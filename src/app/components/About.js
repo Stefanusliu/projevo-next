@@ -1,0 +1,201 @@
+export default function About() {
+  const team = [
+    {
+      name: 'Sarah Chen',
+      role: 'CEO & Co-Founder',
+      image: 'SC',
+      bio: 'Former VP at TechCorp with 15+ years in project management and team building.',
+      gradient: 'from-blue-500 to-indigo-500'
+    },
+    {
+      name: 'Marcus Rodriguez',
+      role: 'CTO & Co-Founder',
+      image: 'MR',
+      bio: 'Ex-Google engineer passionate about connecting talented professionals globally.',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      name: 'Emily Wang',
+      role: 'Head of Operations',
+      image: 'EW',
+      bio: 'Operations expert ensuring smooth partnerships between owners and vendors.',
+      gradient: 'from-green-500 to-emerald-500'
+    }
+  ];
+
+  const values = [
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      ),
+      title: 'Trust & Transparency',
+      description: 'We believe in honest partnerships built on verified profiles and clear communication.'
+    },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+      title: 'Innovation',
+      description: 'Continuously improving our platform with cutting-edge technology and user feedback.'
+    },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      title: 'Community',
+      description: 'Fostering a supportive ecosystem where both Project Owners and Vendors thrive together.'
+    }
+  ];
+
+  return (
+    <section id="about" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 mb-6">
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+              🏢 Our Story
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
+            About Projevo
+          </h2>
+          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+            Born from the belief that great projects deserve great partnerships, Projevo is transforming how Project Owners and Vendors connect worldwide.
+          </p>
+        </div>
+
+        {/* Story Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Our Mission</h3>
+            <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+              We exist to bridge the gap between visionary Project Owners and talented Vendors. Every day, we witness amazing ideas waiting to be brought to life and skilled professionals ready to create something extraordinary.
+            </p>
+            <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+              Projevo was founded in 2023 when our team experienced firsthand the challenges of finding the right partners for projects. We knew there had to be a better way to connect passion with expertise.
+            </p>
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+              <blockquote className="text-lg italic text-slate-700 dark:text-slate-300 mb-4">
+                &ldquo;The journey of a thousand miles begins in a single step.&rdquo;
+              </blockquote>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                This ancient wisdom by Lao Tzu guides our philosophy - every great project starts with connecting the right people.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl border border-slate-200 dark:border-slate-700">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-6">By the Numbers</h4>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    5,000+
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Successful Matches</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                    2,500+
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Verified Vendors</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                    98%
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Success Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
+                    50+
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Countries</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
+              <h4 className="text-xl font-bold mb-4">Our Vision</h4>
+              <p className="text-blue-100 leading-relaxed">
+                To become the world&apos;s most trusted platform where every project finds its perfect partner, and every professional finds opportunities that inspire them to do their best work.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Values Section */}
+        <div className="mb-20">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Our Core Values</h3>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              These principles guide everything we do and shape how we build relationships within our community.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {values.map((value, index) => (
+              <div key={index} className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white mb-6">
+                  {value.icon}
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{value.title}</h4>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Team Section */}
+        <div>
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Meet Our Team</h3>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              The passionate individuals working to make project partnerships seamless and successful.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {team.map((member, index) => (
+              <div key={index} className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center">
+                <div className={`w-20 h-20 bg-gradient-to-r ${member.gradient} rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-6`}>
+                  {member.image}
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{member.name}</h4>
+                <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">{member.role}</p>
+                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{member.bio}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="mt-20 text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+              Ready to Be Part of Our Story?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300 mb-6">
+              Join thousands who have already discovered the power of perfect project partnerships.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                I&apos;m a Project Owner
+              </button>
+              <button className="w-full sm:w-auto border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-8 py-3 rounded-lg font-semibold hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200">
+                I&apos;m a Vendor
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
