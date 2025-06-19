@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PortfolioPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -297,9 +298,11 @@ export default function PortfolioPage() {
                 <div className="lg:col-span-1">
                   <div className="text-center">
                     <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-blue-100 dark:border-blue-900">
-                      <img 
+                      <Image 
                         src={companyProfile.logo} 
                         alt="Company Logo" 
+                        width={128}
+                        height={128}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -425,9 +428,10 @@ export default function PortfolioPage() {
                 {projectGallery.map((project) => (
                   <div key={project.id} className="group relative bg-slate-50 dark:bg-slate-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="aspect-video relative overflow-hidden">
-                      <img 
+                      <Image 
                         src={project.image} 
                         alt={project.title}
+                        fill
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {isEditMode && (

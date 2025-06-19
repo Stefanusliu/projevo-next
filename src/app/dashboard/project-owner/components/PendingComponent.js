@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function PendingComponent({ project, onBack }) {
   const [activeSection, setActiveSection] = useState('overview');
@@ -353,9 +354,11 @@ export default function PendingComponent({ project, onBack }) {
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Client Information</h3>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <img 
+                    <Image 
                       src={pendingProjectData.client.avatar} 
                       alt={pendingProjectData.client.name}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-full"
                     />
                     <div>

@@ -226,7 +226,7 @@ export default function Login() {
               <div>
                 <h4 className="text-sm font-medium text-slate-900 dark:text-white">Automatic Role Detection</h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  Our system will automatically identify whether you're a Project Owner or Vendor based on your account.
+                  Our system will automatically identify whether you&apos;re a Project Owner or Vendor based on your account.
                 </p>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function Login() {
           {/* Sign up link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
                 Sign up for free
               </Link>

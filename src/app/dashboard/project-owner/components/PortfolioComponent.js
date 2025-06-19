@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function PortfolioComponent() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -343,9 +344,10 @@ export default function PortfolioComponent() {
             .map((project) => (
             <div key={project.id} className="group relative bg-slate-50 dark:bg-slate-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <div className="aspect-video relative overflow-hidden">
-                <img 
+                <Image 
                   src={project.image} 
                   alt={project.title}
+                  fill
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 {isEditMode && (
