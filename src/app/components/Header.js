@@ -33,21 +33,15 @@ export default function Header() {
             <a href="#about-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
               About Us
             </a>
-            <a href="#partners" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
-              Partners
-            </a>
-            <a href="#promotion" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
-              Promotion
-            </a>
           </nav>
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Link href="/login" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-              I&apos;m a Project Owner
+              Sign In
             </Link>
             <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
-              I&apos;m a Vendor
+              Sign Up
             </Link>
           </div>
 
@@ -79,18 +73,12 @@ export default function Header() {
               <a href="#about-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
                 About Us
               </a>
-              <a href="#partners" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-                Partners
-              </a>
-              <a href="#promotion" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-                Promotion
-              </a>
               <div className="flex flex-col space-y-2 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <Link href="/login" className="text-left text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-                  I&apos;m a Project Owner
+                  Sign In
                 </Link>
                 <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg text-center">
-                  I&apos;m a Vendor
+                  Sign Up
                 </Link>
               </div>
             </div>

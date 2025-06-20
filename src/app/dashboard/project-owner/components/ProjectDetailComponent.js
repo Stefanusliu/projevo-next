@@ -76,22 +76,100 @@ export default function ProjectDetailComponent({ project, onBack }) {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'client', label: 'Client Details', icon: '👤' },
-    { id: 'documents', label: 'Documents', icon: '📄' },
-    { id: 'gallery', label: 'Gallery', icon: '🖼️' },
-    { id: 'activity', label: 'Activity', icon: '📈' }
+    { 
+      id: 'overview', 
+      label: 'Overview', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'client', 
+      label: 'Client Details', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'documents', 
+      label: 'Documents', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'gallery', 
+      label: 'Gallery', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'activity', 
+      label: 'Activity', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+      )
+    }
   ];
 
   const getActivityIcon = (type) => {
-    const icons = {
-      update: '🔄',
-      milestone: '🎯',
-      comment: '💬',
-      file: '📎',
-      task: '✅'
+    const iconProps = {
+      className: "w-4 h-4",
+      fill: "none",
+      stroke: "currentColor",
+      viewBox: "0 0 24 24"
     };
-    return icons[type] || '📝';
+
+    switch (type) {
+      case 'update':
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        );
+      case 'milestone':
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        );
+      case 'comment':
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        );
+      case 'file':
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+        );
+      case 'task':
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      default:
+        return (
+          <svg {...iconProps}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        );
+    }
   };
 
   return (
@@ -200,7 +278,7 @@ export default function ProjectDetailComponent({ project, onBack }) {
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-1 sm:mr-2 text-base sm:text-lg">{tab.icon}</span>
+                <span className="mr-1 sm:mr-2 flex items-center">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
@@ -337,27 +415,53 @@ export default function ProjectDetailComponent({ project, onBack }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📧 Email Address</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email Address
+                    </label>
                     <p className="text-gray-900 dark:text-white font-medium">{projectData.client.email}</p>
                     <button className="text-blue-600 dark:text-blue-400 hover:underline text-sm mt-1">Send Email</button>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📱 Phone Number</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      Phone Number
+                    </label>
                     <p className="text-gray-900 dark:text-white font-medium">{projectData.client.phone}</p>
                     <button className="text-blue-600 dark:text-blue-400 hover:underline text-sm mt-1">Call Now</button>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🏢 Company</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      Company
+                    </label>
                     <p className="text-gray-900 dark:text-white font-medium">{projectData.client.name}</p>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📍 Project Location</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Project Location
+                    </label>
                     <p className="text-gray-900 dark:text-white font-medium">Jakarta Selatan, Indonesia</p>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">💰 Contract Value</label>
+                    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                      Contract Value
+                    </label>
                     <p className="text-gray-900 dark:text-white font-medium text-lg">{projectData.budget}</p>
                   </div>
                 </div>
@@ -374,15 +478,20 @@ export default function ProjectDetailComponent({ project, onBack }) {
                 <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Budget estimates, technical drawings, and supporting documents</p>
               </div>
               <button className="w-full sm:w-auto flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                📎 Upload Document
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                Upload Document
               </button>
             </div>
             <div className="bg-white/80 backdrop-blur-sm dark:bg-slate-800/90 rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg overflow-hidden">
               {projectData.documents.map((doc, index) => (
                 <div key={doc.id} className={`p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${index !== projectData.documents.length - 1 ? 'border-b border-gray-200 dark:border-slate-700' : ''}`}>
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl flex-shrink-0">
-                      📄
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">{doc.name}</h4>
@@ -411,7 +520,10 @@ export default function ProjectDetailComponent({ project, onBack }) {
                 <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Progress visuals and design documentation</p>
               </div>
               <button className="w-full sm:w-auto flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                🖼️ Add Image
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Add Image
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -494,7 +606,11 @@ export default function ProjectDetailComponent({ project, onBack }) {
               <div className="space-y-6 sm:space-y-8">
                 {[
                   { 
-                    icon: '📄', 
+                    icon: (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    ), 
                     title: 'Design proposal uploaded', 
                     desc: 'New design proposal has been submitted by CV. Kreasi Interior with updated color scheme and layout', 
                     time: '2 hours ago', 
@@ -503,7 +619,11 @@ export default function ProjectDetailComponent({ project, onBack }) {
                     priority: 'high'
                   },
                   { 
-                    icon: '✅', 
+                    icon: (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    ), 
                     title: 'Phase 2 completed', 
                     desc: 'Interior layout phase has been completed successfully. All deliverables have been approved by client', 
                     time: '1 day ago', 
@@ -512,7 +632,11 @@ export default function ProjectDetailComponent({ project, onBack }) {
                     priority: 'high'
                   },
                   { 
-                    icon: '💬', 
+                    icon: (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    ), 
                     title: 'New message received', 
                     desc: 'Client provided detailed feedback regarding color scheme and material selection', 
                     time: '2 days ago', 
@@ -521,7 +645,11 @@ export default function ProjectDetailComponent({ project, onBack }) {
                     priority: 'medium'
                   },
                   { 
-                    icon: '📋', 
+                    icon: (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    ), 
                     title: 'Contract change requested', 
                     desc: 'Additional lighting requirements added to scope. Budget adjustment needed', 
                     time: '3 days ago', 
@@ -530,7 +658,12 @@ export default function ProjectDetailComponent({ project, onBack }) {
                     priority: 'high'
                   },
                   {
-                    icon: '🎯', 
+                    icon: (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    ), 
                     title: 'Milestone achieved', 
                     desc: 'Design phase milestone achieved ahead of schedule', 
                     time: '1 week ago', 

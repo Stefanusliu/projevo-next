@@ -1,28 +1,4 @@
 export default function About() {
-  const team = [
-    {
-      name: 'Sarah Chen',
-      role: 'CEO & Co-Founder',
-      image: 'SC',
-      bio: 'Former VP at TechCorp with 15+ years in project management and team building.',
-      gradient: 'from-blue-500 to-indigo-500'
-    },
-    {
-      name: 'Marcus Rodriguez',
-      role: 'CTO & Co-Founder',
-      image: 'MR',
-      bio: 'Ex-Google engineer passionate about connecting talented professionals globally.',
-      gradient: 'from-purple-500 to-pink-500'
-    },
-    {
-      name: 'Emily Wang',
-      role: 'Head of Operations',
-      image: 'EW',
-      bio: 'Operations expert ensuring smooth partnerships between owners and vendors.',
-      gradient: 'from-green-500 to-emerald-500'
-    }
-  ];
-
   const values = [
     {
       icon: (
@@ -59,8 +35,11 @@ export default function About() {
         {/* Section header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 mb-6">
-            <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
-              🏢 Our Story
+            <span className="flex items-center text-sm font-medium text-blue-800 dark:text-blue-300">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Our Story
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
@@ -148,29 +127,6 @@ export default function About() {
                 </div>
                 <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{value.title}</h4>
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Team Section */}
-        <div>
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Meet Our Team</h3>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              The passionate individuals working to make project partnerships seamless and successful.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div key={index} className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center">
-                <div className={`w-20 h-20 bg-gradient-to-r ${member.gradient} rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-6`}>
-                  {member.image}
-                </div>
-                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{member.name}</h4>
-                <p className="text-blue-600 dark:text-blue-400 font-medium mb-4">{member.role}</p>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{member.bio}</p>
               </div>
             ))}
           </div>

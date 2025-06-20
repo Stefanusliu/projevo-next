@@ -5,6 +5,66 @@ import { useState } from 'react';
 export default function ProjectDetailModal({ project, isOpen, onClose, onCreateProposal }) {
   if (!isOpen || !project) return null;
 
+  // Enhanced project data with comprehensive details from project creation form
+  const enhancedProject = {
+    ...project,
+    // General Information
+    projectTitle: project.name || 'Modern Office Interior Design - Jakarta',
+    province: 'DKI Jakarta',
+    city: 'Jakarta Selatan',
+    fullAddress: 'Jl. Sudirman No. 123, Jakarta Selatan 12190',
+    clientName: project.client || 'PT. Modern Workspace',
+    clientPhone: '+62 21 5555-1234',
+    clientEmail: 'info@modernworkspace.co.id',
+    projectBackground: 'Our company is expanding and needs a modern workspace that reflects our innovative culture and supports collaborative work.',
+    projectGoals: 'Create a productive, inspiring workspace that enhances employee satisfaction and company brand image.',
+    
+    // Classification & Scope
+    projectType: project.type === 'Interior' ? 'Desain' : project.type === 'Construction' ? 'Bangun' : 'Renovasi',
+    projectScope: ['Interior', 'Furniture', 'Lighting Design', 'HVAC'],
+    propertyType: 'Kantor',
+    propertySize: '450 m²',
+    propertyAge: '5 tahun',
+    propertyCondition: 'Baik (Terawat dengan baik)',
+    existingStyle: 'Contemporary',
+    desiredStyle: 'Modern',
+    budgetPriority: 'Seimbang - Kualitas dan harga',
+    estimatedDuration: project.timeEstimation || '4 months',
+    tenderDuration: '2 minggu',
+    estimatedStartDate: '2024-08-01',
+    projectUrgency: 'Normal (2-6 bulan)',
+    workingHours: 'Senin-Jumat (Jam kerja normal)',
+    accessRestrictions: 'Akses terbatas pada jam kerja kantor, tidak mengganggu operasional existing',
+    
+    // Technical Specifications
+    designPreferences: ['Smart Home/Building', 'Hemat Energi', 'Natural Lighting', 'Sound Proofing'],
+    specificRequirements: 'Ruang meeting untuk 12 orang, area kolaborasi terbuka, ruang istirahat modern, sistem keamanan terintegrasi',
+    qualityStandards: 'High Quality (Kualitas tinggi)',
+    materialPreferences: ['Eco-Friendly', 'Low Maintenance', 'Durable Materials'],
+    colorPreferences: 'Warna netral dengan aksen hijau dan biru untuk menciptakan suasana tenang dan produktif',
+    sustainabilityRequirements: 'Penggunaan material ramah lingkungan, sistem pencahayaan LED hemat energi',
+    accessibilityNeeds: 'Akses ramah disabilitas sesuai standar universal design',
+    
+    // Stakeholder & Communication
+    decisionMakers: 'CEO, Operations Manager, HR Director',
+    projectTeam: 'Internal facilities team dan IT support',
+    communicationPreference: 'WhatsApp',
+    reportingFrequency: 'Mingguan',
+    meetingSchedule: 'Setiap Jumat pagi untuk review progress',
+    
+    // Additional Information
+    specialNotes: 'Proyek harus selesai sebelum akhir tahun untuk kebutuhan ekspansi tim',
+    risksAndChallenges: 'Koordinasi dengan operasional kantor yang sedang berjalan',
+    successCriteria: 'Workspace yang meningkatkan produktivitas tim, selesai tepat waktu, dalam budget',
+    
+    // Documents (simulated)
+    uploadedDocuments: [
+      { name: 'Floor Plan.dwg', title: 'Denah Lantai Existing' },
+      { name: 'Requirements.pdf', title: 'Detail Requirements' },
+      { name: 'Budget Breakdown.xlsx', title: 'Breakdown Budget' }
+    ]
+  };
+
   const getBidCountdownColor = (countdown) => {
     const days = parseInt(countdown.split(" ")[0]);
     if (days <= 3)
@@ -22,12 +82,20 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{project.name}</h2>
-            <p className="text-slate-600 dark:text-slate-400">{project.client} • {project.location}</p>
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 rounded-full text-sm font-medium">
+                {enhancedProject.projectType}
+              </span>
+              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full text-sm font-medium">
+                {project.category}
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{enhancedProject.projectTitle}</h2>
+            <p className="text-slate-600 dark:text-slate-400">{enhancedProject.clientName} • {enhancedProject.city}</p>
           </div>
           <button
             onClick={onClose}
@@ -42,45 +110,266 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
         <div className="p-6">
           {/* Project Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Description</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-                {project.description}
-              </p>
-
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Detailed Requirements</h3>
-              <div className="space-y-3">
-                {project.requirements.map((requirement, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-slate-600 dark:text-slate-400">{requirement}</span>
+            <div className="lg:col-span-2 space-y-6">
+              {/* Project Description */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Description</h3>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                  {project.description}
+                </p>
+                
+                {/* Project Background & Goals */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Project Background</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{enhancedProject.projectBackground}</p>
                   </div>
-                ))}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Project Goals</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{enhancedProject.projectGoals}</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <h4 className="font-medium text-blue-900 dark:text-blue-400 mb-2">Additional Information</h4>
-                <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                  <li>• Site visit will be arranged for shortlisted vendors</li>
-                  <li>• All materials must comply with local building codes</li>
-                  <li>• Insurance certificate required before project start</li>
-                  <li>• Weekly progress reports mandatory</li>
-                </ul>
+              {/* Location Details */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Location & Property Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Full Address</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.fullAddress}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Property Type</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.propertyType}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Property Size</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.propertySize}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Property Condition</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.propertyCondition}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Project Scope */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Scope</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {enhancedProject.projectScope.map((scope, index) => (
+                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full text-sm font-medium">
+                      {scope}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Detailed Requirements</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Basic Requirements</h4>
+                    <div className="space-y-2">
+                      {project.requirements.map((requirement, index) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-slate-600 dark:text-slate-400">{requirement}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Specific Requirements</h4>
+                    <p className="text-slate-600 dark:text-slate-400">{enhancedProject.specificRequirements}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Technical Specifications */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Technical Specifications</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Design Preferences</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {enhancedProject.designPreferences.map((pref, index) => (
+                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 rounded text-sm">
+                          {pref}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Material Preferences</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {enhancedProject.materialPreferences.map((material, index) => (
+                        <span key={index} className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded text-sm">
+                          {material}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Color Preferences</h4>
+                    <p className="text-slate-600 dark:text-slate-400">{enhancedProject.colorPreferences}</p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white mb-2">Quality Standards</h4>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 rounded-full text-sm font-medium">
+                      {enhancedProject.qualityStandards}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sustainability & Accessibility */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <h4 className="font-medium text-green-900 dark:text-green-400 mb-2">Sustainability Requirements</h4>
+                  <p className="text-sm text-green-800 dark:text-green-300">{enhancedProject.sustainabilityRequirements}</p>
+                </div>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-400 mb-2">Accessibility Needs</h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-300">{enhancedProject.accessibilityNeeds}</p>
+                </div>
+              </div>
+
+              {/* Working Conditions */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Working Conditions & Constraints</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Working Hours</p>
+                    <p className="text-slate-900 dark:text-white">{enhancedProject.workingHours}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Project Urgency</p>
+                    <p className="text-slate-900 dark:text-white">{enhancedProject.projectUrgency}</p>
+                  </div>
+                </div>
+                {enhancedProject.accessRestrictions && (
+                  <div className="mt-3">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Access Restrictions</p>
+                    <p className="text-slate-600 dark:text-slate-400">{enhancedProject.accessRestrictions}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Communication & Stakeholders */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Communication & Stakeholders</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Decision Makers</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.decisionMakers}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Project Team</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.projectTeam}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Communication Preference</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.communicationPreference}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Reporting Frequency</p>
+                      <p className="text-slate-900 dark:text-white">{enhancedProject.reportingFrequency}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Meeting Schedule</p>
+                  <p className="text-slate-900 dark:text-white">{enhancedProject.meetingSchedule}</p>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Additional Information</h3>
+                <div className="space-y-4">
+                  {enhancedProject.specialNotes && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <h4 className="font-medium text-yellow-900 dark:text-yellow-400 mb-2">Special Notes</h4>
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">{enhancedProject.specialNotes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <h4 className="font-medium text-red-900 dark:text-red-400 mb-2">Risks & Challenges</h4>
+                      <p className="text-sm text-red-800 dark:text-red-300">{enhancedProject.risksAndChallenges}</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <h4 className="font-medium text-green-900 dark:text-green-400 mb-2">Success Criteria</h4>
+                      <p className="text-sm text-green-800 dark:text-green-300">{enhancedProject.successCriteria}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supporting Documents */}
+              {enhancedProject.uploadedDocuments && enhancedProject.uploadedDocuments.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Supporting Documents</h3>
+                  <div className="space-y-2">
+                    {enhancedProject.uploadedDocuments.map((doc, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{doc.title}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{doc.name}</p>
+                        </div>
+                        <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm">
+                          Download
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
               {/* Key Details */}
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Details</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Summary</h3>
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Budget</p>
                     <p className="text-xl font-bold text-slate-900 dark:text-white">{project.budget}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Priority: {enhancedProject.budgetPriority}</p>
                   </div>
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Timeline</p>
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{project.timeEstimation}</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{enhancedProject.estimatedDuration}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Start: {enhancedProject.estimatedStartDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Design Style</p>
+                    <div className="space-y-1">
+                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 rounded text-sm">
+                        Current: {enhancedProject.existingStyle}
+                      </span>
+                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded text-sm">
+                        Desired: {enhancedProject.desiredStyle}
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Category</p>
@@ -112,6 +401,10 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
                     </span>
                   </div>
                   <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Tender Duration</p>
+                    <p className="text-slate-900 dark:text-white">{enhancedProject.tenderDuration}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Deadline</p>
                     <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBidCountdownColor(project.bidCountdown)}`}>
                       {project.bidCountdown}
@@ -123,29 +416,69 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
               {/* Client Information */}
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Client Information</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
-                        {project.client.split(' ').map(n => n[0]).join('')}
+                        {enhancedProject.clientName.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{project.client}</p>
+                      <p className="font-medium text-slate-900 dark:text-white">{enhancedProject.clientName}</p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">Verified Client</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{project.location}</span>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>{enhancedProject.fullAddress}</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>{enhancedProject.clientEmail}</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span>{enhancedProject.clientPhone}</span>
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                  
+                  <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
                     <p>• Average rating: 4.8/5</p>
                     <p>• 12 completed projects</p>
                     <p>• Member since 2021</p>
+                    <p>• Response time: Within 24 hours</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline Information */}
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Timeline</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Estimated Start Date</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{enhancedProject.estimatedStartDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Project Duration</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{enhancedProject.estimatedDuration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Urgency Level</p>
+                    <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 rounded text-sm">
+                      {enhancedProject.projectUrgency}
+                    </span>
                   </div>
                 </div>
               </div>

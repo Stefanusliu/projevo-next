@@ -5,8 +5,6 @@ import Stats from './components/Stats';
 import CTA from './components/CTA';
 import Contact from './components/Contact';
 import About from './components/About';
-import Partners from './components/Partners';
-import Promotion from './components/Promotion';
 import Footer from './components/Footer';
 
 export default function Home() {
@@ -21,12 +19,6 @@ export default function Home() {
         </section>
         <section id="about-us">
           <About />
-        </section>
-        <section id="partners">
-          <Partners />
-        </section>
-        <section id="promotion">
-          <Promotion />
         </section>
         <CTA />
         <section id="contact-us">

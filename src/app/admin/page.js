@@ -4,6 +4,7 @@ import { useState } from 'react';
 import DashboardLayout from './components/DashboardLayout';
 import HomeComponent from './components/HomeComponent';
 import ProjectReviewComponent from './components/ProjectReviewComponent';
+import PaymentManagementComponent from './components/PaymentManagementComponent';
 import UserManagementComponent from './components/UserManagementComponent';
 import AnalyticsComponent from './components/AnalyticsComponent';
 import SettingsComponent from './components/SettingsComponent';
@@ -17,6 +18,8 @@ export default function AdminDashboard() {
         return <HomeComponent />;
       case 'project-review':
         return <ProjectReviewComponent />;
+      case 'payment-management':
+        return <PaymentManagementComponent />;
       case 'user-management':
         return <UserManagementComponent />;
       case 'analytics':

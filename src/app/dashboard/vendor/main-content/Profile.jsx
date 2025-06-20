@@ -1036,7 +1036,7 @@ export default function Profile() {
             {formData.relevantExperience.length === 0 && (
               <div className="text-center py-8 bg-slate-50 dark:bg-slate-700/50 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600">
                 <svg className="w-12 h-12 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6M6 12V8a2 2 0 012-2h2m8 0h2a2 2 0 012 2v4M6 12c0 .796.316 1.559.879 2.121l4.242 4.243a1 1 0 001.414 0l4.243-4.243A3 3 0 0018 12M6 12l1.757.351M18 12l-1.757.351" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No Experience Listed</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-4">Add your relevant work experience to strengthen your profile</p>

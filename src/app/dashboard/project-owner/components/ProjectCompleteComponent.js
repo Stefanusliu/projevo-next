@@ -10,7 +10,7 @@ export default function ProjectCompleteComponent({ project, onBack }) {
 
   // Dummy image fallback
   const dummyImage = "data:image/svg+xml,%3Csvg width='400' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='16' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
-  const dummyAvatar = "data:image/svg+xml,%3Csvg width='48' height='48' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0' rx='24'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='%2364748b' text-anchor='middle' dy='.3em'%3E👤%3C/text%3E%3C/svg%3E";
+  const dummyAvatar = "data:image/svg+xml,%3Csvg width='48' height='48' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0' rx='24'/%3E%3Cpath d='M24 14a6 6 0 0 1 6 6c0 1.657-.672 3.157-1.757 4.243A6 6 0 0 1 24 26a6 6 0 0 1-6-6c0-1.657.672-3.157 1.757-4.243A6 6 0 0 1 24 14zm0 20c-4.418 0-8-1.79-8-4s3.582-4 8-4 8 1.79 8 4-3.582 4-8 4z' fill='%2364748b'/%3E%3C/svg%3E";
 
   const handleImageError = (imageId) => {
     setImageErrors(prev => ({ ...prev, [imageId]: true }));
