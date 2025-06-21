@@ -69,81 +69,40 @@ export default function Features() {
         </div>
 
         {/* Steps */}
-        <div className="space-y-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
           {steps.map((step, index) => (
-            <div key={index} className={`flex flex-col lg:flex-row items-center gap-12 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-              {/* Content */}
-              <div className="flex-1 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="text-6xl font-bold text-blue-100 dark:text-blue-900/50">
-                    {step.step}
-                  </div>
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white">
-                    {step.icon}
-                  </div>
+            <div key={index} className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              {/* Step number and icon */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-4xl font-bold text-blue-100 dark:text-blue-900/50">
+                  {step.step}
                 </div>
-
-                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                  {step.title}
-                </h3>
-
-                <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {step.description}
-                </p>
-
-                {/* For different user types */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-semibold text-blue-600 dark:text-blue-400 mb-2">For Project Owners</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">{step.forOwners}</p>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <h4 className="font-semibold text-purple-600 dark:text-purple-400 mb-2">For Vendors</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">{step.forVendors}</p>
-                  </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white">
+                  {step.icon}
                 </div>
               </div>
 
-              {/* Visual */}
-              <div className="flex-1">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 hover:shadow-2xl transition-shadow duration-300">
-                  <div className="aspect-square bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white mb-4 mx-auto">
-                        {step.icon}
-                      </div>
-                      <div className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                        Step {step.step}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {step.title}
-                      </div>
-                    </div>
-                  </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                {step.title}
+              </h3>
+
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                {step.description}
+              </p>
+
+              {/* For different user types */}
+              <div className="space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h4 className="font-semibold text-blue-600 dark:text-blue-400 mb-1 text-sm">For Project Owners</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">{step.forOwners}</p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <h4 className="font-semibold text-purple-600 dark:text-purple-400 mb-1 text-sm">For Vendors</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">{step.forVendors}</p>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="mt-20 text-center">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-              Ready to Start Your Journey?
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">
-              &ldquo;The journey of a thousand miles begins in a single step.&rdquo; - Take yours today.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                I&apos;m a Project Owner
-              </button>
-              <button className="w-full sm:w-auto border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-8 py-3 rounded-lg font-semibold hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200">
-                I&apos;m a Vendor
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -1,15 +1,15 @@
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import Stats from './components/Stats';
-import CTA from './components/CTA';
-import Contact from './components/Contact';
-import About from './components/About';
-import Footer from './components/Footer';
+import Header from "./components/Header";
+import Hero from "./components/Hero";
+import Features from "./components/Features";
+import Stats from "./components/Stats";
+import CTA from "./components/CTA";
+import About from "./components/About";
+import Footer from "./components/Footer";
 
 export const metadata = {
   title: "Projevo - Premier Construction & Design Platform in Indonesia",
-  description: "Connect with trusted contractors, interior designers, architects, and renovation specialists. Projevo makes it easy to find qualified vendors, submit proposals, and manage construction projects from start to finish.",
+  description:
+    "Connect with trusted contractors, interior designers, architects, and renovation specialists. Projevo makes it easy to find qualified vendors, submit proposals, and manage construction projects from start to finish.",
   keywords: [
     "construction platform Indonesia",
     "find contractors Jakarta",
@@ -20,23 +20,25 @@ export const metadata = {
     "building contractors",
     "design and build services",
     "project management platform",
-    "vendor marketplace Indonesia"
+    "vendor marketplace Indonesia",
   ],
   openGraph: {
     title: "Projevo - Premier Construction & Design Platform",
-    description: "Find trusted contractors and vendors for construction, interior design, architecture, and renovation projects. Seamless collaboration for innovative solutions.",
+    description:
+      "Find trusted contractors and vendors for construction, interior design, architecture, and renovation projects. Seamless collaboration for innovative solutions.",
     images: [
       {
-        url: '/images/projevo-homepage.jpg',
+        url: "/images/projevo-homepage.jpg",
         width: 1200,
         height: 630,
-        alt: 'Projevo Homepage - Construction Platform',
+        alt: "Projevo Homepage - Construction Platform",
       },
     ],
   },
   twitter: {
     title: "Projevo - Premier Construction & Design Platform",
-    description: "Find trusted contractors and vendors for construction, interior design, architecture, and renovation projects in Indonesia.",
+    description:
+      "Find trusted contractors and vendors for construction, interior design, architecture, and renovation projects in Indonesia.",
   },
 };
 
@@ -54,9 +56,6 @@ export default function Home() {
           <About />
         </section>
         <CTA />
-        <section id="contact-us">
-          <Contact />
-        </section>
       </main>
       <Footer />
     </div>

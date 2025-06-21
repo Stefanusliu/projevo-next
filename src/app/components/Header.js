@@ -27,9 +27,12 @@ export default function Header() {
             <a href="#how-it-works" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
               How it Works?
             </a>
-            <a href="#contact-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+            <Link href="/boq-maker" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+              BOQ Maker
+            </Link>
+            <Link href="/contact" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
               Contact Us
-            </a>
+            </Link>
             <a href="#about-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
               About Us
             </a>
@@ -67,9 +70,12 @@ export default function Header() {
               <a href="#how-it-works" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
                 How it Works?
               </a>
-              <a href="#contact-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+              <Link href="/boq-maker" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+                BOQ Maker
+              </Link>
+              <Link href="/contact" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
                 Contact Us
-              </a>
+              </Link>
               <a href="#about-us" className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
                 About Us
               </a>

@@ -109,48 +109,6 @@ export default function About() {
             </div>
           </div>
         </div>
-
-        {/* Values Section */}
-        <div className="mb-20">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Our Core Values</h3>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              These principles guide everything we do and shape how we build relationships within our community.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {values.map((value, index) => (
-              <div key={index} className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white mb-6">
-                  {value.icon}
-                </div>
-                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{value.title}</h4>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="mt-20 text-center">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-xl border border-slate-200 dark:border-slate-700 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-              Ready to Be Part of Our Story?
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">
-              Join thousands who have already discovered the power of perfect project partnerships.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                I&apos;m a Project Owner
-              </button>
-              <button className="w-full sm:w-auto border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-8 py-3 rounded-lg font-semibold hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200">
-                I&apos;m a Vendor
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
