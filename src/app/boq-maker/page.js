@@ -45,6 +45,37 @@ export default function BOQMaker() {
     ));
   };
 
+  const smartDelete = (tahapanId, jenisId, uraianId, specId) => {
+    const tahapan = tahapanKerja.find(t => t.id === tahapanId);
+    if (!tahapan) return;
+
+    if (specId) {
+      // If we have a specId, delete just this spec
+      deleteSpec(tahapanId, jenisId, uraianId, specId);
+    } else if (uraianId) {
+      // If we have uraianId, delete this uraian
+      deleteUraian(tahapanId, jenisId, uraianId);
+    } else if (jenisId) {
+      const jenis = tahapan.jenisKerja.find(j => j.id === jenisId);
+      if (jenis) {
+        if (jenis.uraian.length > 0) {
+          // If jenis has uraian, delete all uraian first
+          jenis.uraian.forEach(uraian => {
+            deleteUraian(tahapanId, jenisId, uraian.id);
+          });
+        } else {
+          // If jenis has no uraian, delete the jenis
+          deleteJenisKerja(tahapanId, jenisId);
+        }
+      }
+    } else {
+      // Delete tahapan if there are multiple tahapans
+      if (tahapanKerja.length > 1) {
+        deleteTahapanKerja(tahapanId);
+      }
+    }
+  };
+
   const deleteTahapanKerja = (id) => {
     setTahapanKerja(tahapanKerja.filter(tahapan => tahapan.id !== id));
   };
@@ -254,7 +285,7 @@ export default function BOQMaker() {
     let csvContent = '\ufeff'; // UTF-8 BOM
     csvContent += `BOQ: ${boqTitle}\n`;
     csvContent += `Generated: ${new Date().toLocaleDateString('id-ID')}\n\n`;
-    csvContent += 'Tahapan Kerja,Jenis Pekerjaan,Uraian,Spesifikasi,Satuan,Volume,Harga per Pcs,Total\n';
+    csvContent += 'Tahapan Kerja,Jenis Pekerjaan,Uraian,Spesifikasi,Volume,Satuan,Harga per Pcs,Total\n';
 
     tahapanKerja.forEach(tahapan => {
       if (tahapan.jenisKerja.length === 0) {
@@ -270,7 +301,7 @@ export default function BOQMaker() {
               } else {
                 uraian.spec.forEach(spec => {
                   const total = calculateSpecTotal(spec);
-                  csvContent += `"${tahapan.name}","${jenis.name}","${uraian.name}","${spec.description}","${spec.satuan}",${spec.volume},"Rp ${spec.pricePerPcs.toLocaleString('id-ID')}","Rp ${total.toLocaleString('id-ID')}"\n`;
+                  csvContent += `"${tahapan.name}","${jenis.name}","${uraian.name}","${spec.description}",${spec.volume},"${spec.satuan}","Rp ${spec.pricePerPcs.toLocaleString('id-ID')}","Rp ${total.toLocaleString('id-ID')}"\n`;
                 });
               }
             });
@@ -557,10 +588,10 @@ export default function BOQMaker() {
                             Spesifikasi
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[100px]">
-                            Satuan
+                            Volume
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[100px]">
-                            Volume
+                            Satuan
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[150px]">
                             Harga per Pcs
@@ -878,14 +909,14 @@ export default function BOQMaker() {
                               ) : null}
                             </td>
 
-                            {/* Satuan */}
+                            {/* Volume */}
                             <td className="px-4 py-3 border-r border-slate-200">
                               {row.spec ? (
                                 <input
-                                  type="text"
-                                  placeholder="Unit"
-                                  value={row.spec.satuan}
-                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'satuan', e.target.value)}
+                                  type="number"
+                                  step="0.01"
+                                  value={row.spec.volume}
+                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'volume', parseFloat(e.target.value) || 0)}
                                   disabled={!editMode}
                                   className={
                                     editMode 
@@ -896,14 +927,14 @@ export default function BOQMaker() {
                               ) : null}
                             </td>
 
-                            {/* Volume */}
+                            {/* Satuan */}
                             <td className="px-4 py-3 border-r border-slate-200">
                               {row.spec ? (
                                 <input
-                                  type="number"
-                                  step="0.01"
-                                  value={row.spec.volume}
-                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'volume', parseFloat(e.target.value) || 0)}
+                                  type="text"
+                                  placeholder="Unit"
+                                  value={row.spec.satuan}
+                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'satuan', e.target.value)}
                                   disabled={!editMode}
                                   className={
                                     editMode 
@@ -943,78 +974,23 @@ export default function BOQMaker() {
                             {/* Actions */}
                             {editMode && (
                               <td className="px-4 py-3 text-center">
-                                <div className="flex flex-col justify-center space-y-1">
-                                  {/* Delete Tahapan button - only show on first row of tahapan */}
-                                  {isFirstTahapanRow && tahapanKerja.length > 1 && (
+                                <div className="flex justify-center">
+                                  {/* Smart Delete Button - shows appropriate tooltip based on what will be deleted */}
+                                  {(isFirstTahapanRow || row.jenisId || row.uraianId || row.specId) && (
                                     <button
-                                      onClick={() => deleteTahapanKerja(row.tahapanId)}
-                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                      title="Delete Tahapan"
+                                      onClick={() => smartDelete(row.tahapanId, row.jenisId, row.uraianId, row.specId)}
+                                      className="bg-white text-red-500 hover:bg-red-50 w-8 h-8 rounded flex items-center justify-center text-xl font-bold transition-all duration-200"
+                                      title={
+                                        row.specId ? "Delete Spec" :
+                                        row.uraianId ? "Delete Uraian" :
+                                        row.jenisId ? 
+                                          (tahapanKerja.find(t => t.id === row.tahapanId)?.jenisKerja.find(j => j.id === row.jenisId)?.uraian.length > 0 ? 
+                                            "Delete All Uraian" : "Delete Jenis") :
+                                        (isFirstTahapanRow && tahapanKerja.length > 1) ? "Delete Tahapan" : ""
+                                      }
                                     >
-                                      Del Tahapan
+                                      ×
                                     </button>
-                                  )}
-                                  {/* Delete Jenis button - only show on first row of jenis */}
-                                  {row.jenisId && isFirstJenisRow && (
-                                    <button
-                                      onClick={() => deleteJenisKerja(row.tahapanId, row.jenisId)}
-                                      className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
-                                      title="Delete Jenis"
-                                    >
-                                      Del Jenis
-                                    </button>
-                                  )}
-                                  {row.type === 'uraian-empty' && (
-                                    <button
-                                      onClick={() => deleteUraian(row.tahapanId, row.jenisId, row.uraianId)}
-                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                      title="Delete Uraian"
-                                    >
-                                      Del
-                                    </button>
-                                  )}
-                                  {row.type === 'spec' && (
-                                    <button
-                                      onClick={() => deleteSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId)}
-                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                      title="Delete Spec"
-                                    >
-                                      Del
-                                    </button>
-                                  )}
-                                  {/* Quick add buttons in actions for easier access */}
-                                  {(row.type === 'tahapan-empty' || row.type === 'add-jenis-row') && (
-                                    <div className="flex space-x-1">
-                                      <button
-                                        onClick={() => addJenisKerja(row.tahapanId)}
-                                        className="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded text-xs"
-                                        title="Add Jenis"
-                                      >
-                                        +J
-                                      </button>
-                                    </div>
-                                  )}
-                                  {(row.type === 'jenis-empty' || row.type === 'add-uraian-row') && (
-                                    <div className="flex space-x-1">
-                                      <button
-                                        onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                        className="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs"
-                                        title="Add Uraian"
-                                      >
-                                        +U
-                                      </button>
-                                    </div>
-                                  )}
-                                  {row.type === 'uraian-empty' && (
-                                    <div className="flex space-x-1">
-                                      <button
-                                        onClick={() => addSpec(row.tahapanId, row.jenisId, row.uraianId)}
-                                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs"
-                                        title="Add Spec"
-                                      >
-                                        +S
-                                      </button>
-                                    </div>
                                   )}
                                 </div>
                               </td>
