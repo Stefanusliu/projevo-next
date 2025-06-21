@@ -20,6 +20,7 @@ export default function BOQMaker() {
   ]);
   const [savedBOQs, setSavedBOQs] = useState([]);
   const [editMode, setEditMode] = useState(true);
+  const [draggedTahapan, setDraggedTahapan] = useState(null);
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
@@ -34,7 +35,27 @@ export default function BOQMaker() {
       {
         id: Date.now(),
         name: '',
-        jenisKerja: []
+        jenisKerja: [
+          {
+            id: Date.now() + 1,
+            name: '',
+            uraian: [
+              {
+                id: Date.now() + 2,
+                name: '',
+                spec: [
+                  {
+                    id: Date.now() + 3,
+                    description: '',
+                    satuan: '',
+                    volume: null,
+                    pricePerPcs: null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]);
   };
@@ -49,11 +70,8 @@ export default function BOQMaker() {
     const tahapan = tahapanKerja.find(t => t.id === tahapanId);
     if (!tahapan) return;
 
-    if (specId) {
-      // If we have a specId, delete just this spec
-      deleteSpec(tahapanId, jenisId, uraianId, specId);
-    } else if (uraianId) {
-      // If we have uraianId, delete this uraian
+    if (uraianId) {
+      // If we have uraianId, delete this uraian (spec is inline, so it gets deleted with uraian)
       deleteUraian(tahapanId, jenisId, uraianId);
     } else if (jenisId) {
       const jenis = tahapan.jenisKerja.find(j => j.id === jenisId);
@@ -80,12 +98,72 @@ export default function BOQMaker() {
     setTahapanKerja(tahapanKerja.filter(tahapan => tahapan.id !== id));
   };
 
+  const handleDragStart = (e, tahapanId) => {
+    setDraggedTahapan(tahapanId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, targetTahapanId) => {
+    e.preventDefault();
+    
+    if (!draggedTahapan || draggedTahapan === targetTahapanId) {
+      setDraggedTahapan(null);
+      return;
+    }
+
+    const newTahapanKerja = [...tahapanKerja];
+    const draggedIndex = newTahapanKerja.findIndex(t => t.id === draggedTahapan);
+    const targetIndex = newTahapanKerja.findIndex(t => t.id === targetTahapanId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedTahapan(null);
+      return;
+    }
+
+    // Remove dragged item and insert at target position
+    const [draggedItem] = newTahapanKerja.splice(draggedIndex, 1);
+    newTahapanKerja.splice(targetIndex, 0, draggedItem);
+
+    setTahapanKerja(newTahapanKerja);
+    setDraggedTahapan(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTahapan(null);
+  };
+
   const addJenisKerja = (tahapanId) => {
     setTahapanKerja(tahapanKerja.map(tahapan => 
       tahapan.id === tahapanId 
         ? { 
             ...tahapan, 
-            jenisKerja: [...tahapan.jenisKerja, { id: Date.now(), name: '', uraian: [] }] 
+            jenisKerja: [
+              ...tahapan.jenisKerja, 
+              { 
+                id: Date.now(), 
+                name: '', 
+                uraian: [
+                  {
+                    id: Date.now() + 1,
+                    name: '',
+                    spec: [
+                      {
+                        id: Date.now() + 2,
+                        description: '',
+                        satuan: '',
+                        volume: null,
+                        pricePerPcs: null
+                      }
+                    ]
+                  }
+                ]
+              }
+            ] 
           }
         : tahapan
     ));
@@ -102,6 +180,8 @@ export default function BOQMaker() {
           }
         : tahapan
     ));
+    
+    // No auto-add for jenis - use manual button instead
   };
 
   const deleteJenisKerja = (tahapanId, jenisId) => {
@@ -124,7 +204,22 @@ export default function BOQMaker() {
               jenis.id === jenisId 
                 ? { 
                     ...jenis, 
-                    uraian: [...jenis.uraian, { id: Date.now(), name: '', spec: [] }] 
+                    uraian: [
+                      ...jenis.uraian, 
+                      { 
+                        id: Date.now(), 
+                        name: '', 
+                        spec: [
+                          {
+                            id: Date.now() + 1,
+                            description: '',
+                            satuan: '',
+                            volume: null,
+                            pricePerPcs: null
+                          }
+                        ]
+                      }
+                    ] 
                   }
                 : jenis
             )
@@ -151,6 +246,8 @@ export default function BOQMaker() {
           }
         : tahapan
     ));
+    
+    // No auto-add for uraian - use manual button instead
   };
 
   const deleteUraian = (tahapanId, jenisId, uraianId) => {
@@ -184,13 +281,13 @@ export default function BOQMaker() {
                       uraian.id === uraianId 
                         ? { 
                             ...uraian, 
-                            spec: [...uraian.spec, { 
+                            spec: [...uraian.spec,                            { 
                               id: Date.now(), 
                               description: '', 
                               satuan: '', 
-                              volume: 0, 
-                              pricePerPcs: 0 
-                            }] 
+                              volume: null, 
+                              pricePerPcs: null 
+                            }]
                           }
                         : uraian
                     )
@@ -227,6 +324,8 @@ export default function BOQMaker() {
           }
         : tahapan
     ));
+    
+    // No auto-add for specs - they are inline with uraian
   };
 
   const deleteSpec = (tahapanId, jenisId, uraianId, specId) => {
@@ -255,7 +354,9 @@ export default function BOQMaker() {
   };
 
   const calculateSpecTotal = (spec) => {
-    return spec.volume * spec.pricePerPcs;
+    const volume = spec.volume || 0;
+    const pricePerPcs = spec.pricePerPcs || 0;
+    return volume * pricePerPcs;
   };
 
   const calculateGrandTotal = () => {
@@ -375,7 +476,33 @@ export default function BOQMaker() {
 
   const createNewBOQ = () => {
     setBoqTitle('');
-    setTahapanKerja([{ id: 1, name: '', jenisKerja: [] }]);
+    setTahapanKerja([
+      { 
+        id: 1, 
+        name: '', 
+        jenisKerja: [
+          {
+            id: 1,
+            name: '',
+            uraian: [
+              {
+                id: 1,
+                name: '',
+                spec: [
+                  {
+                    id: 1,
+                    description: '',
+                    satuan: '',
+                    volume: null,
+                    pricePerPcs: null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]);
     setCurrentBOQId(null);
     setEditMode(true);
     setCurrentView('editor');
@@ -612,20 +739,26 @@ export default function BOQMaker() {
                         const rows = [];
                         
                         if (tahapan.jenisKerja.length === 0) {
-                          // Empty tahapan row - show tahapan but allow adding jenis or direct uraian
+                          // Empty tahapan row - show tahapan but allow adding jenis
                           rows.push({
                             key: `tahapan-${tahapan.id}`,
                             tahapanId: tahapan.id,
                             tahapanName: tahapan.name,
                             tahapanIndex,
-                            type: 'tahapan-empty',
-                            canAddJenis: true,
-                            canAddUraian: true
+                            type: 'tahapan-empty'
+                          });
+                          // Add button to add first jenis
+                          rows.push({
+                            key: `add-jenis-${tahapan.id}`,
+                            tahapanId: tahapan.id,
+                            tahapanName: tahapan.name,
+                            tahapanIndex,
+                            type: 'add-jenis-button'
                           });
                         } else {
                           tahapan.jenisKerja.forEach((jenis, jenisIndex) => {
                             if (jenis.uraian.length === 0) {
-                              // Empty jenis row - show tahapan + jenis but allow adding uraian or direct spec
+                              // Empty jenis row - show tahapan + jenis but allow adding uraian
                               rows.push({
                                 key: `jenis-${jenis.id}`,
                                 tahapanId: tahapan.id,
@@ -634,51 +767,9 @@ export default function BOQMaker() {
                                 jenisId: jenis.id,
                                 jenisName: jenis.name,
                                 jenisIndex,
-                                type: 'jenis-empty',
-                                canAddUraian: true,
-                                canAddSpec: true
+                                type: 'jenis-empty'
                               });
-                            } else {
-                              jenis.uraian.forEach((uraian, uraianIndex) => {
-                                if (uraian.spec.length === 0) {
-                                  // Empty uraian row - show tahapan + jenis + uraian but allow adding spec
-                                  rows.push({
-                                    key: `uraian-${uraian.id}`,
-                                    tahapanId: tahapan.id,
-                                    tahapanName: tahapan.name,
-                                    tahapanIndex,
-                                    jenisId: jenis.id,
-                                    jenisName: jenis.name,
-                                    jenisIndex,
-                                    uraianId: uraian.id,
-                                    uraianName: uraian.name,
-                                    uraianIndex,
-                                    type: 'uraian-empty',
-                                    canAddSpec: true
-                                  });
-                                } else {
-                                  uraian.spec.forEach((spec, specIndex) => {
-                                    rows.push({
-                                      key: `spec-${spec.id}`,
-                                      tahapanId: tahapan.id,
-                                      tahapanName: tahapan.name,
-                                      tahapanIndex,
-                                      jenisId: jenis.id,
-                                      jenisName: jenis.name,
-                                      jenisIndex,
-                                      uraianId: uraian.id,
-                                      uraianName: uraian.name,
-                                      uraianIndex,
-                                      specId: spec.id,
-                                      spec: spec,
-                                      specIndex,
-                                      type: 'spec'
-                                    });
-                                  });
-                                }
-                              });
-                              
-                              // Add a special row at the end of each jenis to allow adding more uraian
+                              // Add button to add first uraian
                               rows.push({
                                 key: `add-uraian-${jenis.id}`,
                                 tahapanId: tahapan.id,
@@ -687,20 +778,49 @@ export default function BOQMaker() {
                                 jenisId: jenis.id,
                                 jenisName: jenis.name,
                                 jenisIndex,
-                                type: 'add-uraian-row',
-                                canAddUraian: true
+                                type: 'add-uraian-button'
+                              });
+                            } else {
+                              jenis.uraian.forEach((uraian, uraianIndex) => {
+                                // Always show uraian row with inline spec data
+                                rows.push({
+                                  key: `uraian-${uraian.id}`,
+                                  tahapanId: tahapan.id,
+                                  tahapanName: tahapan.name,
+                                  tahapanIndex,
+                                  jenisId: jenis.id,
+                                  jenisName: jenis.name,
+                                  jenisIndex,
+                                  uraianId: uraian.id,
+                                  uraianName: uraian.name,
+                                  uraianIndex,
+                                  spec: uraian.spec.length > 0 ? uraian.spec[0] : null, // Use first (and only) spec
+                                  specId: uraian.spec.length > 0 ? uraian.spec[0].id : null,
+                                  type: 'uraian-with-spec'
+                                });
+                              });
+                              
+                              // Add button row after each jenis to add more uraian
+                              rows.push({
+                                key: `add-uraian-${jenis.id}`,
+                                tahapanId: tahapan.id,
+                                tahapanName: tahapan.name,
+                                tahapanIndex,
+                                jenisId: jenis.id,
+                                jenisName: jenis.name,
+                                jenisIndex,
+                                type: 'add-uraian-button'
                               });
                             }
                           });
                           
-                          // Add a special row at the end of each tahapan to allow adding more jenis
+                          // Add button row after each tahapan to add more jenis
                           rows.push({
                             key: `add-jenis-${tahapan.id}`,
                             tahapanId: tahapan.id,
                             tahapanName: tahapan.name,
                             tahapanIndex,
-                            type: 'add-jenis-row',
-                            canAddJenis: true
+                            type: 'add-jenis-button'
                           });
                         }
 
@@ -718,14 +838,61 @@ export default function BOQMaker() {
                           const jenisRowSpan = rows.filter(r => r.jenisId === row.jenisId && r.jenisId).length;
 
                           return (
-                          <tr key={row.key} className={`border-b border-slate-200 hover:bg-slate-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
+                          <tr 
+                            key={row.key} 
+                            className={`border-b border-slate-200 hover:bg-slate-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'} ${draggedTahapan === row.tahapanId ? 'opacity-50' : ''}`}
+                            draggable={editMode && isFirstTahapanRow}
+                            onDragStart={(e) => editMode && isFirstTahapanRow && handleDragStart(e, row.tahapanId)}
+                            onDragOver={editMode && isFirstTahapanRow ? handleDragOver : undefined}
+                            onDrop={(e) => editMode && isFirstTahapanRow && handleDrop(e, row.tahapanId)}
+                            onDragEnd={editMode && isFirstTahapanRow ? handleDragEnd : undefined}
+                          >
+                            {/* Handle button rows */}
+                            {row.type === 'add-jenis-button' ? (
+                              <td colSpan={editMode ? 9 : 8} className="px-4 py-2 text-center bg-slate-50">
+                                {editMode && (
+                                  <button
+                                    onClick={() => addJenisKerja(row.tahapanId)}
+                                    className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Tambah Jenis Pekerjaan</span>
+                                  </button>
+                                )}
+                              </td>
+                            ) : row.type === 'add-uraian-button' ? (
+                              <td colSpan={editMode ? 9 : 8} className="px-4 py-2 text-center bg-slate-50">
+                                {editMode && (
+                                  <button
+                                    onClick={() => addUraian(row.tahapanId, row.jenisId)}
+                                    className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Tambah Uraian</span>
+                                  </button>
+                                )}
+                              </td>
+                            ) : (
+                              <>
+                                {/* Regular table content */}
                             {/* Tahapan Kerja - Show only on first row of each tahapan, with rowspan */}
                             {isFirstTahapanRow && (
                               <td 
-                                className="px-4 py-3 border-r border-slate-200 align-middle"
+                                className={`px-4 py-3 border-r border-slate-200 align-middle ${editMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
                                 rowSpan={tahapanRowSpan}
                               >
                                 <div className="flex items-center space-x-2">
+                                  {editMode && (
+                                    <div className="text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing">
+                                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
+                                      </svg>
+                                    </div>
+                                  )}
                                   <div className="text-blue-600 font-bold text-lg min-w-[24px]">
                                     {row.tahapanIndex + 1}.
                                   </div>
@@ -771,14 +938,7 @@ export default function BOQMaker() {
                               </td>
                             ) : !row.jenisId ? (
                               <td className="px-4 py-3 border-r border-slate-200">
-                                {editMode && (row.type === 'tahapan-empty' || row.type === 'add-jenis-row') ? (
-                                  <button
-                                    onClick={() => addJenisKerja(row.tahapanId)}
-                                    className="text-blue-600 hover:text-blue-700 text-sm underline"
-                                  >
-                                    + Add Jenis
-                                  </button>
-                                ) : null}
+                                {/* Empty cell for tahapan without jenis */}
                               </td>
                             ) : null}
 
@@ -804,36 +964,9 @@ export default function BOQMaker() {
                                 </div>
                               ) : row.uraianId ? (
                                 <div className="text-slate-400 text-sm">↳</div>
-                              ) : editMode ? (
-                                <div className="flex flex-col space-y-1">
-                                  {(row.jenisId || row.canAddUraian) && (
-                                    <button
-                                      onClick={() => row.jenisId ? addUraian(row.tahapanId, row.jenisId) : addJenisKerja(row.tahapanId)}
-                                      className="text-purple-600 hover:text-purple-700 text-sm underline text-left"
-                                    >
-                                      {row.jenisId ? '+ Add Uraian' : '+ Add Uraian (via Jenis)'}
-                                    </button>
-                                  )}
-                                  {row.canAddUraian && !row.jenisId && (
-                                    <button
-                                      onClick={() => {
-                                        // Add a default jenis first, then add uraian to it
-                                        addJenisKerja(row.tahapanId);
-                                        setTimeout(() => {
-                                          const updatedTahapan = tahapanKerja.find(t => t.id === row.tahapanId);
-                                          if (updatedTahapan && updatedTahapan.jenisKerja.length > 0) {
-                                            const lastJenis = updatedTahapan.jenisKerja[updatedTahapan.jenisKerja.length - 1];
-                                            addUraian(row.tahapanId, lastJenis.id);
-                                          }
-                                        }, 100);
-                                      }}
-                                      className="text-green-600 hover:text-green-700 text-sm underline text-left"
-                                    >
-                                      + Quick Add Uraian
-                                    </button>
-                                  )}
-                                </div>
-                              ) : null}
+                              ) : (
+                                <div></div>
+                              )}
                             </td>
 
                             {/* Spesifikasi */}
@@ -851,61 +984,6 @@ export default function BOQMaker() {
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
-                              ) : editMode ? (
-                                <div className="flex flex-col space-y-1">
-                                  {row.uraianId && (
-                                    <button
-                                      onClick={() => addSpec(row.tahapanId, row.jenisId, row.uraianId)}
-                                      className="text-emerald-600 hover:text-emerald-700 text-sm underline text-left"
-                                    >
-                                      + Add Spec
-                                    </button>
-                                  )}
-                                  {row.canAddSpec && !row.uraianId && row.jenisId && (
-                                    <button
-                                      onClick={() => {
-                                        // Add a default uraian first, then add spec to it
-                                        addUraian(row.tahapanId, row.jenisId);
-                                        setTimeout(() => {
-                                          const updatedTahapan = tahapanKerja.find(t => t.id === row.tahapanId);
-                                          const updatedJenis = updatedTahapan?.jenisKerja.find(j => j.id === row.jenisId);
-                                          if (updatedJenis && updatedJenis.uraian.length > 0) {
-                                            const lastUraian = updatedJenis.uraian[updatedJenis.uraian.length - 1];
-                                            addSpec(row.tahapanId, row.jenisId, lastUraian.id);
-                                          }
-                                        }, 100);
-                                      }}
-                                      className="text-green-600 hover:text-green-700 text-sm underline text-left"
-                                    >
-                                      + Quick Add Spec
-                                    </button>
-                                  )}
-                                  {!row.jenisId && !row.uraianId && (
-                                    <button
-                                      onClick={() => {
-                                        // Add jenis -> uraian -> spec in sequence
-                                        addJenisKerja(row.tahapanId);
-                                        setTimeout(() => {
-                                          const updatedTahapan = tahapanKerja.find(t => t.id === row.tahapanId);
-                                          if (updatedTahapan && updatedTahapan.jenisKerja.length > 0) {
-                                            const lastJenis = updatedTahapan.jenisKerja[updatedTahapan.jenisKerja.length - 1];
-                                            addUraian(row.tahapanId, lastJenis.id);
-                                            setTimeout(() => {
-                                              const updatedJenis = updatedTahapan.jenisKerja.find(j => j.id === lastJenis.id);
-                                              if (updatedJenis && updatedJenis.uraian.length > 0) {
-                                                const lastUraian = updatedJenis.uraian[updatedJenis.uraian.length - 1];
-                                                addSpec(row.tahapanId, lastJenis.id, lastUraian.id);
-                                              }
-                                            }, 100);
-                                          }
-                                        }, 100);
-                                      }}
-                                      className="text-blue-600 hover:text-blue-700 text-sm underline text-left"
-                                    >
-                                      + Quick Add Full Item
-                                    </button>
-                                  )}
-                                </div>
                               ) : null}
                             </td>
 
@@ -915,12 +993,24 @@ export default function BOQMaker() {
                                 <input
                                   type="number"
                                   step="0.01"
-                                  value={row.spec.volume}
-                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'volume', parseFloat(e.target.value) || 0)}
+                                  min="0"
+                                  placeholder="0"
+                                  value={row.spec.volume === null || row.spec.volume === undefined ? '' : row.spec.volume}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                      updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'volume', value === '' ? null : parseFloat(value) || 0);
+                                    }
+                                  }}
+                                  onKeyPress={(e) => {
+                                    if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                   disabled={!editMode}
                                   className={
                                     editMode 
-                                      ? "w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-800 bg-white text-sm" 
+                                      ? `w-full px-2 py-1 border ${row.spec.volume === null || row.spec.volume === undefined ? 'border-red-300' : 'border-slate-300'} rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-800 bg-white text-sm` 
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
@@ -950,12 +1040,24 @@ export default function BOQMaker() {
                               {row.spec ? (
                                 <input
                                   type="number"
-                                  value={row.spec.pricePerPcs}
-                                  onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', parseFloat(e.target.value) || 0)}
+                                  min="0"
+                                  placeholder="0"
+                                  value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                      updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
+                                    }
+                                  }}
+                                  onKeyPress={(e) => {
+                                    if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                   disabled={!editMode}
                                   className={
                                     editMode 
-                                      ? "w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-800 bg-white text-sm" 
+                                      ? `w-full px-2 py-1 border ${row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? 'border-red-300' : 'border-slate-300'} rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-800 bg-white text-sm` 
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
@@ -976,12 +1078,11 @@ export default function BOQMaker() {
                               <td className="px-4 py-3 text-center">
                                 <div className="flex justify-center">
                                   {/* Smart Delete Button - shows appropriate tooltip based on what will be deleted */}
-                                  {(isFirstTahapanRow || row.jenisId || row.uraianId || row.specId) && (
+                                  {(isFirstTahapanRow || row.jenisId || row.uraianId) && (
                                     <button
                                       onClick={() => smartDelete(row.tahapanId, row.jenisId, row.uraianId, row.specId)}
                                       className="bg-white text-red-500 hover:bg-red-50 w-8 h-8 rounded flex items-center justify-center text-xl font-bold transition-all duration-200"
                                       title={
-                                        row.specId ? "Delete Spec" :
                                         row.uraianId ? "Delete Uraian" :
                                         row.jenisId ? 
                                           (tahapanKerja.find(t => t.id === row.tahapanId)?.jenisKerja.find(j => j.id === row.jenisId)?.uraian.length > 0 ? 
@@ -994,6 +1095,8 @@ export default function BOQMaker() {
                                   )}
                                 </div>
                               </td>
+                            )}
+                              </>
                             )}
                           </tr>
                           );
