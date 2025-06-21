@@ -695,8 +695,8 @@ export default function BOQMaker() {
                                 rowSpan={tahapanRowSpan}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                                    {row.tahapanIndex + 1}
+                                  <div className="text-blue-600 font-bold text-lg min-w-[24px]">
+                                    {row.tahapanIndex + 1}.
                                   </div>
                                   <input
                                     type="text"
@@ -721,8 +721,8 @@ export default function BOQMaker() {
                                 rowSpan={jenisRowSpan}
                               >
                                 <div className="flex items-center space-x-2">
-                                  <div className="bg-indigo-500 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs">
-                                    {row.jenisIndex + 1}
+                                  <div className="text-indigo-600 font-bold text-base min-w-[20px]">
+                                    {row.jenisIndex + 1}.
                                   </div>
                                   <input
                                     type="text"
@@ -755,8 +755,8 @@ export default function BOQMaker() {
                             <td className="px-4 py-3 border-r border-slate-200">
                               {row.uraianId && (row.type.includes('uraian') || isFirstUraianRow) ? (
                                 <div className="flex items-center space-x-2">
-                                  <div className="bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">
-                                    {row.uraianIndex + 1}
+                                  <div className="text-purple-600 font-bold text-sm min-w-[16px]">
+                                    {row.uraianIndex + 1}.
                                   </div>
                                   <input
                                     type="text"
