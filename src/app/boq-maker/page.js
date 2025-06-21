@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export default function BOQMaker() {
+  const router = useRouter();
   const [currentView, setCurrentView] = useState('editor');
   const [currentBOQId, setCurrentBOQId] = useState(null);
   const [boqTitle, setBoqTitle] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [tahapanKerja, setTahapanKerja] = useState([
     {
       id: 1,
@@ -311,7 +316,7 @@ export default function BOQMaker() {
     setSavedBOQs(updatedBOQs);
     localStorage.setItem('projevo_boqs', JSON.stringify(updatedBOQs));
     setCurrentBOQId(boqData.id);
-    alert(currentBOQId ? 'BOQ updated successfully!' : 'BOQ saved successfully!');
+    setShowSuccessModal(true);
   };
 
   const loadBOQ = (id, mode = 'edit') => {
@@ -360,9 +365,15 @@ export default function BOQMaker() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'list' ? (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <Header />
+      
+      <main className="relative">
+        {/* Background gradient effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {currentView === 'list' ? (
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -370,12 +381,20 @@ export default function BOQMaker() {
                   <h1 className="text-3xl font-bold text-white mb-2">Saved BOQs</h1>
                   <p className="text-blue-100">Manage your saved Bill of Quantities</p>
                 </div>
-                <button
-                  onClick={createNewBOQ}
-                  className="bg-white hover:bg-slate-50 text-blue-700 px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 font-medium border"
-                >
-                  <span>Create New BOQ</span>
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => router.push('/')}
+                    className="bg-white hover:bg-slate-50 text-blue-700 px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium border border-blue-200"
+                  >
+                    ← Home
+                  </button>
+                  <button
+                    onClick={createNewBOQ}
+                    className="bg-white hover:bg-slate-50 text-blue-700 px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 font-medium border"
+                  >
+                    <span>Create New BOQ</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -444,6 +463,12 @@ export default function BOQMaker() {
                   <p className="text-blue-100">Create detailed Bill of Quantities with local storage</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => router.push('/')}
+                    className="bg-white hover:bg-slate-50 text-blue-700 px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium border border-blue-200"
+                  >
+                    ← Home
+                  </button>
                   <button
                     onClick={() => setCurrentView('list')}
                     className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
@@ -655,12 +680,20 @@ export default function BOQMaker() {
                           const isFirstUraianRow = rows.findIndex(r => r.uraianId === row.uraianId) === rowIndex;
                           // Check if this is the first row for this tahapan
                           const isFirstTahapanRow = rows.findIndex(r => r.tahapanId === row.tahapanId) === rowIndex;
+                          
+                          // Calculate rowspan for tahapan (how many rows belong to this tahapan)
+                          const tahapanRowSpan = rows.filter(r => r.tahapanId === row.tahapanId).length;
+                          // Calculate rowspan for jenis (how many rows belong to this jenis)
+                          const jenisRowSpan = rows.filter(r => r.jenisId === row.jenisId && r.jenisId).length;
 
                           return (
                           <tr key={row.key} className={`border-b border-slate-200 hover:bg-slate-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
-                            {/* Tahapan Kerja */}
-                            <td className="px-4 py-3 border-r border-slate-200">
-                              {row.type.includes('tahapan') || isFirstTahapanRow ? (
+                            {/* Tahapan Kerja - Show only on first row of each tahapan, with rowspan */}
+                            {isFirstTahapanRow && (
+                              <td 
+                                className="px-4 py-3 border-r border-slate-200 align-middle"
+                                rowSpan={tahapanRowSpan}
+                              >
                                 <div className="flex items-center space-x-2">
                                   <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                                     {row.tahapanIndex + 1}
@@ -678,16 +711,15 @@ export default function BOQMaker() {
                                     }
                                   />
                                 </div>
-                              ) : row.type === 'add-jenis-row' ? (
-                                <div className="text-slate-400 text-sm ml-10">+ Add more items...</div>
-                              ) : (
-                                <div className="text-slate-400 text-sm">↳</div>
-                              )}
-                            </td>
+                              </td>
+                            )}
 
-                            {/* Jenis Pekerjaan */}
-                            <td className="px-4 py-3 border-r border-slate-200">
-                              {row.jenisId && (row.type.includes('jenis') || isFirstJenisRow) ? (
+                            {/* Jenis Pekerjaan - Show only on first row of each jenis, with rowspan */}
+                            {row.jenisId && isFirstJenisRow ? (
+                              <td 
+                                className="px-4 py-3 border-r border-slate-200 align-middle"
+                                rowSpan={jenisRowSpan}
+                              >
                                 <div className="flex items-center space-x-2">
                                   <div className="bg-indigo-500 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs">
                                     {row.jenisIndex + 1}
@@ -705,17 +737,19 @@ export default function BOQMaker() {
                                     }
                                   />
                                 </div>
-                              ) : row.jenisId ? (
-                                <div className="text-slate-400 text-sm">↳</div>
-                              ) : editMode && (row.type === 'tahapan-empty' || row.type === 'add-jenis-row') ? (
-                                <button
-                                  onClick={() => addJenisKerja(row.tahapanId)}
-                                  className="text-blue-600 hover:text-blue-700 text-sm underline"
-                                >
-                                  + Add Jenis
-                                </button>
-                              ) : null}
-                            </td>
+                              </td>
+                            ) : !row.jenisId ? (
+                              <td className="px-4 py-3 border-r border-slate-200">
+                                {editMode && (row.type === 'tahapan-empty' || row.type === 'add-jenis-row') ? (
+                                  <button
+                                    onClick={() => addJenisKerja(row.tahapanId)}
+                                    className="text-blue-600 hover:text-blue-700 text-sm underline"
+                                  >
+                                    + Add Jenis
+                                  </button>
+                                ) : null}
+                              </td>
+                            ) : null}
 
                             {/* Uraian */}
                             <td className="px-4 py-3 border-r border-slate-200">
@@ -739,8 +773,6 @@ export default function BOQMaker() {
                                 </div>
                               ) : row.uraianId ? (
                                 <div className="text-slate-400 text-sm">↳</div>
-                              ) : row.type === 'add-uraian-row' ? (
-                                <div className="text-slate-400 text-sm ml-10">+ Add more uraian...</div>
                               ) : editMode ? (
                                 <div className="flex flex-col space-y-1">
                                   {(row.jenisId || row.canAddUraian) && (
@@ -771,15 +803,6 @@ export default function BOQMaker() {
                                   )}
                                 </div>
                               ) : null}
-                              {/* Add Uraian button for add-uraian-row */}
-                              {editMode && row.type === 'add-uraian-row' && (
-                                <button
-                                  onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                  className="text-purple-600 hover:text-purple-700 text-sm underline"
-                                >
-                                  + Add Uraian
-                                </button>
-                              )}
                             </td>
 
                             {/* Spesifikasi */}
@@ -920,23 +943,25 @@ export default function BOQMaker() {
                             {/* Actions */}
                             {editMode && (
                               <td className="px-4 py-3 text-center">
-                                <div className="flex justify-center space-x-1">
-                                  {row.type === 'tahapan-empty' && tahapanKerja.length > 1 && (
+                                <div className="flex flex-col justify-center space-y-1">
+                                  {/* Delete Tahapan button - only show on first row of tahapan */}
+                                  {isFirstTahapanRow && tahapanKerja.length > 1 && (
                                     <button
                                       onClick={() => deleteTahapanKerja(row.tahapanId)}
                                       className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
                                       title="Delete Tahapan"
                                     >
-                                      Del
+                                      Del Tahapan
                                     </button>
                                   )}
-                                  {row.type === 'jenis-empty' && (
+                                  {/* Delete Jenis button - only show on first row of jenis */}
+                                  {row.jenisId && isFirstJenisRow && (
                                     <button
                                       onClick={() => deleteJenisKerja(row.tahapanId, row.jenisId)}
-                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
+                                      className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
                                       title="Delete Jenis"
                                     >
-                                      Del
+                                      Del Jenis
                                     </button>
                                   )}
                                   {row.type === 'uraian-empty' && (
@@ -1043,7 +1068,56 @@ export default function BOQMaker() {
             </div>
           </div>
         )}
-      </div>
+        
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">BOQ Saved Successfully!</h3>
+                <p className="text-slate-600 mb-8 leading-relaxed">Your Bill of Quantities has been saved. Ready to take the next step in your project journey?</p>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      router.push('/dashboard/project-owner');
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Go to Project Owner Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      router.push('/dashboard/vendor');
+                    }}
+                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Browse as Vendor
+                  </button>
+                  <button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full text-slate-500 hover:text-slate-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+                  >
+                    Continue Editing BOQ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        </div>
+      </main>
+      
+      <Footer />
     </div>
   );
 }
