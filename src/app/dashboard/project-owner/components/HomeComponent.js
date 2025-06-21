@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProjectDetailComponent from './ProjectDetailComponent';
 import ProjectCompleteComponent from './ProjectCompleteComponent';
 import UnderReviewComponent from './UnderReviewComponent';
@@ -15,56 +15,29 @@ function CreateProjectModal({ onClose }) {
     province: '',
     city: '',
     fullAddress: '',
-    clientName: '',
-    clientPhone: '',
-    clientEmail: '',
-    projectDescription: '',
-    projectBackground: '',
-    projectGoals: '',
     
     // II. Klasifikasi & Ruang Lingkup Proyek
     projectType: '',
     projectScope: [],
     propertyType: '',
     otherProperty: '',
-    propertySize: '',
-    propertyAge: '',
-    propertyCondition: '',
-    existingStyle: '',
-    desiredStyle: '',
     estimatedBudget: '',
-    budgetPriority: '',
     estimatedDuration: '',
     tenderDuration: '',
     estimatedStartDate: '',
-    projectUrgency: '',
-    workingHours: '',
-    accessRestrictions: '',
-    
-    // III. Spesifikasi Teknis & Requirements
-    designPreferences: [],
-    specificRequirements: '',
-    qualityStandards: '',
-    materialPreferences: [],
-    colorPreferences: '',
-    sustainabilityRequirements: '',
-    accessibilityNeeds: '',
-    
-    // IV. Stakeholder & Communication
-    decisionMakers: '',
-    projectTeam: '',
-    communicationPreference: '',
-    reportingFrequency: '',
-    meetingSchedule: '',
     
     // Documents
-    uploadedDocuments: [],
+    supportingDocuments: [], // For Desain projects
+    boqDocuments: [], // For Bangun & Renovasi projects
+    drawingDocuments: [], // For Bangun & Renovasi projects
     documentTitles: {},
+    
+    // BOQ Data from BOQ Maker
+    selectedBOQ: null,
+    boqData: null,
     
     // Special Notes
     specialNotes: '',
-    risksAndChallenges: '',
-    successCriteria: '',
     
     // Agreements
     agreementTerms: false,
@@ -72,77 +45,28 @@ function CreateProjectModal({ onClose }) {
     agreementValidation: false
   });
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const [showBOQSelector, setShowBOQSelector] = useState(false);
+  const [savedBOQs, setSavedBOQs] = useState([]);
+
+  // Load saved BOQs from localStorage when component mounts
+  useEffect(() => {
+    const savedData = localStorage.getItem('projevo_boqs');
+    if (savedData) {
+      setSavedBOQs(JSON.parse(savedData));
+    }
+  }, []);
 
   const projectTypes = [
     'Desain', 'Bangun', 'Renovasi'
   ];
 
   const projectScopes = [
-    'Interior', 'Furniture', 'Sipil', 'Eksterior', 'Taman & Hardscape',
-    'Elektrikal', 'Plumbing', 'HVAC', 'Lighting Design', 'Acoustic Design'
+    'Interior', 'Furniture', 'Sipil', 'Eksterior', 'Taman & Hardscape'
   ];
 
   const propertyTypes = [
     'Rumah Tinggal', 'Apartemen', 'Ruko', 'Kantor', 'Gudang', 
-    'Restoran', 'Sekolah', 'Hotel / Penginapan', 'Klinik/Rumah Sakit',
-    'Retail/Mall', 'Pabrik', 'Warehouse', 'Other'
-  ];
-
-  const propertyConditions = [
-    'Baru (Belum pernah dihuni)', 'Baik (Terawat dengan baik)', 
-    'Cukup (Perlu sedikit perbaikan)', 'Perlu Renovasi', 'Rusak Berat'
-  ];
-
-  const designStyles = [
-    'Modern', 'Minimalis', 'Industrial', 'Skandinavia', 'Tradisional',
-    'Contemporary', 'Rustic', 'Classic', 'Art Deco', 'Mid-Century Modern',
-    'Bohemian', 'Mediterranean', 'Tropical', 'Other'
-  ];
-
-  const budgetPriorities = [
-    'Fleksibel - Kualitas terbaik', 'Seimbang - Kualitas dan harga',
-    'Efisien - Harga terjangkau', 'Minimal - Budget ketat'
-  ];
-
-  const projectUrgencies = [
-    'Sangat Mendesak (< 1 bulan)', 'Mendesak (1-2 bulan)',
-    'Normal (2-6 bulan)', 'Fleksibel (> 6 bulan)'
-  ];
-
-  const workingHourOptions = [
-    'Senin-Jumat (Jam kerja normal)', 'Senin-Sabtu (Termasuk weekend)',
-    'Fleksibel (Sesuai kebutuhan)', 'Malam hari (Setelah jam kerja)',
-    'Weekend only (Sabtu-Minggu)'
-  ];
-
-  const designPreferenceOptions = [
-    'Ramah Lingkungan', 'Hemat Energi', 'Smart Home/Building',
-    'Aksesibilitas Disabilitas', 'Pet-Friendly', 'Child-Safe',
-    'Multifungsi', 'Storage Solutions', 'Natural Lighting',
-    'Ventilasi Natural', 'Sound Proofing', 'Security Features'
-  ];
-
-  const materialPreferenceOptions = [
-    'Kayu Natural', 'Material Recycle', 'High-End Materials',
-    'Budget-Friendly Materials', 'Local Materials', 'Imported Materials',
-    'Low Maintenance', 'Durable Materials', 'Eco-Friendly',
-    'Fire Resistant', 'Water Resistant', 'Anti-Bacterial'
-  ];
-
-  const qualityStandardOptions = [
-    'Premium (Kualitas terbaik)', 'High Quality (Kualitas tinggi)',
-    'Standard (Kualitas menengah)', 'Budget (Kualitas dasar)'
-  ];
-
-  const communicationPreferences = [
-    'WhatsApp', 'Email', 'Telepon', 'Video Call', 'Aplikasi Project Management',
-    'Kombinasi (Multi-channel)'
-  ];
-
-  const reportingFrequencies = [
-    'Harian', 'Mingguan', 'Bi-weekly', 'Bulanan', 'Sesuai Milestone'
+    'Restoran', 'Sekolah', 'Hotel / Penginapan', 'Other'
   ];
 
   const provinces = [
@@ -172,50 +96,42 @@ function CreateProjectModal({ onClose }) {
     }));
   };
 
-  const handleDesignPreferenceToggle = (preference) => {
-    setFormData(prev => ({
-      ...prev,
-      designPreferences: prev.designPreferences.includes(preference)
-        ? prev.designPreferences.filter(p => p !== preference)
-        : [...prev.designPreferences, preference]
-    }));
-  };
-
-  const handleMaterialPreferenceToggle = (material) => {
-    setFormData(prev => ({
-      ...prev,
-      materialPreferences: prev.materialPreferences.includes(material)
-        ? prev.materialPreferences.filter(m => m !== material)
-        : [...prev.materialPreferences, material]
-    }));
-  };
-
-  const handleFileUpload = (event) => {
+  const handleFileUpload = (event, documentType) => {
     const files = Array.from(event.target.files);
     setFormData(prev => ({
       ...prev,
-      uploadedDocuments: [...prev.uploadedDocuments, ...files]
+      [documentType]: [...prev[documentType], ...files]
     }));
   };
 
-  const handleDocumentTitleChange = (fileName, title) => {
+  const handleDocumentTitleChange = (fileName, title, documentType) => {
     setFormData(prev => ({
       ...prev,
       documentTitles: {
         ...prev.documentTitles,
-        [fileName]: title
+        [`${documentType}_${fileName}`]: title
       }
     }));
   };
 
-  const removeDocument = (fileName) => {
+  const removeDocument = (fileName, documentType) => {
     setFormData(prev => ({
       ...prev,
-      uploadedDocuments: prev.uploadedDocuments.filter(file => file.name !== fileName),
+      [documentType]: prev[documentType].filter(file => file.name !== fileName),
       documentTitles: Object.fromEntries(
-        Object.entries(prev.documentTitles).filter(([key]) => key !== fileName)
+        Object.entries(prev.documentTitles).filter(([key]) => key !== `${documentType}_${fileName}`)
       )
     }));
+  };
+
+  const selectBOQ = (boqId) => {
+    const selectedBOQ = savedBOQs.find(boq => boq.id === boqId);
+    setFormData(prev => ({
+      ...prev,
+      selectedBOQ: boqId,
+      boqData: selectedBOQ
+    }));
+    setShowBOQSelector(false);
   };
 
   const handleSubmit = (e) => {
@@ -227,13 +143,18 @@ function CreateProjectModal({ onClose }) {
       return;
     }
     
+    // Validate required fields
+    if (!formData.projectTitle || !formData.province || !formData.city || !formData.fullAddress || 
+        !formData.projectType || formData.projectScope.length === 0 || !formData.propertyType ||
+        !formData.estimatedBudget || !formData.estimatedDuration || !formData.tenderDuration || !formData.estimatedStartDate) {
+      alert('Silakan lengkapi semua field yang wajib diisi (*)');
+      return;
+    }
+    
     // Handle form submission here
     console.log('Project created:', formData);
     onClose();
   };
-
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const getAvailableCities = () => {
     return cities[formData.province] || [];
@@ -1131,7 +1052,6 @@ function CreateProjectModal({ onClose }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Buat Proyek Baru</h2>
-              <p className="text-blue-100 mt-1">Langkah {currentStep} dari {totalSteps}</p>
             </div>
             <button
               onClick={onClose}
@@ -1142,74 +1062,537 @@ function CreateProjectModal({ onClose }) {
               </svg>
             </button>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="w-full bg-blue-500 rounded-full h-2">
-              <div 
-                className="bg-white rounded-full h-2 transition-all duration-300"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-              ></div>
+        </div>
+
+        {/* Form Content */}
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* I. Informasi Umum Proyek */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">
+                I. Informasi Umum Proyek
+              </h3>
+              
+              {/* 1. Judul Proyek */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  1. Judul Proyek *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                  [Jenis Proyek] - [Ruang Lingkup] - [Property] - [Lokasi] - [Detail Opsional]
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 italic">
+                  Bangun Interior Rumah BSD Minimalis Modern
+                </p>
+                <input
+                  type="text"
+                  value={formData.projectTitle}
+                  onChange={(e) => handleInputChange('projectTitle', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Masukkan judul proyek sesuai format"
+                  required
+                />
+              </div>
+
+              {/* 2. Lokasi Proyek */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
+                  2. Lokasi Proyek
+                </label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Provinsi *
+                    </label>
+                    <select
+                      value={formData.province}
+                      onChange={(e) => {
+                        handleInputChange('province', e.target.value);
+                        handleInputChange('city', '');
+                      }}
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Pilih Provinsi</option>
+                      {provinces.map(province => (
+                        <option key={province} value={province}>{province}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Kota *
+                    </label>
+                    <select
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      disabled={!formData.province}
+                    >
+                      <option value="">Pilih Kota</option>
+                      {getAvailableCities().map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Alamat Lengkap *
+                  </label>
+                  <textarea
+                    value={formData.fullAddress}
+                    onChange={(e) => handleInputChange('fullAddress', e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Masukkan alamat lengkap proyek"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* II. Klasifikasi & Ruang Lingkup Proyek */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">
+                II. Klasifikasi & Ruang Lingkup Proyek
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Penjelasan ruang lingkup harus jelas dan spesifik agar vendor bisa memahami kebutuhan klien secara tepat, 
+                serta menjadi dasar dalam pembuatan kontrak dan milestone.
+              </p>
+              
+              {/* 1. Jenis Proyek */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  1. Jenis Proyek *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  This is a required question
+                </p>
+                <select
+                  value={formData.projectType}
+                  onChange={(e) => handleInputChange('projectType', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Pilih Jenis Proyek</option>
+                  {projectTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Ruang Lingkup */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  2. Ruang Lingkup *
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {projectScopes.map(scope => (
+                    <label key={scope} className="flex items-center space-x-2 cursor-pointer p-3 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={formData.projectScope.includes(scope)}
+                        onChange={() => handleScopeToggle(scope)}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{scope}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Properti */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  3. Properti *
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {propertyTypes.map(property => (
+                    <label key={property} className="flex items-center space-x-2 cursor-pointer p-3 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">
+                      <input
+                        type="radio"
+                        name="propertyType"
+                        value={property}
+                        checked={formData.propertyType === property}
+                        onChange={(e) => handleInputChange('propertyType', e.target.value)}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{property}</span>
+                    </label>
+                  ))}
+                </div>
+                
+                {formData.propertyType === 'Other' && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      value={formData.otherProperty}
+                      onChange={(e) => handleInputChange('otherProperty', e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Other:"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Estimasi Anggaran */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  4. Estimasi Anggaran *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Masukkan estimasi anggaran Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                </p>
+                <input
+                  type="text"
+                  value={formData.estimatedBudget}
+                  onChange={(e) => handleInputChange('estimatedBudget', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Contoh: Rp 50.000.000 - Rp 100.000.000"
+                  required
+                />
+              </div>
+
+              {/* 5. Estimasi Durasi Proyek */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  5. Estimasi Durasi Proyek *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Masukkan estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                </p>
+                <input
+                  type="text"
+                  value={formData.estimatedDuration}
+                  onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Contoh: 2-3 bulan"
+                  required
+                />
+              </div>
+
+              {/* 6. Durasi Tender */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  6. Durasi Tender *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Masukkan estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                </p>
+                <input
+                  type="text"
+                  value={formData.tenderDuration}
+                  onChange={(e) => handleInputChange('tenderDuration', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Contoh: 2 minggu"
+                  required
+                />
+              </div>
+
+              {/* 7. Estimasi Mulai Proyek */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  7. Estimasi Mulai Proyek *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Masukkan estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                </p>
+                <input
+                  type="date"
+                  value={formData.estimatedStartDate}
+                  onChange={(e) => handleInputChange('estimatedStartDate', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              {/* 8. Upload Dokumen Pendukung */}
+              {isDesignProject() && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    8. Upload Dokumen Pendukung (Referensi)
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    Hanya muncul untuk jenis proyek desain.
+                  </p>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload(e, 'supportingDocuments')}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  
+                  {/* Display uploaded files with title input */}
+                  {formData.supportingDocuments.map((file, index) => (
+                    <div key={index} className="mt-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeDocument(file.name, 'supportingDocuments')}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Masukkan judul dokumen"
+                        value={formData.documentTitles[`supportingDocuments_${file.name}`] || ''}
+                        onChange={(e) => handleDocumentTitleChange(file.name, e.target.value, 'supportingDocuments')}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* BOQ & Gambar Kerja for Bangun & Renovasi */}
+              {isBuildRenovateProject() && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    8. Upload Dokumen Pendukung (BOQ & Gambar Kerja)
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    Hanya muncul untuk jenis proyek bangun & renovasi.
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    Bagian ini pada saat upload ada judulnya. jika upload BOQ, harus masukin judul dulu BOQ, dan seterusnya.
+                  </p>
+                  
+                  {/* BOQ Section */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-4 mb-3">
+                      <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">BOQ (Bill of Quantity)</h4>
+                      <button
+                        type="button"
+                        onClick={() => setShowBOQSelector(true)}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Load from BOQ Maker
+                      </button>
+                    </div>
+                    
+                    {formData.selectedBOQ && (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-3">
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          BOQ Loaded: {formData.boqData?.title || 'Selected BOQ'}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.xls,.xlsx"
+                      onChange={(e) => handleFileUpload(e, 'boqDocuments')}
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    
+                    {formData.boqDocuments.map((file, index) => (
+                      <div key={index} className="mt-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(file.name, 'boqDocuments')}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="BOQ - [Nama Proyek/Bagian]"
+                          value={formData.documentTitles[`boqDocuments_${file.name}`] || ''}
+                          onChange={(e) => handleDocumentTitleChange(file.name, e.target.value, 'boqDocuments')}
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Gambar Kerja Section */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Gambar Kerja</h4>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.dwg,.jpg,.jpeg,.png"
+                      onChange={(e) => handleFileUpload(e, 'drawingDocuments')}
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    
+                    {formData.drawingDocuments.map((file, index) => (
+                      <div key={index} className="mt-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(file.name, 'drawingDocuments')}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Gambar Kerja - [Nama Bagian]"
+                          value={formData.documentTitles[`drawingDocuments_${file.name}`] || ''}
+                          onChange={(e) => handleDocumentTitleChange(file.name, e.target.value, 'drawingDocuments')}
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Catatan Khusus */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Catatan Khusus (Opsional)
+              </label>
+              <textarea
+                value={formData.specialNotes}
+                onChange={(e) => handleInputChange('specialNotes', e.target.value)}
+                rows={4}
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Tambahkan catatan khusus atau requirements tambahan..."
+              />
+            </div>
+
+            {/* Persetujuan */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Persetujuan</h3>
+              
+              <div className="space-y-3">
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreementTerms}
+                    onChange={(e) => handleInputChange('agreementTerms', e.target.checked)}
+                    className="mt-1 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    Saya menyetujui seluruh ketentuan dan tata cara di platform Projevo. *
+                  </span>
+                </label>
+
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreementData}
+                    onChange={(e) => handleInputChange('agreementData', e.target.checked)}
+                    className="mt-1 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    Saya menyatakan data yang diisi sudah benar dan sesuai kondisi yang sebenarnya. *
+                  </span>
+                </label>
+
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreementValidation}
+                    onChange={(e) => handleInputChange('agreementValidation', e.target.checked)}
+                    className="mt-1 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    Saya mengizinkan admin untuk validasi draft ini sebelum dipublikasikan. *
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200 dark:border-slate-600">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Buat Proyek
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* BOQ Selector Modal */}
+      {showBOQSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[70vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 text-white">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold">Pilih BOQ dari BOQ Maker</h3>
+                <button
+                  onClick={() => setShowBOQSelector(false)}
+                  className="text-white hover:text-green-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(70vh-80px)]">
+              {savedBOQs.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-slate-500 dark:text-slate-400">Tidak ada BOQ yang tersimpan.</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
+                    Silakan buat BOQ terlebih dahulu di BOQ Maker.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedBOQs.map((boq, index) => (
+                    <div
+                      key={boq.id || index}
+                      className="p-4 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                      onClick={() => selectBOQ(boq.id || index)}
+                    >
+                      <h4 className="font-medium text-slate-900 dark:text-white">
+                        {boq.title || `BOQ ${index + 1}`}
+                      </h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        {boq.tahapanKerja?.length || 0} tahapan kerja
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        Dibuat: {boq.createdAt ? new Date(boq.createdAt).toLocaleDateString() : 'Tidak diketahui'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Modal Body */}
-        <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
-          <form onSubmit={handleSubmit}>
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-            {currentStep === 5 && renderStep5()}
-          </form>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="bg-slate-50 dark:bg-slate-700 px-8 py-4 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              currentStep === 1
-                ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                : 'bg-slate-600 text-white hover:bg-slate-700'
-            }`}
-          >
-            Previous
-          </button>
-
-          <div className="flex items-center space-x-2">
-            {Array.from({ length: totalSteps }).map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full ${
-                  index + 1 <= currentStep ? 'bg-blue-600' : 'bg-slate-300'
-                }`}
-              />
-            ))}
-          </div>
-
-          {currentStep < totalSteps ? (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-            >
-              Create Project
-            </button>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
