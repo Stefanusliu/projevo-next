@@ -41,13 +41,61 @@ export default function BOQMaker() {
   const [savedBOQs, setSavedBOQs] = useState([]);
   const [editMode, setEditMode] = useState(true);
   const [draggedTahapan, setDraggedTahapan] = useState(null);
+  const [lastAutoSave, setLastAutoSave] = useState(null);
+  const [showAutosaveNotification, setShowAutosaveNotification] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
     if (savedData) {
       setSavedBOQs(JSON.parse(savedData));
     }
+
+    // Load autosaved draft on component mount
+    const autosaveData = localStorage.getItem('projevo_boq_autosave');
+    if (autosaveData) {
+      try {
+        const draft = JSON.parse(autosaveData);
+        // Only load if it's recent (within last 24 hours) and has content
+        const hoursSinceAutosave = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
+        if (hoursSinceAutosave < 24 && (draft.boqTitle.trim() || draft.tahapanKerja.some(t => t.name.trim()))) {
+          setBoqTitle(draft.boqTitle);
+          setTahapanKerja(draft.tahapanKerja);
+          setCurrentBOQId(draft.currentBOQId);
+          setLastAutoSave(new Date(draft.timestamp));
+          setShowAutosaveNotification(true);
+          
+          // Hide notification after 5 seconds
+          setTimeout(() => setShowAutosaveNotification(false), 5000);
+        }
+      } catch (error) {
+        console.error('Error loading autosave data:', error);
+      }
+    }
   }, []);
+
+  // Autosave effect - saves draft every few seconds when changes are made
+  useEffect(() => {
+    const autosaveTimer = setTimeout(() => {
+      // Only autosave if there's meaningful content
+      if (boqTitle.trim() || tahapanKerja.some(t => t.name.trim() || 
+          t.jenisKerja.some(j => j.name.trim() || 
+            j.uraian.some(u => u.name.trim() || 
+              u.spec.some(s => s.description.trim() || s.satuan.trim() || s.volume || s.pricePerPcs))))) {
+        
+        const autosaveData = {
+          boqTitle,
+          tahapanKerja,
+          currentBOQId,
+          timestamp: Date.now()
+        };
+        
+        localStorage.setItem('projevo_boq_autosave', JSON.stringify(autosaveData));
+        setLastAutoSave(new Date());
+      }
+    }, 3000); // Autosave every 3 seconds
+
+    return () => clearTimeout(autosaveTimer);
+  }, [boqTitle, tahapanKerja, currentBOQId]);
 
   const addTahapanKerja = () => {
     setTahapanKerja([
@@ -468,6 +516,11 @@ export default function BOQMaker() {
     setSavedBOQs(updatedBOQs);
     localStorage.setItem('projevo_boqs', JSON.stringify(updatedBOQs));
     setCurrentBOQId(boqData.id);
+    
+    // Clear autosave after successful save
+    localStorage.removeItem('projevo_boq_autosave');
+    setLastAutoSave(null);
+    
     setShowSuccessModal(true);
   };
 
@@ -479,6 +532,10 @@ export default function BOQMaker() {
       setCurrentBOQId(id);
       setEditMode(mode === 'edit');
       setCurrentView('editor');
+      
+      // Clear autosave when loading existing BOQ
+      localStorage.removeItem('projevo_boq_autosave');
+      setLastAutoSave(null);
     }
   };
 
@@ -526,6 +583,10 @@ export default function BOQMaker() {
     setCurrentBOQId(null);
     setEditMode(true);
     setCurrentView('editor');
+    
+    // Clear autosave when creating new BOQ
+    localStorage.removeItem('projevo_boq_autosave');
+    setLastAutoSave(null);
   };
 
   const getSavedBOQ = (id) => {
@@ -710,12 +771,27 @@ export default function BOQMaker() {
                 <p className="mt-2 text-sm text-slate-500">
                   This title will be used when saving your BOQ.
                 </p>
+                {/* Autosave indicator */}
+                {lastAutoSave && (
+                  <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>
+                      Auto-saved at {lastAutoSave.toLocaleTimeString('id-ID', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex flex-col">
               {/* Main Table Area */}
-              <div className="p-8 pb-0">
+              <div className="p-8 pb-8">
                 {/* Table View */}
                 <div className="bg-white border border-slate-200 rounded-t-xl shadow-sm">
                   <div className="w-full">
@@ -1177,6 +1253,24 @@ export default function BOQMaker() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        
+        {/* Autosave Notification */}
+        {showAutosaveNotification && (
+          <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium">Draft restored from autosave</span>
+            <button
+              onClick={() => setShowAutosaveNotification(false)}
+              className="ml-2 text-green-200 hover:text-white"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
         
