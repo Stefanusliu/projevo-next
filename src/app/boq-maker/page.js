@@ -15,7 +15,27 @@ export default function BOQMaker() {
     {
       id: 1,
       name: '',
-      jenisKerja: []
+      jenisKerja: [
+        {
+          id: 2,
+          name: '',
+          uraian: [
+            {
+              id: 3,
+              name: '',
+              spec: [
+                {
+                  id: 4,
+                  description: '',
+                  satuan: '',
+                  volume: null,
+                  pricePerPcs: null
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]);
   const [savedBOQs, setSavedBOQs] = useState([]);
@@ -482,15 +502,15 @@ export default function BOQMaker() {
         name: '', 
         jenisKerja: [
           {
-            id: 1,
+            id: 2,
             name: '',
             uraian: [
               {
-                id: 1,
+                id: 3,
                 name: '',
                 spec: [
                   {
-                    id: 1,
+                    id: 4,
                     description: '',
                     satuan: '',
                     volume: null,
@@ -563,7 +583,7 @@ export default function BOQMaker() {
                   <p className="text-slate-500 mb-4">Create your first BOQ to get started.</p>
                   <button
                     onClick={createNewBOQ}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg"
                   >
                     Create New BOQ
                   </button>
@@ -721,7 +741,7 @@ export default function BOQMaker() {
                             Satuan
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '14%'}}>
-                            Harga per Pcs
+                            Harga Satuan
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-slate-700" style={{width: '16%'}}>
                             Total
@@ -732,6 +752,7 @@ export default function BOQMaker() {
                       {tahapanKerja.map((tahapan, tahapanIndex) => {
                         // Create rows for each specification or empty rows for each level
                         const rows = [];
+                        const isLastTahapan = tahapanIndex === tahapanKerja.length - 1;
                         
                         if (tahapan.jenisKerja.length === 0) {
                           // Empty tahapan row - show tahapan but allow adding jenis
@@ -740,18 +761,13 @@ export default function BOQMaker() {
                             tahapanId: tahapan.id,
                             tahapanName: tahapan.name,
                             tahapanIndex,
+                            isLastTahapan,
                             type: 'tahapan-empty'
-                          });
-                          // Add button to add first jenis
-                          rows.push({
-                            key: `add-jenis-${tahapan.id}`,
-                            tahapanId: tahapan.id,
-                            tahapanName: tahapan.name,
-                            tahapanIndex,
-                            type: 'add-jenis-button'
                           });
                         } else {
                           tahapan.jenisKerja.forEach((jenis, jenisIndex) => {
+                            const isLastJenis = jenisIndex === tahapan.jenisKerja.length - 1;
+                            
                             if (jenis.uraian.length === 0) {
                               // Empty jenis row - show tahapan + jenis but allow adding uraian
                               rows.push({
@@ -762,21 +778,14 @@ export default function BOQMaker() {
                                 jenisId: jenis.id,
                                 jenisName: jenis.name,
                                 jenisIndex,
+                                isLastTahapan,
+                                isLastJenis,
                                 type: 'jenis-empty'
-                              });
-                              // Add button to add first uraian
-                              rows.push({
-                                key: `add-uraian-${jenis.id}`,
-                                tahapanId: tahapan.id,
-                                tahapanName: tahapan.name,
-                                tahapanIndex,
-                                jenisId: jenis.id,
-                                jenisName: jenis.name,
-                                jenisIndex,
-                                type: 'add-uraian-button'
                               });
                             } else {
                               jenis.uraian.forEach((uraian, uraianIndex) => {
+                                const isLastUraian = uraianIndex === jenis.uraian.length - 1;
+                                
                                 // Always show uraian row with inline spec data
                                 rows.push({
                                   key: `uraian-${uraian.id}`,
@@ -791,31 +800,13 @@ export default function BOQMaker() {
                                   uraianIndex,
                                   spec: uraian.spec.length > 0 ? uraian.spec[0] : null, // Use first (and only) spec
                                   specId: uraian.spec.length > 0 ? uraian.spec[0].id : null,
+                                  isLastTahapan,
+                                  isLastJenis,
+                                  isLastUraian,
                                   type: 'uraian-with-spec'
                                 });
                               });
-                              
-                              // Add button row after each jenis to add more uraian
-                              rows.push({
-                                key: `add-uraian-${jenis.id}`,
-                                tahapanId: tahapan.id,
-                                tahapanName: tahapan.name,
-                                tahapanIndex,
-                                jenisId: jenis.id,
-                                jenisName: jenis.name,
-                                jenisIndex,
-                                type: 'add-uraian-button'
-                              });
                             }
-                          });
-                          
-                          // Add button row after each tahapan to add more jenis
-                          rows.push({
-                            key: `add-jenis-${tahapan.id}`,
-                            tahapanId: tahapan.id,
-                            tahapanName: tahapan.name,
-                            tahapanIndex,
-                            type: 'add-jenis-button'
                           });
                         }
 
@@ -835,96 +826,75 @@ export default function BOQMaker() {
                           return (
                           <tr 
                             key={row.key} 
-                            className={`border-b border-slate-200 hover:bg-slate-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'} ${draggedTahapan === row.tahapanId ? 'opacity-50' : ''}`}
-                            draggable={editMode && isFirstTahapanRow}
-                            onDragStart={(e) => editMode && isFirstTahapanRow && handleDragStart(e, row.tahapanId)}
-                            onDragOver={editMode && isFirstTahapanRow ? handleDragOver : undefined}
-                            onDrop={(e) => editMode && isFirstTahapanRow && handleDrop(e, row.tahapanId)}
-                            onDragEnd={editMode && isFirstTahapanRow ? handleDragEnd : undefined}
+                            className={`border-b border-slate-200 hover:bg-slate-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}
                           >
-                            {/* Handle button rows */}
-                            {row.type === 'add-jenis-button' ? (
-                              <>
-                                {/* Tahapan Kerja column for Jenis button */}
-                                <td className="px-4 py-2 text-center bg-white">
-                                  {editMode && (
-                                    <button
-                                      onClick={() => addJenisKerja(row.tahapanId)}
-                                      className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                      </svg>
-                                      <span>Tambah Jenis Pekerjaan</span>
-                                    </button>
-                                  )}
-                                </td>
-                                {/* Empty cells for other columns */}
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                              </>
-                            ) : row.type === 'add-uraian-button' ? (
-                              <>
-                                {/* Tahapan Kerja column for Uraian button */}
-                                <td className="px-4 py-2 text-center bg-white">
-                                  {editMode && (
-                                    <button
-                                      onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                      className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                      </svg>
-                                      <span>Tambah Uraian</span>
-                                    </button>
-                                  )}
-                                </td>
-                                {/* Empty cells for other columns */}
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                                <td className="px-4 py-2 bg-white"></td>
-                              </>
-                            ) : (
-                              <>
-                                {/* Regular table content */}
+                            {/* Regular table content */}
                             {/* Tahapan Kerja - Show only on first row of each tahapan, with rowspan */}
                             {isFirstTahapanRow && (
                               <td 
-                                className={`px-4 py-3 border-r border-slate-200 align-middle ${editMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                className={`px-4 py-3 border-r border-slate-200 align-middle ${row.isLastTahapan ? 'group' : ''}`}
                                 rowSpan={tahapanRowSpan}
                               >
-                                <div className="flex items-center space-x-2">
-                                  {editMode && (
-                                    <div className="text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing">
-                                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
-                                      </svg>
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="text-blue-600 font-bold text-lg min-w-[24px]">
+                                      {row.tahapanIndex + 1}.
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Tahapan Kerja"
+                                      value={row.tahapanName}
+                                      onChange={(e) => updateTahapanKerja(row.tahapanId, e.target.value)}
+                                      disabled={!editMode}
+                                      className={
+                                        editMode 
+                                          ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-800 bg-white text-sm" 
+                                          : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
+                                      }
+                                    />
+                                    {/* Delete Tahapan button - show on hover */}
+                                    {editMode && tahapanKerja.length > 1 && (
+                                      <button
+                                        onClick={() => deleteTahapanKerja(row.tahapanId)}
+                                        className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                        title="Delete Tahapan Kerja"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                  {/* Add Tahapan Kerja button - only show on last tahapan when hovering */}
+                                  {editMode && row.isLastTahapan && (
+                                    <div className="flex justify-start pl-10">
+                                      <button
+                                        onClick={addTahapanKerja}
+                                        className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center space-x-1 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                        title="Tambah Tahapan Kerja"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span className="text-xs">Tambah Tahapan Kerja</span>
+                                      </button>
                                     </div>
                                   )}
-                                  <div className="text-blue-600 font-bold text-lg min-w-[24px]">
-                                    {row.tahapanIndex + 1}.
-                                  </div>
-                                  <input
-                                    type="text"
-                                    placeholder="Tahapan Kerja"
-                                    value={row.tahapanName}
-                                    onChange={(e) => updateTahapanKerja(row.tahapanId, e.target.value)}
-                                    disabled={!editMode}
-                                    className={
-                                      editMode 
-                                        ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-800 bg-white text-sm" 
-                                        : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
-                                    }
-                                  />
+                                  {/* Add Jenis Pekerjaan button for empty tahapan */}
+                                  {editMode && row.type === 'tahapan-empty' && (
+                                    <div className="flex justify-start pl-10">
+                                      <button
+                                        onClick={() => addJenisKerja(row.tahapanId)}
+                                        className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center space-x-1 transition-all duration-200"
+                                        title="Tambah Jenis Pekerjaan"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span className="text-xs">Tambah Jenis Pekerjaan</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             )}
@@ -932,25 +902,69 @@ export default function BOQMaker() {
                             {/* Jenis Pekerjaan - Show only on first row of each jenis, with rowspan */}
                             {row.jenisId && isFirstJenisRow ? (
                               <td 
-                                className="px-4 py-3 border-r border-slate-200 align-middle"
+                                className={`px-4 py-3 border-r border-slate-200 align-middle ${row.isLastJenis ? 'group' : ''}`}
                                 rowSpan={jenisRowSpan}
                               >
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-indigo-600 font-bold text-base min-w-[20px]">
-                                    {row.jenisIndex + 1}.
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="text-indigo-600 font-bold text-base min-w-[20px]">
+                                      {row.jenisIndex + 1}.
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Jenis Pekerjaan"
+                                      value={row.jenisName}
+                                      onChange={(e) => updateJenisKerja(row.tahapanId, row.jenisId, e.target.value)}
+                                      disabled={!editMode}
+                                      className={
+                                        editMode 
+                                          ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-slate-800 bg-white text-sm" 
+                                          : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
+                                      }
+                                    />
+                                    {/* Delete Jenis button - show on hover */}
+                                    {editMode && (
+                                      <button
+                                        onClick={() => deleteJenisKerja(row.tahapanId, row.jenisId)}
+                                        className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                        title="Delete Jenis Pekerjaan"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
                                   </div>
-                                  <input
-                                    type="text"
-                                    placeholder="Jenis Pekerjaan"
-                                    value={row.jenisName}
-                                    onChange={(e) => updateJenisKerja(row.tahapanId, row.jenisId, e.target.value)}
-                                    disabled={!editMode}
-                                    className={
-                                      editMode 
-                                        ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-slate-800 bg-white text-sm" 
-                                        : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
-                                    }
-                                  />
+                                  {/* Add Jenis Pekerjaan button - only show on last jenis when hovering */}
+                                  {editMode && row.isLastJenis && (
+                                    <div className="flex justify-start pl-6">
+                                      <button
+                                        onClick={() => addJenisKerja(row.tahapanId)}
+                                        className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center space-x-1 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                        title="Tambah Jenis Pekerjaan"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span className="text-xs">Tambah Jenis Pekerjaan</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                  {/* Add Uraian button for empty jenis */}
+                                  {editMode && row.type === 'jenis-empty' && (
+                                    <div className="flex justify-start pl-6">
+                                      <button
+                                        onClick={() => addUraian(row.tahapanId, row.jenisId)}
+                                        className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center space-x-1 transition-all duration-200"
+                                        title="Tambah Uraian"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span className="text-xs">Tambah Uraian</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             ) : !row.jenisId ? (
@@ -960,34 +974,63 @@ export default function BOQMaker() {
                             ) : null}
 
                             {/* Uraian */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3 border-r border-slate-200 align-middle">
                               {row.uraianId && (row.type.includes('uraian') || isFirstUraianRow) ? (
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-purple-600 font-bold text-sm min-w-[16px]">
-                                    {row.uraianIndex + 1}.
+                                <div className={`space-y-2 ${row.isLastUraian ? 'group' : ''}`}>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="text-purple-600 font-bold text-sm min-w-[16px]">
+                                      {row.uraianIndex + 1}.
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Uraian"
+                                      value={row.uraianName}
+                                      onChange={(e) => updateUraian(row.tahapanId, row.jenisId, row.uraianId, e.target.value)}
+                                      disabled={!editMode}
+                                      className={
+                                        editMode 
+                                          ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-slate-800 bg-white text-sm" 
+                                          : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
+                                      }
+                                    />
+                                    {/* Delete Uraian button - show on hover */}
+                                    {editMode && (
+                                      <button
+                                        onClick={() => deleteUraian(row.tahapanId, row.jenisId, row.uraianId)}
+                                        className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                        title="Delete Uraian"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
                                   </div>
-                                  <input
-                                    type="text"
-                                    placeholder="Uraian"
-                                    value={row.uraianName}
-                                    onChange={(e) => updateUraian(row.tahapanId, row.jenisId, row.uraianId, e.target.value)}
-                                    disabled={!editMode}
-                                    className={
-                                      editMode 
-                                        ? "flex-1 px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-slate-800 bg-white text-sm" 
-                                        : "flex-1 px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
-                                    }
-                                  />
+                                  {/* Add Uraian button - only show on last uraian when hovering */}
+                                  {editMode && row.isLastUraian && (
+                                    <div className="flex justify-start pl-5">
+                                      <button
+                                        onClick={() => addUraian(row.tahapanId, row.jenisId)}
+                                        className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center space-x-1 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                        title="Tambah Uraian"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        <span className="text-xs">Tambah Uraian</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : row.uraianId ? (
-                                <div className="text-slate-400 text-sm">↳</div>
+                                <div className="text-slate-400 text-sm text-center">↳</div>
                               ) : (
                                 <div></div>
                               )}
                             </td>
 
                             {/* Spesifikasi */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3 border-r border-slate-200 align-middle">
                               {row.spec ? (
                                 <input
                                   type="text"
@@ -1001,11 +1044,13 @@ export default function BOQMaker() {
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-8"></div>
+                              )}
                             </td>
 
                             {/* Volume */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3 border-r border-slate-200 align-middle">
                               {row.spec ? (
                                 <input
                                   type="number"
@@ -1031,11 +1076,13 @@ export default function BOQMaker() {
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-8"></div>
+                              )}
                             </td>
 
                             {/* Satuan */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3 border-r border-slate-200 align-middle">
                               {row.spec ? (
                                 <input
                                   type="text"
@@ -1049,11 +1096,13 @@ export default function BOQMaker() {
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-8"></div>
+                              )}
                             </td>
 
                             {/* Harga per Pcs */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3 border-r border-slate-200 align-middle">
                               {row.spec ? (
                                 <input
                                   type="number"
@@ -1078,72 +1127,52 @@ export default function BOQMaker() {
                                       : "w-full px-2 py-1 border border-slate-200 rounded transition-all text-slate-800 bg-slate-50 cursor-not-allowed text-sm"
                                   }
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-8"></div>
+                              )}
                             </td>
 
                             {/* Total */}
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 align-middle">
                               {row.spec ? (
-                                <div className="px-2 py-1 text-slate-800 font-medium text-sm">
+                                <div className="px-2 py-1 text-slate-800 font-medium text-sm text-center">
                                   Rp {calculateSpecTotal(row.spec).toLocaleString('id-ID')}
                                 </div>
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-8"></div>
+                              )}
                             </td>
-
-                              </>
-                            )}
                           </tr>
                           );
                         });
                       })}
                       
-                      {/* Add Tahapan Kerja row */}
-                      {editMode && (
-                        <tr className="border-b border-slate-200 hover:bg-blue-50">
-                          {/* Tahapan Kerja column for main add button */}
-                          <td className="px-4 py-4 text-center bg-white">
-                            <button
-                              onClick={addTahapanKerja}
-                              className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              <span>Tambah Tahapan Kerja</span>
-                            </button>
-                          </td>
-                          {/* Empty cells for other columns */}
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                          <td className="px-4 py-4 bg-white"></td>
-                        </tr>
-                      )}
+                      {/* Summary rows inside table */}
+                      <tr className="border-t-2 border-slate-300 bg-white">
+                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-slate-700">
+                          Subtotal:
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-800">
+                          Rp {calculateGrandTotal().toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                      <tr className="bg-white">
+                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-slate-700">
+                          PPN (11%):
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-700">
+                          Rp {(calculateGrandTotal() * 0.11).toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                      <tr className="border-t border-slate-300 bg-white">
+                        <td colSpan="7" className="px-4 py-4 text-right font-bold text-slate-800 text-lg">
+                          Total:
+                        </td>
+                        <td className="px-4 py-4 font-bold text-slate-900 text-lg">
+                          Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}
+                        </td>
+                      </tr>
                     </tbody>                    </table>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Summary Section - Full Width */}
-              <div className="px-8 py-6 bg-gradient-to-r from-slate-100 to-slate-200 border-t-2 border-slate-300">
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-6 shadow-lg">
-                  <h3 className="text-xl font-bold text-slate-800 mb-4">Summary</h3>
-                  <div className="space-y-2 text-lg">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-slate-700">Subtotal:</span>
-                      <span className="font-bold text-slate-800">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium text-slate-700">PPN (11%):</span>
-                      <span className="font-bold text-slate-800">Rp {(calculateGrandTotal() * 0.11).toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="flex justify-between border-t-2 border-slate-400 pt-2">
-                      <span className="font-bold text-slate-900 text-xl">Total:</span>
-                      <span className="font-bold text-slate-900 text-xl">Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}</span>
-                    </div>
                   </div>
                 </div>
               </div>
