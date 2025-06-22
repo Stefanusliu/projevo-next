@@ -530,7 +530,7 @@ export default function BOQMaker() {
         {/* Background gradient effects */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {currentView === 'list' ? (
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
@@ -693,44 +693,39 @@ export default function BOQMaker() {
               </div>
             </div>
 
-            <div className="flex h-[calc(100vh-200px)] flex-col">
+            <div className="flex flex-col">
               {/* Main Table Area */}
-              <div className="flex-1 p-8 pb-0 overflow-hidden">
+              <div className="p-8 pb-0">
                 {/* Table View */}
-                <div className="bg-white border border-slate-200 rounded-t-xl overflow-hidden shadow-sm h-full flex flex-col">
-                  <div className="flex-1 overflow-auto">
-                    <table className="w-full min-w-full">
+                <div className="bg-white border border-slate-200 rounded-t-xl shadow-sm">
+                  <div className="w-full">
+                    <table className="w-full table-fixed">
                       <thead className="bg-gradient-to-r from-slate-100 to-slate-200 sticky top-0 z-10">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[200px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '18%'}}>
                             Tahapan Kerja
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[200px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '18%'}}>
                             Jenis Pekerjaan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[200px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '18%'}}>
                             Uraian
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[250px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '16%'}}>
                             Spesifikasi
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[100px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '8%'}}>
                             Volume
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[100px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '8%'}}>
                             Satuan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[150px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300" style={{width: '14%'}}>
                             Harga per Pcs
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700 border-r border-slate-300 min-w-[150px]">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-700" style={{width: '16%'}}>
                             Total
                           </th>
-                          {editMode && (
-                            <th className="px-4 py-3 text-center text-sm font-bold text-slate-700 min-w-[120px]">
-                              Actions
-                            </th>
-                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -849,33 +844,55 @@ export default function BOQMaker() {
                           >
                             {/* Handle button rows */}
                             {row.type === 'add-jenis-button' ? (
-                              <td colSpan={editMode ? 9 : 8} className="px-4 py-2 text-center bg-slate-50">
-                                {editMode && (
-                                  <button
-                                    onClick={() => addJenisKerja(row.tahapanId)}
-                                    className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    <span>Tambah Jenis Pekerjaan</span>
-                                  </button>
-                                )}
-                              </td>
+                              <>
+                                {/* Tahapan Kerja column for Jenis button */}
+                                <td className="px-4 py-2 text-center bg-white">
+                                  {editMode && (
+                                    <button
+                                      onClick={() => addJenisKerja(row.tahapanId)}
+                                      className="text-indigo-600 hover:text-indigo-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                      </svg>
+                                      <span>Tambah Jenis Pekerjaan</span>
+                                    </button>
+                                  )}
+                                </td>
+                                {/* Empty cells for other columns */}
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                              </>
                             ) : row.type === 'add-uraian-button' ? (
-                              <td colSpan={editMode ? 9 : 8} className="px-4 py-2 text-center bg-slate-50">
-                                {editMode && (
-                                  <button
-                                    onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                    className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    <span>Tambah Uraian</span>
-                                  </button>
-                                )}
-                              </td>
+                              <>
+                                {/* Tahapan Kerja column for Uraian button */}
+                                <td className="px-4 py-2 text-center bg-white">
+                                  {editMode && (
+                                    <button
+                                      onClick={() => addUraian(row.tahapanId, row.jenisId)}
+                                      className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                      </svg>
+                                      <span>Tambah Uraian</span>
+                                    </button>
+                                  )}
+                                </td>
+                                {/* Empty cells for other columns */}
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                                <td className="px-4 py-2 bg-white"></td>
+                              </>
                             ) : (
                               <>
                                 {/* Regular table content */}
@@ -1065,7 +1082,7 @@ export default function BOQMaker() {
                             </td>
 
                             {/* Total */}
-                            <td className="px-4 py-3 border-r border-slate-200">
+                            <td className="px-4 py-3">
                               {row.spec ? (
                                 <div className="px-2 py-1 text-slate-800 font-medium text-sm">
                                   Rp {calculateSpecTotal(row.spec).toLocaleString('id-ID')}
@@ -1073,29 +1090,6 @@ export default function BOQMaker() {
                               ) : null}
                             </td>
 
-                            {/* Actions */}
-                            {editMode && (
-                              <td className="px-4 py-3 text-center">
-                                <div className="flex justify-center">
-                                  {/* Smart Delete Button - shows appropriate tooltip based on what will be deleted */}
-                                  {(isFirstTahapanRow || row.jenisId || row.uraianId) && (
-                                    <button
-                                      onClick={() => smartDelete(row.tahapanId, row.jenisId, row.uraianId, row.specId)}
-                                      className="bg-white text-red-500 hover:bg-red-50 w-8 h-8 rounded flex items-center justify-center text-xl font-bold transition-all duration-200"
-                                      title={
-                                        row.uraianId ? "Delete Uraian" :
-                                        row.jenisId ? 
-                                          (tahapanKerja.find(t => t.id === row.tahapanId)?.jenisKerja.find(j => j.id === row.jenisId)?.uraian.length > 0 ? 
-                                            "Delete All Uraian" : "Delete Jenis") :
-                                        (isFirstTahapanRow && tahapanKerja.length > 1) ? "Delete Tahapan" : ""
-                                      }
-                                    >
-                                      ×
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            )}
                               </>
                             )}
                           </tr>
@@ -1106,7 +1100,8 @@ export default function BOQMaker() {
                       {/* Add Tahapan Kerja row */}
                       {editMode && (
                         <tr className="border-b border-slate-200 hover:bg-blue-50">
-                          <td colSpan={editMode ? 9 : 8} className="px-4 py-4 text-center">
+                          {/* Tahapan Kerja column for main add button */}
+                          <td className="px-4 py-4 text-center bg-white">
                             <button
                               onClick={addTahapanKerja}
                               className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center space-x-2 mx-auto transition-colors duration-200"
@@ -1117,6 +1112,14 @@ export default function BOQMaker() {
                               <span>Tambah Tahapan Kerja</span>
                             </button>
                           </td>
+                          {/* Empty cells for other columns */}
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
+                          <td className="px-4 py-4 bg-white"></td>
                         </tr>
                       )}
                     </tbody>                    </table>
