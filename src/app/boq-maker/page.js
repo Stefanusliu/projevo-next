@@ -41,9 +41,11 @@ export default function BOQMaker() {
   const [savedBOQs, setSavedBOQs] = useState([]);
   const [editMode, setEditMode] = useState(true);
   const [draggedTahapan, setDraggedTahapan] = useState(null);
+  const [draggedJenis, setDraggedJenis] = useState(null);
+  const [draggedUraian, setDraggedUraian] = useState(null);
   const [lastAutoSave, setLastAutoSave] = useState(null);
   const [showAutosaveNotification, setShowAutosaveNotification] = useState(false);
-  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, tahapanId: null });
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, tahapanId: null, jenisId: null, uraianId: null, type: null });
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 });
 
   useEffect(() => {
@@ -241,14 +243,22 @@ export default function BOQMaker() {
     setContextMenu({ show: false, x: 0, y: 0, tahapanId: null });
   };
 
-  const handleContextMenu = (e, tahapanId) => {
+  const handleContextMenu = (e, tahapanId, jenisId = null, uraianId = null) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    let type = 'tahapan';
+    if (uraianId) type = 'uraian';
+    else if (jenisId) type = 'jenis';
+    
     setContextMenu({
       show: true,
       x: e.clientX,
       y: e.clientY,
-      tahapanId
+      tahapanId,
+      jenisId,
+      uraianId,
+      type
     });
   };
 
@@ -308,6 +318,99 @@ export default function BOQMaker() {
 
   const handleDragEnd = () => {
     setDraggedTahapan(null);
+  };
+
+  // Jenis drag handlers
+  const handleJenisDragStart = (e, jenisId) => {
+    setDraggedJenis(jenisId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  };
+
+  const handleJenisDrop = (e, targetJenisId, tahapanId) => {
+    e.preventDefault();
+    
+    if (!draggedJenis || draggedJenis === targetJenisId) {
+      setDraggedJenis(null);
+      return;
+    }
+
+    const newTahapanKerja = [...tahapanKerja];
+    const tahapan = newTahapanKerja.find(t => t.id === tahapanId);
+    
+    if (!tahapan) {
+      setDraggedJenis(null);
+      return;
+    }
+
+    const draggedIndex = tahapan.jenisKerja.findIndex(j => j.id === draggedJenis);
+    const targetIndex = tahapan.jenisKerja.findIndex(j => j.id === targetJenisId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedJenis(null);
+      return;
+    }
+
+    // Remove dragged item and insert at target position
+    const [draggedItem] = tahapan.jenisKerja.splice(draggedIndex, 1);
+    tahapan.jenisKerja.splice(targetIndex, 0, draggedItem);
+
+    setTahapanKerja(newTahapanKerja);
+    setDraggedJenis(null);
+  };
+
+  const handleJenisDragEnd = () => {
+    setDraggedJenis(null);
+  };
+
+  // Uraian drag handlers
+  const handleUraianDragStart = (e, uraianId) => {
+    setDraggedUraian(uraianId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  };
+
+  const handleUraianDrop = (e, targetUraianId, tahapanId, jenisId) => {
+    e.preventDefault();
+    
+    if (!draggedUraian || draggedUraian === targetUraianId) {
+      setDraggedUraian(null);
+      return;
+    }
+
+    const newTahapanKerja = [...tahapanKerja];
+    const tahapan = newTahapanKerja.find(t => t.id === tahapanId);
+    
+    if (!tahapan) {
+      setDraggedUraian(null);
+      return;
+    }
+
+    const jenis = tahapan.jenisKerja.find(j => j.id === jenisId);
+    
+    if (!jenis) {
+      setDraggedUraian(null);
+      return;
+    }
+
+    const draggedIndex = jenis.uraian.findIndex(u => u.id === draggedUraian);
+    const targetIndex = jenis.uraian.findIndex(u => u.id === targetUraianId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedUraian(null);
+      return;
+    }
+
+    // Remove dragged item and insert at target position
+    const [draggedItem] = jenis.uraian.splice(draggedIndex, 1);
+    jenis.uraian.splice(targetIndex, 0, draggedItem);
+
+    setTahapanKerja(newTahapanKerja);
+    setDraggedUraian(null);
+  };
+
+  const handleUraianDragEnd = () => {
+    setDraggedUraian(null);
   };
 
   const addJenisKerja = (tahapanId) => {
@@ -800,10 +903,10 @@ export default function BOQMaker() {
           </div>
         ) : (
           <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-600 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
+            <div className="bg-slate-800 px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">BOQ Maker</h1>
+                  <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
                   <p className="text-blue-100">Create detailed Bill of Quantities with local storage</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -855,7 +958,7 @@ export default function BOQMaker() {
               </div>
             </div>
 
-            <div className="px-8 py-6 border-b border-slate-600 bg-slate-700">
+            <div className="px-8 py-6 border-b border-slate-600 bg-slate-800">
               <div className="max-w-2xl">
                 <label htmlFor="boqTitle" className="block text-sm font-medium text-slate-200 mb-2">
                   BOQ Title / Project Name
@@ -869,8 +972,8 @@ export default function BOQMaker() {
                   disabled={!editMode}
                   className={
                     editMode 
-                      ? "w-full px-4 py-3 border-2 border-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-100 font-medium text-lg bg-slate-600 shadow-sm placeholder-slate-400" 
-                      : "w-full px-4 py-3 border-2 border-slate-600 rounded-lg transition-all text-slate-200 font-medium text-lg bg-slate-700 shadow-sm cursor-not-allowed"
+                      ? "w-full px-2 py-1 border-2 border-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-100 font-medium text-lg bg-slate-600 shadow-sm placeholder-slate-400" 
+                      : "w-full px-2 py-1 border-2 border-slate-600 rounded-lg transition-all text-slate-200 font-medium text-lg bg-slate-700 shadow-sm cursor-not-allowed"
                   }
                 />
                 <p className="mt-2 text-sm text-slate-400">
@@ -898,7 +1001,7 @@ export default function BOQMaker() {
               {/* Main Table Area */}
               <div className="p-8 pb-8">
                 {/* Table View */}
-                <div className="bg-slate-700 border border-slate-600 shadow-sm">
+                <div className="bg-slate-700 border border-slate-600 shadow-sm rounded-xl overflow-hidden">
                   <div className="w-full">
                     <table className="w-full table-fixed">
                       <thead className="bg-gradient-to-r from-slate-600 to-slate-700 sticky top-0 z-10">
@@ -1078,18 +1181,6 @@ export default function BOQMaker() {
                                           : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm font-medium"
                                       }
                                     />
-                                    {/* Delete Tahapan button - show on hover */}
-                                    {editMode && tahapanKerja.length > 1 && (
-                                      <button
-                                        onClick={() => deleteTahapanKerja(row.tahapanId)}
-                                        className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                        title="Delete Tahapan Kerja"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    )}
                                   </div>
                                   {/* Add Tahapan Kerja button - only show on last tahapan when hovering */}
                                   {editMode && row.isLastTahapan && (
@@ -1113,15 +1204,46 @@ export default function BOQMaker() {
                             {/* Jenis Pekerjaan - Show only on first row of each jenis, with rowspan */}
                             {row.jenisId && isFirstJenisRow ? (
                               <td 
-                                className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer ${row.isLastJenis ? 'group' : ''}`}
+                                className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer group
+                                  ${isFirstJenisRow && draggedJenis === row.jenisId ? 'opacity-75 bg-blue-900' : ''}
+                                  ${isFirstJenisRow && draggedJenis && draggedJenis !== row.jenisId ? 'hover:bg-slate-600' : ''}
+                                `}
                                 rowSpan={jenisRowSpan}
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
                                 }}
+                                onDragOver={isFirstJenisRow ? handleDragOver : undefined}
+                                onDrop={isFirstJenisRow ? (e) => handleJenisDrop(e, row.jenisId, row.tahapanId) : undefined}
+                                onDragEnd={isFirstJenisRow ? handleJenisDragEnd : undefined}
                               >
                                 <div className="space-y-2">
                                   <div className="flex items-center space-x-2">
+                                    {/* Multi-function 6-dot icon - show on hover */}
+                                    {editMode && (
+                                      <button
+                                        onClick={(e) => handleContextMenu(e, row.tahapanId, row.jenisId, null)}
+                                        className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                        title="Drag to reorder or click for options"
+                                        onMouseDown={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                        draggable={true}
+                                        onDragStart={(e) => {
+                                          handleJenisDragStart(e, row.jenisId);
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <circle cx="6" cy="8" r="2"/>
+                                          <circle cx="12" cy="8" r="2"/>
+                                          <circle cx="18" cy="8" r="2"/>
+                                          <circle cx="6" cy="16" r="2"/>
+                                          <circle cx="12" cy="16" r="2"/>
+                                          <circle cx="18" cy="16" r="2"/>
+                                        </svg>
+                                      </button>
+                                    )}
                                     <input
                                       type="text"
                                       value={row.jenisName}
@@ -1129,22 +1251,10 @@ export default function BOQMaker() {
                                       disabled={!editMode}
                                       className={
                                         editMode 
-                                          ? "w-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
-                                          : "w-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
+                                          ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
+                                          : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
                                       }
                                     />
-                                    {/* Delete Jenis button - show on hover */}
-                                    {editMode && (
-                                      <button
-                                        onClick={() => deleteJenisKerja(row.tahapanId, row.jenisId)}
-                                        className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                        title="Delete Jenis Pekerjaan"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    )}
                                   </div>
                                   {/* Add Jenis Pekerjaan button - only show on last jenis when hovering */}
                                   {editMode && row.isLastJenis && (
@@ -1199,14 +1309,46 @@ export default function BOQMaker() {
                             ) : null}
 
                             {/* Uraian */}
-                            <td className="px-4 py-2 border-r border-slate-600 align-middle cursor-pointer"
+                            <td className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer
+                              ${row.uraianId && isFirstUraianRow && draggedUraian === row.uraianId ? 'opacity-75 bg-blue-900' : ''}
+                              ${row.uraianId && isFirstUraianRow && draggedUraian && draggedUraian !== row.uraianId ? 'hover:bg-slate-600' : ''}
+                            `}
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
-                                }}>
+                                }}
+                                onDragOver={row.uraianId && isFirstUraianRow ? handleDragOver : undefined}
+                                onDrop={row.uraianId && isFirstUraianRow ? (e) => handleUraianDrop(e, row.uraianId, row.tahapanId, row.jenisId) : undefined}
+                                onDragEnd={row.uraianId && isFirstUraianRow ? handleUraianDragEnd : undefined}
+                            >
                               {row.uraianId && (row.type.includes('uraian') || isFirstUraianRow) ? (
-                                <div className={`space-y-1 ${row.isLastUraian ? 'group' : ''}`}>
+                                <div className={`space-y-1 group`}>
                                   <div className="flex items-center space-x-2">
+                                    {/* Multi-function 6-dot icon - show on hover */}
+                                    {editMode && (
+                                      <button
+                                        onClick={(e) => handleContextMenu(e, row.tahapanId, row.jenisId, row.uraianId)}
+                                        className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                        title="Drag to reorder or click for options"
+                                        onMouseDown={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                        draggable={true}
+                                        onDragStart={(e) => {
+                                          handleUraianDragStart(e, row.uraianId);
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <circle cx="6" cy="8" r="2"/>
+                                          <circle cx="12" cy="8" r="2"/>
+                                          <circle cx="18" cy="8" r="2"/>
+                                          <circle cx="6" cy="16" r="2"/>
+                                          <circle cx="12" cy="16" r="2"/>
+                                          <circle cx="18" cy="16" r="2"/>
+                                        </svg>
+                                      </button>
+                                    )}
                                     <input
                                       type="text"
                                       value={row.uraianName}
@@ -1214,22 +1356,10 @@ export default function BOQMaker() {
                                       disabled={!editMode}
                                       className={
                                         editMode 
-                                          ? "w-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
-                                          : "w-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
+                                          ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
+                                          : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
                                       }
                                     />
-                                    {/* Delete Uraian button - show on hover */}
-                                    {editMode && (
-                                      <button
-                                        onClick={() => deleteUraian(row.tahapanId, row.jenisId, row.uraianId)}
-                                        className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                        title="Delete Uraian"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    )}
                                   </div>
                                   {/* Add Uraian button - only show on last uraian when hovering */}
                                   {editMode && row.isLastUraian && (
@@ -1442,37 +1572,105 @@ export default function BOQMaker() {
               transform: 'translate(-50%, 0)' // Center horizontally at mouse position
             }}
           >
-            <button
-              onClick={() => duplicateTahapanKerja(contextMenu.tahapanId)}
-              className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>Duplicate</span>
-            </button>
-            <button
-              onClick={() => clearTahapanKerjaContents(contextMenu.tahapanId)}
-              className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              <span>Clear Contents</span>
-            </button>
-            {tahapanKerja.length > 1 && (
-              <button
-                onClick={() => {
-                  deleteTahapanKerja(contextMenu.tahapanId);
-                  closeContextMenu();
-                }}
-                className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Delete</span>
-              </button>
+            {contextMenu.type === 'tahapan' && (
+              <>
+                <button
+                  onClick={() => {
+                    duplicateTahapanKerja(contextMenu.tahapanId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Duplicate</span>
+                </button>
+                <button
+                  onClick={() => {
+                    clearTahapanKerjaContents(contextMenu.tahapanId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Clear Contents</span>
+                </button>
+                {tahapanKerja.length > 1 && (
+                  <button
+                    onClick={() => {
+                      deleteTahapanKerja(contextMenu.tahapanId);
+                      closeContextMenu();
+                    }}
+                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Delete</span>
+                  </button>
+                )}
+              </>
+            )}
+            
+            {contextMenu.type === 'jenis' && (
+              <>
+                <button
+                  onClick={() => {
+                    // Add duplicate jenis functionality here
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Duplicate Jenis</span>
+                </button>
+                <button
+                  onClick={() => {
+                    deleteJenisKerja(contextMenu.tahapanId, contextMenu.jenisId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Delete Jenis</span>
+                </button>
+              </>
+            )}
+            
+            {contextMenu.type === 'uraian' && (
+              <>
+                <button
+                  onClick={() => {
+                    // Add duplicate uraian functionality here
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Duplicate Uraian</span>
+                </button>
+                <button
+                  onClick={() => {
+                    deleteUraian(contextMenu.tahapanId, contextMenu.jenisId, contextMenu.uraianId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Delete Uraian</span>
+                </button>
+              </>
             )}
           </div>
         )}

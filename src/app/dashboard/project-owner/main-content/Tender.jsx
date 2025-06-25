@@ -1,131 +1,187 @@
 import React, { useState } from 'react';
 
 const Tender = () => {
-  const [marketData] = useState([
-        {
-          id: 1,
-          category: "Interior Design",
-          subcategory: "Restaurant Design",
-          type: "Interior",
-          industry: "Food & Beverage",
-          name: "Modern Restaurant Interior - PIK Jakarta",
-          budget: "Rp 750,000,000",
-          timeEstimation: "4 months",
-          bidCountdown: "2 days left",
-        },
-        {
-          id: 2,
-          category: "Construction",
-          subcategory: "Commercial Building",
-          type: "Construction",
-          industry: "Retail",
-          name: "Shopping Mall Extension - Kemang",
-          budget: "Rp 2,500,000,000",
-          timeEstimation: "8 months",
-          bidCountdown: "5 days left",
-        },
-        {
-          id: 3,
-          category: "Architecture",
-          subcategory: "Residential Complex",
-          type: "Architecture",
-          industry: "Real Estate",
-          name: "Luxury Apartment Design - Sudirman",
-          budget: "Rp 5,200,000,000",
-          timeEstimation: "12 months",
-          bidCountdown: "10 days left",
-        },
-        {
-          id: 4,
-          category: "Construction",
-          subcategory: "Office Building",
-          type: "Construction",
-          industry: "Corporate",
-          name: "Corporate Headquarters - Thamrin",
-          budget: "Rp 520,000,000",
-          timeEstimation: "3.5 months",
-          bidCountdown: "3 days left",
-        },
-        {
-          id: 5,
-          category: "Interior Design",
-          subcategory: "Bar & Lounge",
-          type: "Interior",
-          industry: "Entertainment",
-          name: "Rooftop Bar Design - SCBD Jakarta",
-          budget: "Rp 850,000,000",
-          timeEstimation: "4 months",
-          bidCountdown: "15 days left",
-        },
-        {
-          id: 6,
-          category: "Construction",
-          subcategory: "Renovation",
-          type: "Renovation",
-          industry: "Food & Beverage",
-          name: "Bakery Shop Renovation - Kelapa Gading",
-          budget: "Rp 180,000,000",
-          timeEstimation: "8 weeks",
-          bidCountdown: "7 days left",
-        },
-        {
-          id: 7,
-          category: "Interior Design",
-          subcategory: "Office Design",
-          type: "Interior",
-          industry: "Corporate",
-          name: "Startup Office Interior - Kuningan",
-          budget: "Rp 320,000,000",
-          timeEstimation: "10 weeks",
-          bidCountdown: "9 days left",
-        },
-        {
-          id: 8,
-          category: "Architecture",
-          subcategory: "Facade Design",
-          type: "Architecture",
-          industry: "Food & Beverage",
-          name: "Street Food Court Design - Senopati",
-          budget: "Rp 420,000,000",
-          timeEstimation: "12 weeks",
-          bidCountdown: "6 days left",
-        },
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
+
+  const [marketData, setMarketData] = useState([
+    {
+      id: 1,
+      projectTitle: "Bangun Interior Rumah BSD Minimalis Modern",
+      location: "Jakarta Selatan",
+      clientName: "John Doe",
+      projectType: "Bangun",
+      propertyType: "Rumah Tinggal",
+      budget: "Rp 750,000,000",
+      duration: "4 bulan",
+      bidCountdown: "2 hari 14 jam",
+    },
+    {
+      id: 2,
+      projectTitle: "Renovasi Kantor Modern SCBD",
+      location: "Jakarta Pusat",
+      clientName: "PT Maju Jaya",
+      projectType: "Renovasi",
+      propertyType: "Kantor",
+      budget: "Rp 2,500,000,000",
+      duration: "8 bulan",
+      bidCountdown: "5 hari 8 jam",
+    },
+    {
+      id: 3,
+      projectTitle: "Desain Interior Apartemen Luxury Sudirman",
+      location: "Jakarta Pusat",
+      clientName: "Maria Sari",
+      projectType: "Desain",
+      propertyType: "Apartemen",
+      budget: "Rp 520,000,000",
+      duration: "12 minggu",
+      bidCountdown: "1 minggu 3 hari",
+    },
+    {
+      id: 4,
+      projectTitle: "Bangun Ruko 3 Lantai Kelapa Gading",
+      location: "Jakarta Utara",
+      clientName: "Budi Santoso",
+      projectType: "Bangun",
+      propertyType: "Ruko",
+      budget: "Rp 1,200,000,000",
+      duration: "6 bulan",
+      bidCountdown: "3 hari 6 jam",
+    },
+    {
+      id: 5,
+      projectTitle: "Renovasi Restaurant Modern PIK",
+      location: "Jakarta Utara",
+      clientName: "CV Food Paradise",
+      projectType: "Renovasi",
+      propertyType: "Restoran",
+      budget: "Rp 850,000,000",
+      duration: "4 bulan",
+      bidCountdown: "2 minggu 1 hari",
+    },
+    {
+      id: 6,
+      projectTitle: "Desain Hotel Boutique Kemang",
+      location: "Jakarta Selatan",
+      clientName: "Hotel Boutique Ltd",
+      projectType: "Desain",
+      propertyType: "Hotel / Penginapan",
+      budget: "Rp 3,800,000,000",
+      duration: "10 bulan",
+      bidCountdown: "1 minggu 2 hari",
+    },
+    {
+      id: 7,
+      projectTitle: "Bangun Gudang Industri Cakung",
+      location: "Jakarta Timur",
+      clientName: "PT Logistik Prima",
+      projectType: "Bangun",
+      propertyType: "Gudang",
+      budget: "Rp 4,200,000,000",
+      duration: "8 bulan",
+      bidCountdown: "4 hari 12 jam",
+    },
+    {
+      id: 8,
+      projectTitle: "Renovasi Sekolah Dasar Tangerang",
+      location: "Tangerang",
+      clientName: "Yayasan Pendidikan",
+      projectType: "Renovasi",
+      propertyType: "Sekolah",
+      budget: "Rp 680,000,000",
+      duration: "5 bulan",
+      bidCountdown: "6 hari 4 jam",
+    },
   ]);
 
+  const handleSort = (field) => {
+    const direction = field === sortField && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(direction);
+
+    const sortedData = [...marketData].sort((a, b) => {
+      let aValue = a[field];
+      let bValue = b[field];
+
+      // Handle budget sorting (remove Rp and convert to number)
+      if (field === 'budget') {
+        aValue = parseInt(aValue.replace(/[^0-9]/g, ''));
+        bValue = parseInt(bValue.replace(/[^0-9]/g, ''));
+      }
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setMarketData(sortedData);
+  };
+
+  const SortableHeader = ({ field, children }) => (
+    <button
+      onClick={() => handleSort(field)}
+      className="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+    >
+      <span>{children}</span>
+      {sortField === field && (
+        <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      )}
+    </button>
+  );
+
   const getBidCountdownColor = (countdown) => {
-    const days = parseInt(countdown.split(" ")[0]);
-    if (days <= 3)
+    // Extract time values and convert to hours for comparison
+    let totalHours = 0;
+    
+    if (countdown.includes('minggu')) {
+      const weeks = parseInt(countdown.match(/(\d+)\s*minggu/)?.[1] || 0);
+      totalHours += weeks * 7 * 24;
+    }
+    if (countdown.includes('hari')) {
+      const days = parseInt(countdown.match(/(\d+)\s*hari/)?.[1] || 0);
+      totalHours += days * 24;
+    }
+    if (countdown.includes('jam')) {
+      const hours = parseInt(countdown.match(/(\d+)\s*jam/)?.[1] || 0);
+      totalHours += hours;
+    }
+
+    if (totalHours <= 72) // 3 days or less
       return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20";
-    if (days <= 7)
+    if (totalHours <= 168) // 7 days or less
       return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20";
     return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20";
   };
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Today's Market Title */}
+        {/* Tender Title */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Today&apos;s Market
+            Tender
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
             Discover and connect with qualified contractors for your projects
           </p>
         </div>
 
-        {/* Market Table */}
+        {/* Tender Table */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Table Header */}
           <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-            <div className="grid grid-cols-8 gap-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              <div>Category</div>
-              <div>Subcategory</div>
-              <div>Type</div>
-              <div>Industry</div>
-              <div>Name</div>
-              <div>Budget</div>
-              <div>Time Estimation</div>
-              <div>Bid Countdown</div>
+            <div className="grid grid-cols-7 gap-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <SortableHeader field="projectTitle">Judul Proyek</SortableHeader>
+              <SortableHeader field="location">Lokasi</SortableHeader>
+              <SortableHeader field="clientName">Klien</SortableHeader>
+              <SortableHeader field="projectType">Tipe</SortableHeader>
+              <SortableHeader field="propertyType">Properti</SortableHeader>
+              <SortableHeader field="budget">Budget</SortableHeader>
+              <SortableHeader field="bidCountdown">Deadline</SortableHeader>
             </div>
           </div>
 
@@ -136,54 +192,47 @@ const Tender = () => {
                 key={item.id}
                 className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
               >
-                <div className="grid grid-cols-8 gap-4 items-center">
-                  {/* Category */}
+                <div className="grid grid-cols-7 gap-4 items-center">
+                  {/* Project Title */}
                   <div className="text-sm font-medium text-slate-900 dark:text-white">
-                    {item.category}
+                    {item.projectTitle}
                   </div>
 
-                  {/* Subcategory */}
+                  {/* Location */}
                   <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {item.subcategory}
+                    {item.location}
                   </div>
 
-                  {/* Type */}
+                  {/* Client Name */}
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    {item.clientName}
+                  </div>
+
+                  {/* Project Type */}
                   <div>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        item.type === "Interior"
+                        item.projectType === "Desain"
                           ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
-                          : item.type === "Construction"
+                          : item.projectType === "Bangun"
                           ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                          : item.type === "Architecture"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                          : item.type === "Renovation"
+                          : item.projectType === "Renovasi"
                           ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                           : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                       }`}
                     >
-                      {item.type}
+                      {item.projectType}
                     </span>
                   </div>
 
-                  {/* Industry */}
+                  {/* Property Type */}
                   <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {item.industry}
-                  </div>
-
-                  {/* Name */}
-                  <div className="text-sm font-medium text-slate-900 dark:text-white">
-                    {item.name}
+                    {item.propertyType}
                   </div>
 
                   {/* Budget */}
                   <div className="text-sm font-semibold text-slate-900 dark:text-white">
                     {item.budget}
-                  </div>
-
-                  {/* Time Estimation */}
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {item.timeEstimation}
                   </div>
 
                   {/* Bid Countdown */}

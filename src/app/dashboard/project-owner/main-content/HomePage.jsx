@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import HomeComponent from '../components/HomeComponent';
-import PortfolioComponent from '../components/PortfolioComponent';
-import SavedComponent from '../components/SavedComponent';
 import HistoryComponent from '../components/HistoryComponent';
+import BOQGeneratorComponent from '../components/BOQGeneratorComponent';
+import PaymentManagementComponent from '../components/PaymentManagementComponent';
 
 export default function HomePage() {
-  const [activeMenu, setActiveMenu] = useState("Projects");
+  const [activeMenu, setActiveMenu] = useState("Project");
   
-  const menuItems = ['Projects', 'Portfolio', 'Saved', 'History'];
+  const menuItems = ['Project', 'BOQ Generator', 'Payment', 'History'];
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -37,9 +37,9 @@ export default function HomePage() {
 
         {/* Main Content Area */}
         <div className="flex-1">
-          {activeMenu === "Projects" && <HomeComponent />}
-          {activeMenu === "Portfolio" && <PortfolioComponent />}
-          {activeMenu === "Saved" && <SavedComponent />}
+          {activeMenu === "Project" && <HomeComponent />}
+          {activeMenu === "BOQ Generator" && <BOQGeneratorComponent />}
+          {activeMenu === "Payment" && <PaymentManagementComponent />}
           {activeMenu === "History" && <HistoryComponent />}
         </div>
       </div>
