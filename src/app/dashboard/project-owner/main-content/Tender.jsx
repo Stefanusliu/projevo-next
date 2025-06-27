@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Tender = () => {
   const [sortField, setSortField] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const locationFilterRef = useRef(null);
 
   const [marketData, setMarketData] = useState([
     {
       id: 1,
       projectTitle: "Bangun Interior Rumah BSD Minimalis Modern",
       location: "Jakarta Selatan",
-      clientName: "John Doe",
+      scope: ["Interior", "Furniture"],
       projectType: "Bangun",
       propertyType: "Rumah Tinggal",
       budget: "Rp 750,000,000",
@@ -20,7 +23,7 @@ const Tender = () => {
       id: 2,
       projectTitle: "Renovasi Kantor Modern SCBD",
       location: "Jakarta Pusat",
-      clientName: "PT Maju Jaya",
+      scope: ["Interior", "Sipil"],
       projectType: "Renovasi",
       propertyType: "Kantor",
       budget: "Rp 2,500,000,000",
@@ -31,7 +34,7 @@ const Tender = () => {
       id: 3,
       projectTitle: "Desain Interior Apartemen Luxury Sudirman",
       location: "Jakarta Pusat",
-      clientName: "Maria Sari",
+      scope: ["Interior", "Furniture"],
       projectType: "Desain",
       propertyType: "Apartemen",
       budget: "Rp 520,000,000",
@@ -42,7 +45,7 @@ const Tender = () => {
       id: 4,
       projectTitle: "Bangun Ruko 3 Lantai Kelapa Gading",
       location: "Jakarta Utara",
-      clientName: "Budi Santoso",
+      scope: ["Sipil", "Eksterior"],
       projectType: "Bangun",
       propertyType: "Ruko",
       budget: "Rp 1,200,000,000",
@@ -53,7 +56,7 @@ const Tender = () => {
       id: 5,
       projectTitle: "Renovasi Restaurant Modern PIK",
       location: "Jakarta Utara",
-      clientName: "CV Food Paradise",
+      scope: ["Interior", "Furniture"],
       projectType: "Renovasi",
       propertyType: "Restoran",
       budget: "Rp 850,000,000",
@@ -64,7 +67,7 @@ const Tender = () => {
       id: 6,
       projectTitle: "Desain Hotel Boutique Kemang",
       location: "Jakarta Selatan",
-      clientName: "Hotel Boutique Ltd",
+      scope: ["Interior", "Eksterior", "Taman & Hardscape"],
       projectType: "Desain",
       propertyType: "Hotel / Penginapan",
       budget: "Rp 3,800,000,000",
@@ -75,7 +78,7 @@ const Tender = () => {
       id: 7,
       projectTitle: "Bangun Gudang Industri Cakung",
       location: "Jakarta Timur",
-      clientName: "PT Logistik Prima",
+      scope: ["Sipil"],
       projectType: "Bangun",
       propertyType: "Gudang",
       budget: "Rp 4,200,000,000",
@@ -86,7 +89,7 @@ const Tender = () => {
       id: 8,
       projectTitle: "Renovasi Sekolah Dasar Tangerang",
       location: "Tangerang",
-      clientName: "Yayasan Pendidikan",
+      scope: ["Interior", "Sipil"],
       projectType: "Renovasi",
       propertyType: "Sekolah",
       budget: "Rp 680,000,000",
@@ -95,12 +98,40 @@ const Tender = () => {
     },
   ]);
 
+  // Get unique locations for filter
+  const allLocations = [...new Set(marketData.map(item => item.location))];
+
+  // Filter data based on selected locations
+  const filteredData = selectedLocations.length > 0 
+    ? marketData.filter(item => selectedLocations.includes(item.location))
+    : marketData;
+
+  const handleLocationFilter = (location) => {
+    setSelectedLocations(prev => 
+      prev.includes(location) 
+        ? prev.filter(loc => loc !== location)
+        : [...prev, location]
+    );
+  };
+
+  // Close location filter when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (locationFilterRef.current && !locationFilterRef.current.contains(event.target)) {
+        setShowLocationFilter(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSort = (field) => {
     const direction = field === sortField && sortDirection === 'asc' ? 'desc' : 'asc';
     setSortField(field);
     setSortDirection(direction);
 
-    const sortedData = [...marketData].sort((a, b) => {
+    const sortedData = [...filteredData].sort((a, b) => {
       let aValue = a[field];
       let bValue = b[field];
 
@@ -170,16 +201,74 @@ const Tender = () => {
           </p>
         </div>
 
+        {/* Filters */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            {/* Location Filter */}
+            <div className="relative" ref={locationFilterRef}>
+              <button
+                onClick={() => setShowLocationFilter(!showLocationFilter)}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-sm font-medium">Lokasi</span>
+                {selectedLocations.length > 0 && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                    {selectedLocations.length}
+                  </span>
+                )}
+                <svg className={`w-4 h-4 transition-transform ${showLocationFilter ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Location Filter Dropdown */}
+              {showLocationFilter && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg z-10">
+                  <div className="p-4">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Pilih Lokasi</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {allLocations.map(location => (
+                        <label key={location} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedLocations.includes(location)}
+                            onChange={() => handleLocationFilter(location)}
+                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{location}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {selectedLocations.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
+                        <button
+                          onClick={() => setSelectedLocations([])}
+                          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Tender Table */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Table Header */}
           <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-            <div className="grid grid-cols-7 gap-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-6 gap-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
               <SortableHeader field="projectTitle">Judul Proyek</SortableHeader>
               <SortableHeader field="location">Lokasi</SortableHeader>
-              <SortableHeader field="clientName">Klien</SortableHeader>
+              <SortableHeader field="scope">Ruang Lingkup</SortableHeader>
               <SortableHeader field="projectType">Tipe</SortableHeader>
-              <SortableHeader field="propertyType">Properti</SortableHeader>
               <SortableHeader field="budget">Budget</SortableHeader>
               <SortableHeader field="bidCountdown">Deadline</SortableHeader>
             </div>
@@ -187,12 +276,12 @@ const Tender = () => {
 
           {/* Table Body */}
           <div className="divide-y divide-slate-200 dark:divide-slate-700">
-            {marketData.map((item) => (
+            {filteredData.map((item) => (
               <div
                 key={item.id}
-                className="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                className="px-6 py-4 transition-colors cursor-pointer"
               >
-                <div className="grid grid-cols-7 gap-4 items-center">
+                <div className="grid grid-cols-6 gap-4 items-center">
                   {/* Project Title */}
                   <div className="text-sm font-medium text-slate-900 dark:text-white">
                     {item.projectTitle}
@@ -203,9 +292,16 @@ const Tender = () => {
                     {item.location}
                   </div>
 
-                  {/* Client Name */}
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {item.clientName}
+                  {/* Scope (Ruang Lingkup) */}
+                  <div className="flex flex-wrap gap-1">
+                    {item.scope.map((scopeItem, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                      >
+                        {scopeItem}
+                      </span>
+                    ))}
                   </div>
 
                   {/* Project Type */}
@@ -223,11 +319,6 @@ const Tender = () => {
                     >
                       {item.projectType}
                     </span>
-                  </div>
-
-                  {/* Property Type */}
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {item.propertyType}
                   </div>
 
                   {/* Budget */}
@@ -255,8 +346,13 @@ const Tender = () => {
         <div className="flex items-center justify-between mt-6">
           <div className="text-sm text-slate-600 dark:text-slate-400">
             Showing <span className="font-medium">1</span> to{" "}
-            <span className="font-medium">8</span> of{" "}
-            <span className="font-medium">97</span> results
+            <span className="font-medium">{filteredData.length}</span> of{" "}
+            <span className="font-medium">{filteredData.length}</span> results
+            {selectedLocations.length > 0 && (
+              <span className="ml-2 text-blue-600 dark:text-blue-400">
+                (filtered by {selectedLocations.length} location{selectedLocations.length > 1 ? 's' : ''})
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <button className="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">

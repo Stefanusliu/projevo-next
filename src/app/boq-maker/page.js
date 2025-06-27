@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export default function BOQMaker() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState('editor');
   const [currentBOQId, setCurrentBOQId] = useState(null);
   const [boqTitle, setBoqTitle] = useState('');
@@ -52,30 +53,47 @@ export default function BOQMaker() {
     const savedData = localStorage.getItem('projevo_boqs');
     if (savedData) {
       setSavedBOQs(JSON.parse(savedData));
-    }
-
-    // Load autosaved draft on component mount
-    const autosaveData = localStorage.getItem('projevo_boq_autosave');
-    if (autosaveData) {
-      try {
-        const draft = JSON.parse(autosaveData);
-        // Only load if it's recent (within last 24 hours) and has content
-        const hoursSinceAutosave = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
-        if (hoursSinceAutosave < 24 && (draft.boqTitle.trim() || draft.tahapanKerja.some(t => t.name.trim()))) {
-          setBoqTitle(draft.boqTitle);
-          setTahapanKerja(draft.tahapanKerja);
-          setCurrentBOQId(draft.currentBOQId);
-          setLastAutoSave(new Date(draft.timestamp));
-          setShowAutosaveNotification(true);
-          
-          // Hide notification after 5 seconds
-          setTimeout(() => setShowAutosaveNotification(false), 5000);
+      
+      // Check if there's a load parameter in URL
+      const loadBOQId = searchParams.get('load');
+      if (loadBOQId) {
+        const savedBOQsList = JSON.parse(savedData);
+        const boqToLoad = savedBOQsList.find(b => b.id == loadBOQId);
+        if (boqToLoad) {
+          setBoqTitle(boqToLoad.title);
+          setTahapanKerja(boqToLoad.tahapanKerja);
+          setCurrentBOQId(boqToLoad.id);
+          setEditMode(true);
+          setCurrentView('editor');
+          return; // Skip autosave loading if loading from URL
         }
-      } catch (error) {
-        console.error('Error loading autosave data:', error);
       }
     }
-  }, []);
+
+    // Load autosaved draft on component mount (only if not loading from URL)
+    if (!searchParams.get('load')) {
+      const autosaveData = localStorage.getItem('projevo_boq_autosave');
+      if (autosaveData) {
+        try {
+          const draft = JSON.parse(autosaveData);
+          // Only load if it's recent (within last 24 hours) and has content
+          const hoursSinceAutosave = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
+          if (hoursSinceAutosave < 24 && (draft.boqTitle.trim() || draft.tahapanKerja.some(t => t.name.trim()))) {
+            setBoqTitle(draft.boqTitle);
+            setTahapanKerja(draft.tahapanKerja);
+            setCurrentBOQId(draft.currentBOQId);
+            setLastAutoSave(new Date(draft.timestamp));
+            setShowAutosaveNotification(true);
+            
+            // Hide notification after 5 seconds
+            setTimeout(() => setShowAutosaveNotification(false), 5000);
+          }
+        } catch (error) {
+          console.error('Error loading autosave data:', error);
+        }
+      }
+    }
+  }, [searchParams]);
 
   // Autosave effect - saves draft every few seconds when changes are made
   useEffect(() => {
@@ -278,6 +296,35 @@ export default function BOQMaker() {
 
   const hideTooltip = () => {
     setTooltip({ show: false, text: '', x: 0, y: 0 });
+  };
+
+  // Handle key press for inputs
+  const handleKeyPress = (e, tahapanId, jenisId, uraianId, fieldType) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Add new uraian when pressing Enter
+      addUraian(tahapanId, jenisId);
+      
+      // Focus on the new uraian's first input after a short delay
+      setTimeout(() => {
+        // Find the newly added uraian (last one in the list)
+        const tahapan = tahapanKerja.find(t => t.id === tahapanId);
+        const jenis = tahapan?.jenisKerja?.find(j => j.id === jenisId);
+        const lastUraian = jenis?.uraian?.[jenis.uraian.length - 1];
+        
+        if (lastUraian) {
+          // Try to focus on the uraian name input of the new row
+          const uraianInputs = document.querySelectorAll(`input[data-uraian-id="${lastUraian.id}"]`);
+          if (uraianInputs.length > 0) {
+            uraianInputs[0].focus();
+          }
+        }
+      }, 50);
+    } else if (e.key === 'Tab') {
+      // Let default tab behavior handle navigation between inputs
+      return;
+    }
   };
 
   const handleDragStart = (e, tahapanId) => {
@@ -1113,8 +1160,7 @@ export default function BOQMaker() {
                             className={`
                               border-b border-slate-600 transition-all duration-150
                               bg-slate-800
-                              ${isFirstTahapanRow && draggedTahapan === row.tahapanId ? 'opacity-75 bg-blue-900' : 'hover:bg-slate-600'}
-                              ${isFirstTahapanRow && draggedTahapan && draggedTahapan !== row.tahapanId ? 'hover:bg-slate-600' : ''}
+                              ${isFirstTahapanRow && draggedTahapan === row.tahapanId ? 'opacity-75 bg-blue-900' : ''}
                               group
                             `}
                             style={{
@@ -1174,7 +1220,10 @@ export default function BOQMaker() {
                                       type="text"
                                       value={row.tahapanName}
                                       onChange={(e) => updateTahapanKerja(row.tahapanId, e.target.value)}
+                                      onKeyDown={(e) => handleKeyPress(e, row.tahapanId, null, null, 'tahapan')}
                                       disabled={!editMode}
+                                      data-tahapan-id={row.tahapanId}
+                                      tabIndex={row.tahapanIndex * 100 + 1}
                                       className={
                                         editMode 
                                           ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm font-medium placeholder-slate-400" 
@@ -1182,21 +1231,6 @@ export default function BOQMaker() {
                                       }
                                     />
                                   </div>
-                                  {/* Add Tahapan Kerja button - only show on last tahapan when hovering */}
-                                  {editMode && row.isLastTahapan && (
-                                    <div className="relative w-full mt-1">
-                                      <button
-                                        onClick={addTahapanKerja}
-                                        onMouseEnter={(e) => showTooltip(e, 'Klik untuk menambahkan Tahapan Kerja')}
-                                        onMouseLeave={hideTooltip}
-                                        className="bg-slate-600 hover:bg-slate-500 text-slate-300 hover:text-white font-medium text-sm flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 w-full h-6 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  )}
                                 </div>
                               </td>
                             )}
@@ -1206,7 +1240,6 @@ export default function BOQMaker() {
                               <td 
                                 className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer group
                                   ${isFirstJenisRow && draggedJenis === row.jenisId ? 'opacity-75 bg-blue-900' : ''}
-                                  ${isFirstJenisRow && draggedJenis && draggedJenis !== row.jenisId ? 'hover:bg-slate-600' : ''}
                                 `}
                                 rowSpan={jenisRowSpan}
                                 onClick={(e) => {
@@ -1248,7 +1281,10 @@ export default function BOQMaker() {
                                       type="text"
                                       value={row.jenisName}
                                       onChange={(e) => updateJenisKerja(row.tahapanId, row.jenisId, e.target.value)}
+                                      onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, null, 'jenis')}
                                       disabled={!editMode}
+                                      data-jenis-id={row.jenisId}
+                                      tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + 2}
                                       className={
                                         editMode 
                                           ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
@@ -1256,62 +1292,16 @@ export default function BOQMaker() {
                                       }
                                     />
                                   </div>
-                                  {/* Add Jenis Pekerjaan button - only show on last jenis when hovering */}
-                                  {editMode && row.isLastJenis && (
-                                    <div className="relative w-full mt-1">
-                                      <button
-                                        onClick={() => addJenisKerja(row.tahapanId)}
-                                        onMouseEnter={(e) => showTooltip(e, 'Klik untuk menambahkan Jenis Pekerjaan')}
-                                        onMouseLeave={hideTooltip}
-                                        className="bg-slate-600 hover:bg-slate-500 text-slate-300 hover:text-white font-medium text-sm flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 w-full h-6 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  )}
-                                  {/* Add Uraian button for empty jenis */}
-                                  {editMode && row.type === 'jenis-empty' && (
-                                    <div className="relative w-full mt-1">
-                                      <button
-                                        onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                        onMouseEnter={(e) => showTooltip(e, 'Klik untuk menambahkan Uraian')}
-                                        onMouseLeave={hideTooltip}
-                                        className="bg-slate-600 hover:bg-slate-500 text-slate-300 hover:text-white font-medium text-sm flex items-center justify-center transition-all duration-200 w-full h-6 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  )}
                                 </div>
                               </td>
                             ) : !row.jenisId ? (
                               <td className="px-4 py-2 border-r border-slate-600 group cursor-pointer">
-                                {/* Add Jenis Pekerjaan button for empty tahapan */}
-                                {editMode && row.type === 'tahapan-empty' && (
-                                  <div className="relative w-full">
-                                    <button
-                                      onClick={() => addJenisKerja(row.tahapanId)}
-                                      onMouseEnter={(e) => showTooltip(e, 'Klik untuk menambahkan Jenis Pekerjaan')}
-                                      onMouseLeave={hideTooltip}
-                                      className="bg-slate-600 hover:bg-slate-500 text-slate-300 hover:text-white font-medium text-sm flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 w-full h-6 rounded"
-                                    >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                )}
                               </td>
                             ) : null}
 
                             {/* Uraian */}
                             <td className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer
                               ${row.uraianId && isFirstUraianRow && draggedUraian === row.uraianId ? 'opacity-75 bg-blue-900' : ''}
-                              ${row.uraianId && isFirstUraianRow && draggedUraian && draggedUraian !== row.uraianId ? 'hover:bg-slate-600' : ''}
                             `}
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
@@ -1353,7 +1343,10 @@ export default function BOQMaker() {
                                       type="text"
                                       value={row.uraianName}
                                       onChange={(e) => updateUraian(row.tahapanId, row.jenisId, row.uraianId, e.target.value)}
+                                      onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'uraian')}
                                       disabled={!editMode}
+                                      data-uraian-id={row.uraianId}
+                                      tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 3}
                                       className={
                                         editMode 
                                           ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
@@ -1361,21 +1354,6 @@ export default function BOQMaker() {
                                       }
                                     />
                                   </div>
-                                  {/* Add Uraian button - only show on last uraian when hovering */}
-                                  {editMode && row.isLastUraian && (
-                                    <div className="relative w-full mt-1">
-                                      <button
-                                        onClick={() => addUraian(row.tahapanId, row.jenisId)}
-                                        onMouseEnter={(e) => showTooltip(e, 'Klik untuk menambahkan Uraian')}
-                                        onMouseLeave={hideTooltip}
-                                        className="bg-slate-600 hover:bg-slate-500 text-slate-300 hover:text-white font-medium text-sm flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 w-full h-6 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  )}
                                 </div>
                               ) : row.uraianId ? (
                                 <div className="text-slate-500 text-sm text-center">↳</div>
@@ -1395,7 +1373,9 @@ export default function BOQMaker() {
                                   type="text"
                                   value={row.spec.description}
                                   onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'description', e.target.value)}
+                                  onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'description')}
                                   disabled={!editMode}
+                                  tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 4}
                                   className={
                                     editMode 
                                       ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
@@ -1425,12 +1405,14 @@ export default function BOQMaker() {
                                       updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'volume', value === '' ? null : parseFloat(value) || 0);
                                     }
                                   }}
+                                  onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'volume')}
                                   onKeyPress={(e) => {
                                     if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
                                       e.preventDefault();
                                     }
                                   }}
                                   disabled={!editMode}
+                                  tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 5}
                                   className={
                                     editMode 
                                       ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-slate-400" 
@@ -1453,7 +1435,9 @@ export default function BOQMaker() {
                                   type="text"
                                   value={row.spec.satuan}
                                   onChange={(e) => updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'satuan', e.target.value)}
+                                  onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'satuan')}
                                   disabled={!editMode}
+                                  tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 6}
                                   className={
                                     editMode 
                                       ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-slate-400" 
@@ -1482,12 +1466,14 @@ export default function BOQMaker() {
                                       updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
                                     }
                                   }}
+                                  onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
                                   onKeyPress={(e) => {
                                     if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
                                       e.preventDefault();
                                     }
                                   }}
                                   disabled={!editMode}
+                                  tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
                                   className={
                                     editMode 
                                       ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-slate-400" 
@@ -1576,6 +1562,31 @@ export default function BOQMaker() {
               <>
                 <button
                   onClick={() => {
+                    addTahapanKerja();
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Tahapan Kerja</span>
+                </button>
+                <button
+                  onClick={() => {
+                    addJenisKerja(contextMenu.tahapanId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Jenis Pekerjaan</span>
+                </button>
+                <div className="border-t border-slate-600 my-1"></div>
+                <button
+                  onClick={() => {
                     duplicateTahapanKerja(contextMenu.tahapanId);
                     closeContextMenu();
                   }}
@@ -1619,6 +1630,31 @@ export default function BOQMaker() {
               <>
                 <button
                   onClick={() => {
+                    addJenisKerja(contextMenu.tahapanId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Jenis Pekerjaan</span>
+                </button>
+                <button
+                  onClick={() => {
+                    addUraian(contextMenu.tahapanId, contextMenu.jenisId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Uraian</span>
+                </button>
+                <div className="border-t border-slate-600 my-1"></div>
+                <button
+                  onClick={() => {
                     // Add duplicate jenis functionality here
                     closeContextMenu();
                   }}
@@ -1646,6 +1682,19 @@ export default function BOQMaker() {
             
             {contextMenu.type === 'uraian' && (
               <>
+                <button
+                  onClick={() => {
+                    addUraian(contextMenu.tahapanId, contextMenu.jenisId);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Uraian</span>
+                </button>
+                <div className="border-t border-slate-600 my-1"></div>
                 <button
                   onClick={() => {
                     // Add duplicate uraian functionality here

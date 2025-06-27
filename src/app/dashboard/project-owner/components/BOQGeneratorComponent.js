@@ -251,6 +251,34 @@ export default function BOQGeneratorComponent() {
     }));
   };
 
+  // Handle key press for inputs
+  const handleKeyPress = (e, tahapanId, jenisId, uraianId, currentIndex, fieldType) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSpec(tahapanId, jenisId, uraianId);
+      // Focus on the first input of the new row after a short delay
+      setTimeout(() => {
+        const nextRowIndex = tahapanKerja[0]?.jenisKerja[0]?.uraian[0]?.spec.length - 1;
+        const nextInput = document.querySelector(`input[data-row-index="${nextRowIndex}"][data-field="description"]`);
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }, 50);
+    } else if (e.key === 'Tab') {
+      // Let default tab behavior handle navigation between inputs
+      return;
+    }
+  };
+
+  // Handle number input validation
+  const handleNumberInput = (e, tahapanId, jenisId, uraianId, specId, field) => {
+    const value = e.target.value;
+    // Allow empty string, numbers, and decimal points
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      updateSpec(tahapanId, jenisId, uraianId, specId, field, value === '' ? null : parseFloat(value) || null);
+    }
+  };
+
   // Delete tahapan
   const deleteTahapan = (tahapanId) => {
     const tahapan = tahapanKerja.find(t => t.id === tahapanId);
@@ -579,7 +607,7 @@ export default function BOQGeneratorComponent() {
           // List View
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Saved BOQs</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Draft BOQ Generator</h3>
               <button
                 onClick={createNewBOQ}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -682,50 +710,78 @@ export default function BOQGeneratorComponent() {
                   <div>Price/Unit</div>
                   <div>Total</div>
                 </div>
-                {tahapanKerja[0]?.jenisKerja[0]?.uraian[0]?.spec.map((spec, index) => (
-                  <div key={spec.id} className="grid grid-cols-5 gap-4 mb-2">
-                    <input
-                      type="text"
-                      value={spec.description}
-                      onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'description', e.target.value)}
-                      placeholder="Item description"
-                      className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={spec.satuan}
-                      onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'satuan', e.target.value)}
-                      placeholder="Unit"
-                      className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={spec.volume || ''}
-                      onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'volume', parseFloat(e.target.value) || null)}
-                      placeholder="0"
-                      className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={spec.pricePerPcs || ''}
-                      onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'pricePerPcs', parseFloat(e.target.value) || null)}
-                      placeholder="0"
-                      className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm"
-                    />
-                    <div className="px-3 py-2 bg-slate-100 dark:bg-slate-600 rounded text-sm font-medium">
-                      Rp {calculateSpecTotal(spec.volume, spec.pricePerPcs).toLocaleString('id-ID')}
+                <div className="space-y-2">
+                  {tahapanKerja[0]?.jenisKerja[0]?.uraian[0]?.spec.map((spec, index) => (
+                    <div key={spec.id} className="grid grid-cols-5 gap-4">
+                      <input
+                        type="text"
+                        value={spec.description}
+                        onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'description', e.target.value)}
+                        onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'description')}
+                        placeholder="Item description"
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10"
+                        data-row-index={index}
+                        data-field="description"
+                      />
+                      <input
+                        type="text"
+                        value={spec.satuan}
+                        onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'satuan', e.target.value)}
+                        onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'satuan')}
+                        placeholder="Unit"
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10"
+                        data-row-index={index}
+                        data-field="satuan"
+                      />
+                      <input
+                        type="text"
+                        value={spec.volume || ''}
+                        onChange={(e) => handleNumberInput(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'volume')}
+                        onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'volume')}
+                        placeholder="0"
+                        inputMode="decimal"
+                        style={{ 
+                          MozAppearance: 'textfield',
+                          WebkitAppearance: 'none'
+                        }}
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        data-row-index={index}
+                        data-field="volume"
+                      />
+                      <input
+                        type="text"
+                        value={spec.pricePerPcs || ''}
+                        onChange={(e) => handleNumberInput(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'pricePerPcs')}
+                        onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'pricePerPcs')}
+                        placeholder="0"
+                        inputMode="decimal"
+                        style={{ 
+                          MozAppearance: 'textfield',
+                          WebkitAppearance: 'none'
+                        }}
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        data-row-index={index}
+                        data-field="pricePerPcs"
+                      />
+                      <div className="px-3 py-2 bg-slate-100 dark:bg-slate-600 rounded text-sm font-medium flex items-center h-10">
+                        Rp {calculateSpecTotal(spec.volume, spec.pricePerPcs).toLocaleString('id-ID')}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
-                  <button
-                    onClick={() => addSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  >
-                    Add Item
-                  </button>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">
-                    Grand Total: Rp {calculateGrandTotal().toLocaleString('id-ID')}
+                  ))}
+                </div>
+                {/* Add Item button moved outside of table */}
+                <div className="mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={() => addSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                      tabIndex={-1}
+                    >
+                      Add Item
+                    </button>
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">
+                      Grand Total: Rp {calculateGrandTotal().toLocaleString('id-ID')}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import HomeComponent from '../components/HomeComponent';
 import HistoryComponent from '../components/HistoryComponent';
-import BOQGeneratorComponent from '../components/BOQGeneratorComponent';
+import SavedBOQComponent from '../components/SavedBOQComponent';
 import PaymentManagementComponent from '../components/PaymentManagementComponent';
 
 export default function HomePage() {
@@ -38,7 +38,7 @@ export default function HomePage() {
         {/* Main Content Area */}
         <div className="flex-1">
           {activeMenu === "Project" && <HomeComponent />}
-          {activeMenu === "BOQ Generator" && <BOQGeneratorComponent />}
+          {activeMenu === "BOQ Generator" && <SavedBOQComponent />}
           {activeMenu === "Payment" && <PaymentManagementComponent />}
           {activeMenu === "History" && <HistoryComponent />}
         </div>
