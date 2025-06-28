@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-export default function BOQMaker() {
+function BOQMakerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentView, setCurrentView] = useState('editor');
@@ -1792,5 +1792,42 @@ export default function BOQMaker() {
       
       <Footer />
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <Header />
+      <main className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 via-slate-900/30 to-slate-800/20"></div>
+        <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-600 overflow-hidden">
+            <div className="bg-slate-800 px-8 py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
+                  <p className="text-blue-100">Loading...</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-8">
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function BOQMaker() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BOQMakerContent />
+    </Suspense>
   );
 }
