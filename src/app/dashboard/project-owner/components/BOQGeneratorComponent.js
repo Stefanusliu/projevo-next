@@ -45,6 +45,7 @@ export default function BOQGeneratorComponent() {
   const [showAutosaveNotification, setShowAutosaveNotification] = useState(false);
   const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, tahapanId: null, jenisId: null, uraianId: null, type: null });
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 });
+  const [bulkAddModal, setBulkAddModal] = useState({ show: false, type: '', tahapanId: null, jenisId: null, uraianId: null, count: 1 });
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
@@ -599,6 +600,44 @@ export default function BOQGeneratorComponent() {
     });
   };
 
+  // Bulk add functions for BOQ Generator
+  const openBulkAddModal = (type, tahapanId = null, jenisId = null, uraianId = null) => {
+    setBulkAddModal({
+      show: true,
+      type,
+      tahapanId,
+      jenisId,
+      uraianId,
+      count: 1
+    });
+  };
+
+  const closeBulkAddModal = () => {
+    setBulkAddModal({
+      show: false,
+      type: '',
+      tahapanId: null,
+      jenisId: null,
+      uraianId: null,
+      count: 1
+    });
+  };
+
+  const handleBulkAdd = () => {
+    const { type, tahapanId, jenisId, uraianId, count } = bulkAddModal;
+    
+    for (let i = 0; i < count; i++) {
+      // Add a small delay to ensure unique IDs
+      setTimeout(() => {
+        if (type === 'spec') {
+          addSpec(tahapanId, jenisId, uraianId);
+        }
+      }, i * 10); // 10ms delay between each addition
+    }
+    
+    closeBulkAddModal();
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
       {/* Main Content without Header/Footer */}
@@ -772,13 +811,22 @@ export default function BOQGeneratorComponent() {
                 {/* Add Item button moved outside of table */}
                 <div className="mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
                   <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => addSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                      tabIndex={-1}
-                    >
-                      Add Item
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => addSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                        tabIndex={-1}
+                      >
+                        Add Item
+                      </button>
+                      <button
+                        onClick={() => openBulkAddModal('spec', tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                        tabIndex={-1}
+                      >
+                        + Add Multiple
+                      </button>
+                    </div>
                     <div className="text-lg font-bold text-slate-900 dark:text-white">
                       Grand Total: Rp {calculateGrandTotal().toLocaleString('id-ID')}
                     </div>
@@ -832,6 +880,63 @@ export default function BOQGeneratorComponent() {
                   className="w-full border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold"
                 >
                   View All BOQs
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Add Modal */}
+      {bulkAddModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 max-w-md mx-4 border border-slate-200 dark:border-slate-600">
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+                Add Multiple Specifications
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
+                How many specifications would you like to add at once?
+              </p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={bulkAddModal.count}
+                  onChange={(e) => setBulkAddModal(prev => ({
+                    ...prev,
+                    count: Math.max(1, Math.min(50, parseInt(e.target.value) || 1))
+                  }))}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-100 dark:bg-slate-700 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleBulkAdd();
+                    } else if (e.key === 'Escape') {
+                      closeBulkAddModal();
+                    }
+                  }}
+                  autoFocus
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Maximum 50 items</p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={closeBulkAddModal}
+                  className="flex-1 px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition-all duration-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkAdd}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                >
+                  Add {bulkAddModal.count} Items
                 </button>
               </div>
             </div>

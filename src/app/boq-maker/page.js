@@ -48,6 +48,15 @@ function BOQMakerContent() {
   const [showAutosaveNotification, setShowAutosaveNotification] = useState(false);
   const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, tahapanId: null, jenisId: null, uraianId: null, type: null });
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 });
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const [bulkAddCount, setBulkAddCount] = useState(10);
+  const [showBulkAddJenisModal, setShowBulkAddJenisModal] = useState(false);
+  const [bulkAddJenisCount, setBulkAddJenisCount] = useState(5);
+  const [bulkAddJenisTahapanId, setBulkAddJenisTahapanId] = useState(null);
+  const [showBulkAddUraianModal, setShowBulkAddUraianModal] = useState(false);
+  const [bulkAddUraianCount, setBulkAddUraianCount] = useState(5);
+  const [bulkAddUraianTahapanId, setBulkAddUraianTahapanId] = useState(null);
+  const [bulkAddUraianJenisId, setBulkAddUraianJenisId] = useState(null);
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
@@ -162,6 +171,117 @@ function BOQMakerContent() {
     ]);
   };
 
+  const addBulkTahapanKerja = (count) => {
+    const newTahapanKerja = [];
+    const baseTime = Date.now();
+    for (let i = 0; i < count; i++) {
+      const baseId = baseTime + i * 1000; // Increase spacing to 1000 for tahapan
+      newTahapanKerja.push({
+        id: baseId,
+        name: '',
+        jenisKerja: [
+          {
+            id: baseId + 1,
+            name: '',
+            uraian: [
+              {
+                id: baseId + 2,
+                name: '',
+                spec: [
+                  {
+                    id: baseId + 3,
+                    description: '',
+                    satuan: '',
+                    volume: null,
+                    pricePerPcs: null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      });
+    }
+    setTahapanKerja([...tahapanKerja, ...newTahapanKerja]);
+  };
+
+  const addBulkJenisKerja = (tahapanId, count) => {
+    console.log('addBulkJenisKerja called with tahapanId:', tahapanId, 'count:', count, 'type of count:', typeof count);
+    // Ensure count is a number
+    const numCount = parseInt(count) || 1;
+    console.log('numCount:', numCount);
+    const newJenisKerja = [];
+    const baseTime = Date.now();
+    for (let i = 0; i < numCount; i++) {
+      const baseId = baseTime + i * 100; // Increase spacing to 100
+      newJenisKerja.push({
+        id: baseId,
+        name: '',
+        uraian: [
+          {
+            id: baseId + 1,
+            name: '',
+            spec: [
+              {
+                id: baseId + 2,
+                description: '',
+                satuan: '',
+                volume: null,
+                pricePerPcs: null
+              }
+            ]
+          }
+        ]
+      });
+    }
+    console.log('Creating', newJenisKerja.length, 'new jenis kerja items');
+    
+    setTahapanKerja(prevTahapan => prevTahapan.map(tahapan => 
+      tahapan.id === tahapanId 
+        ? { ...tahapan, jenisKerja: [...tahapan.jenisKerja, ...newJenisKerja] }
+        : tahapan
+    ));
+  };
+
+  const addBulkUraian = (tahapanId, jenisId, count) => {
+    console.log('addBulkUraian called with tahapanId:', tahapanId, 'jenisId:', jenisId, 'count:', count, 'type of count:', typeof count);
+    // Ensure count is a number
+    const numCount = parseInt(count) || 1;
+    console.log('numCount:', numCount);
+    const newUraian = [];
+    const baseTime = Date.now();
+    for (let i = 0; i < numCount; i++) {
+      const baseId = baseTime + i * 100; // Increase spacing to 100
+      newUraian.push({
+        id: baseId,
+        name: '',
+        spec: [
+          {
+            id: baseId + 1,
+            description: '',
+            satuan: '',
+            volume: null,
+            pricePerPcs: null
+          }
+        ]
+      });
+    }
+    console.log('Creating', newUraian.length, 'new uraian items');
+    
+    setTahapanKerja(prevTahapan => prevTahapan.map(tahapan => 
+      tahapan.id === tahapanId 
+        ? {
+            ...tahapan,
+            jenisKerja: tahapan.jenisKerja.map(jenis =>
+              jenis.id === jenisId
+                ? { ...jenis, uraian: [...jenis.uraian, ...newUraian] }
+                : jenis
+            )
+          }
+        : tahapan
+    ));
+  };
+
   const updateTahapanKerja = (id, name) => {
     setTahapanKerja(tahapanKerja.map(tahapan => 
       tahapan.id === id ? { ...tahapan, name } : tahapan
@@ -264,6 +384,8 @@ function BOQMakerContent() {
   const handleContextMenu = (e, tahapanId, jenisId = null, uraianId = null) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log('handleContextMenu called with:', { tahapanId, jenisId, uraianId });
     
     let type = 'tahapan';
     if (uraianId) type = 'uraian';
@@ -1255,7 +1377,10 @@ function BOQMakerContent() {
                                     {/* Multi-function 6-dot icon - show on hover */}
                                     {editMode && (
                                       <button
-                                        onClick={(e) => handleContextMenu(e, row.tahapanId, row.jenisId, null)}
+                                        onClick={(e) => {
+                                          console.log('Jenis context menu clicked, row data:', { tahapanId: row.tahapanId, jenisId: row.jenisId, type: row.type });
+                                          handleContextMenu(e, row.tahapanId, row.jenisId, null);
+                                        }}
                                         className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
                                         title="Drag to reorder or click for options"
                                         onMouseDown={(e) => {
@@ -1555,7 +1680,7 @@ function BOQMakerContent() {
             style={{ 
               left: `${contextMenu.x}px`, 
               top: `${contextMenu.y}px`,
-              transform: 'translate(-50%, 0)' // Center horizontally at mouse position
+              transform: 'translate(0, 0)' // Start at mouse position instead of center
             }}
           >
             {contextMenu.type === 'tahapan' && (
@@ -1574,7 +1699,7 @@ function BOQMakerContent() {
                 </button>
                 <button
                   onClick={() => {
-                    addJenisKerja(contextMenu.tahapanId);
+                    setShowBulkAddModal(true);
                     closeContextMenu();
                   }}
                   className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
@@ -1582,21 +1707,9 @@ function BOQMakerContent() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>Tambah Jenis Pekerjaan</span>
+                  <span>Tambah Banyak Tahapan Kerja</span>
                 </button>
                 <div className="border-t border-slate-600 my-1"></div>
-                <button
-                  onClick={() => {
-                    duplicateTahapanKerja(contextMenu.tahapanId);
-                    closeContextMenu();
-                  }}
-                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span>Duplicate</span>
-                </button>
                 <button
                   onClick={() => {
                     clearTahapanKerjaContents(contextMenu.tahapanId);
@@ -1642,7 +1755,8 @@ function BOQMakerContent() {
                 </button>
                 <button
                   onClick={() => {
-                    addUraian(contextMenu.tahapanId, contextMenu.jenisId);
+                    setBulkAddJenisTahapanId(contextMenu.tahapanId);
+                    setShowBulkAddJenisModal(true);
                     closeContextMenu();
                   }}
                   className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
@@ -1650,24 +1764,14 @@ function BOQMakerContent() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span>Tambah Uraian</span>
+                  <span>Tambah Banyak Jenis Pekerjaan</span>
                 </button>
                 <div className="border-t border-slate-600 my-1"></div>
                 <button
                   onClick={() => {
-                    // Add duplicate jenis functionality here
-                    closeContextMenu();
-                  }}
-                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span>Duplicate Jenis</span>
-                </button>
-                <button
-                  onClick={() => {
-                    deleteJenisKerja(contextMenu.tahapanId, contextMenu.jenisId);
+                    if (contextMenu.jenisId) {
+                      deleteJenisKerja(contextMenu.tahapanId, contextMenu.jenisId);
+                    }
                     closeContextMenu();
                   }}
                   className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
@@ -1675,7 +1779,7 @@ function BOQMakerContent() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  <span>Delete Jenis</span>
+                  <span>Delete Jenis Pekerjaan</span>
                 </button>
               </>
             )}
@@ -1694,22 +1798,26 @@ function BOQMakerContent() {
                   </svg>
                   <span>Tambah Uraian</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setBulkAddUraianTahapanId(contextMenu.tahapanId);
+                    setBulkAddUraianJenisId(contextMenu.jenisId);
+                    setShowBulkAddUraianModal(true);
+                    closeContextMenu();
+                  }}
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Tambah Banyak Uraian</span>
+                </button>
                 <div className="border-t border-slate-600 my-1"></div>
                 <button
                   onClick={() => {
-                    // Add duplicate uraian functionality here
-                    closeContextMenu();
-                  }}
-                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span>Duplicate Uraian</span>
-                </button>
-                <button
-                  onClick={() => {
-                    deleteUraian(contextMenu.tahapanId, contextMenu.jenisId, contextMenu.uraianId);
+                    if (contextMenu.uraianId) {
+                      deleteUraian(contextMenu.tahapanId, contextMenu.jenisId, contextMenu.uraianId);
+                    }
                     closeContextMenu();
                   }}
                   className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
@@ -1781,6 +1889,358 @@ function BOQMakerContent() {
                     className="w-full text-slate-500 hover:text-slate-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
                   >
                     Continue Editing BOQ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Bulk Add Modal */}
+        {showBulkAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Tahapan Kerja</h3>
+                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak tahapan kerja yang ingin Anda tambahkan?</p>
+                
+                <div className="mb-6">
+                  <label htmlFor="bulkCount" className="block text-sm font-medium text-slate-700 mb-3">
+                    Jumlah Tahapan Kerja (1-100)
+                  </label>
+                  <input
+                    id="bulkCount"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={bulkAddCount}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      setBulkAddCount(Math.max(1, Math.min(100, value)));
+                    }}
+                    onKeyPress={(e) => {
+                      // Allow only numbers, backspace, delete, tab, enter
+                      if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                      // Submit on Enter key
+                      if (e.key === 'Enter') {
+                        addBulkTahapanKerja(bulkAddCount);
+                        setShowBulkAddModal(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    placeholder="Masukkan jumlah tahapan kerja"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-2 text-center">
+                    Maksimal 100 tahapan kerja dalam satu kali penambahan
+                  </p>
+                  
+                  <div className="flex justify-center space-x-2 mt-4">
+                    <button
+                      onClick={() => setBulkAddCount(5)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddCount === 5 
+                          ? 'bg-blue-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      5
+                    </button>
+                    <button
+                      onClick={() => setBulkAddCount(10)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddCount === 10 
+                          ? 'bg-blue-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      10
+                    </button>
+                    <button
+                      onClick={() => setBulkAddCount(20)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddCount === 20 
+                          ? 'bg-blue-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      20
+                    </button>
+                    <button
+                      onClick={() => setBulkAddCount(50)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddCount === 50 
+                          ? 'bg-blue-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      50
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      addBulkTahapanKerja(bulkAddCount);
+                      setShowBulkAddModal(false);
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Tambah {bulkAddCount} Tahapan Kerja
+                  </button>
+                  <button
+                    onClick={() => setShowBulkAddModal(false)}
+                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Bulk Add Jenis Pekerjaan Modal */}
+        {showBulkAddJenisModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Jenis Pekerjaan</h3>
+                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak jenis pekerjaan yang ingin Anda tambahkan?</p>
+                
+                <div className="mb-6">
+                  <label htmlFor="bulkJenisCount" className="block text-sm font-medium text-slate-700 mb-3">
+                    Jumlah Jenis Pekerjaan (1-50)
+                  </label>
+                  <input
+                    id="bulkJenisCount"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={bulkAddJenisCount}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      setBulkAddJenisCount(Math.max(1, Math.min(50, value)));
+                    }}
+                    onKeyPress={(e) => {
+                      if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                      if (e.key === 'Enter') {
+                        addBulkJenisKerja(contextMenu.tahapanId, bulkAddJenisCount);
+                        setShowBulkAddJenisModal(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    placeholder="Masukkan jumlah jenis pekerjaan"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-2 text-center">
+                    Maksimal 50 jenis pekerjaan dalam satu kali penambahan
+                  </p>
+                  
+                  <div className="flex justify-center space-x-2 mt-4">
+                    <button
+                      onClick={() => setBulkAddJenisCount(3)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddJenisCount === 3 
+                          ? 'bg-green-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      3
+                    </button>
+                    <button
+                      onClick={() => setBulkAddJenisCount(5)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddJenisCount === 5 
+                          ? 'bg-green-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      5
+                    </button>
+                    <button
+                      onClick={() => setBulkAddJenisCount(10)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddJenisCount === 10 
+                          ? 'bg-green-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      10
+                    </button>
+                    <button
+                      onClick={() => setBulkAddJenisCount(20)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddJenisCount === 20 
+                          ? 'bg-green-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      20
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      console.log('Button clicked - bulkAddJenisTahapanId:', bulkAddJenisTahapanId, 'bulkAddJenisCount:', bulkAddJenisCount);
+                      addBulkJenisKerja(bulkAddJenisTahapanId, bulkAddJenisCount);
+                      setShowBulkAddJenisModal(false);
+                      setBulkAddJenisTahapanId(null);
+                    }}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Tambah {bulkAddJenisCount} Jenis Pekerjaan
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowBulkAddJenisModal(false);
+                      setBulkAddJenisTahapanId(null);
+                    }}
+                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Bulk Add Uraian Modal */}
+        {showBulkAddUraianModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Uraian</h3>
+                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak uraian yang ingin Anda tambahkan?</p>
+                
+                <div className="mb-6">
+                  <label htmlFor="bulkUraianCount" className="block text-sm font-medium text-slate-700 mb-3">
+                    Jumlah Uraian (1-50)
+                  </label>
+                  <input
+                    id="bulkUraianCount"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={bulkAddUraianCount}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      setBulkAddUraianCount(Math.max(1, Math.min(50, value)));
+                    }}
+                    onKeyPress={(e) => {
+                      if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                      if (e.key === 'Enter') {
+                        addBulkUraian(bulkAddUraianTahapanId, bulkAddUraianJenisId, bulkAddUraianCount);
+                        setShowBulkAddUraianModal(false);
+                        setBulkAddUraianTahapanId(null);
+                        setBulkAddUraianJenisId(null);
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    placeholder="Masukkan jumlah uraian"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-2 text-center">
+                    Maksimal 50 uraian dalam satu kali penambahan
+                  </p>
+                  
+                  <div className="flex justify-center space-x-2 mt-4">
+                    <button
+                      onClick={() => setBulkAddUraianCount(3)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddUraianCount === 3 
+                          ? 'bg-purple-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      3
+                    </button>
+                    <button
+                      onClick={() => setBulkAddUraianCount(5)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddUraianCount === 5 
+                          ? 'bg-purple-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      5
+                    </button>
+                    <button
+                      onClick={() => setBulkAddUraianCount(10)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddUraianCount === 10 
+                          ? 'bg-purple-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      10
+                    </button>
+                    <button
+                      onClick={() => setBulkAddUraianCount(20)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                        bulkAddUraianCount === 20 
+                          ? 'bg-purple-500 text-white shadow-md' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      20
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      console.log('Uraian Button clicked - bulkAddUraianTahapanId:', bulkAddUraianTahapanId, 'bulkAddUraianJenisId:', bulkAddUraianJenisId, 'bulkAddUraianCount:', bulkAddUraianCount);
+                      addBulkUraian(bulkAddUraianTahapanId, bulkAddUraianJenisId, bulkAddUraianCount);
+                      setShowBulkAddUraianModal(false);
+                      setBulkAddUraianTahapanId(null);
+                      setBulkAddUraianJenisId(null);
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-600 to-violet-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-violet-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Tambah {bulkAddUraianCount} Uraian
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowBulkAddUraianModal(false);
+                      setBulkAddUraianTahapanId(null);
+                      setBulkAddUraianJenisId(null);
+                    }}
+                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                  >
+                    Batal
                   </button>
                 </div>
               </div>
