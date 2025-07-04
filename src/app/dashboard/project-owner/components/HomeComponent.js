@@ -1603,180 +1603,146 @@ export default function HomeComponent() {
   const [projects] = useState([
     {
       id: 1,
-      projectType: "Interior Design",
-      title: "Modern Cafe Interior Design",
-      location: "South Jakarta",
-      profileName: "CV. Kreasi Interior",
-      contractType: "Contract",
-      status: "in progress",
-      projectStatus: "Project",
-      budget: "Rp 185.000.000",
-      progress: 75
+      title: 'Modern Cafe Interior Design',
+      client: 'CV. Kreasi Interior',
+      status: 'In Progress',
+      budget: 'Rp 185,000,000',
+      startDate: '2024-03-15',
+      deadline: '2024-12-15',
+      progress: 75,
+      category: 'Interior Design',
+      location: 'South Jakarta',
+      description: 'Contemporary cafe interior design featuring modern aesthetics with comfortable seating and efficient workflow.',
+      team: ['John Doe', 'Sarah Wilson', 'Mike Chen'],
+      milestones: [
+        { name: 'Design Concept', completed: true, date: '2024-03-25' },
+        { name: 'Material Selection', completed: true, date: '2024-04-10' },
+        { name: 'Installation', completed: false, date: '2024-11-30' },
+        { name: 'Final Touches', completed: false, date: '2024-12-10' },
+      ]
     },
     {
       id: 2,
-      projectType: "Construction",
-      title: "Traditional Restaurant Construction",
-      location: "Menteng, Jakarta",
-      profileName: "PT. Bangun Jaya",
-      contractType: "Tender",
-      status: "completed",
-      projectStatus: "Dashboard",
-      budget: "Rp 320.000.000",
+      title: 'Traditional Restaurant Construction',
+      client: 'PT. Kuliner Nusantara',
+      status: 'Completed',
+      budget: 'Rp 320,000,000',
+      startDate: '2023-11-20',
+      deadline: '2024-05-20',
       progress: 100,
-      // Additional fields for completed projects
-      completedDate: "2024-05-20",
-      duration: "6 months",
-      startDate: "2023-11-20",
-      rating: 4.9,
-      review: "Outstanding work! The team exceeded all expectations with their attention to detail and timely delivery. The traditional restaurant design perfectly captures the authentic atmosphere we wanted.",
-      client: {
-        name: "PT. Kuliner Nusantara",
-        contact: "Sari Dewi",
-        email: "sari@kulinernusantara.co.id"
-      }
+      category: 'Construction',
+      location: 'Menteng, Jakarta',
+      description: 'Complete construction of traditional Indonesian restaurant with authentic architectural elements and modern amenities.',
+      team: ['Robert Chen', 'Lisa Park', 'David Kumar'],
+      milestones: [
+        { name: 'Foundation', completed: true, date: '2023-12-15' },
+        { name: 'Structure', completed: true, date: '2024-02-28' },
+        { name: 'MEP Installation', completed: true, date: '2024-04-15' },
+        { name: 'Finishing', completed: true, date: '2024-05-15' },
+      ]
     },
     {
       id: 3,
-      projectType: "Architecture",
-      title: "Co-working Space Design",
-      location: "Kemang, Jakarta",
-      profileName: "Studio Arsitek Modern",
-      contractType: "Contract",
-      status: "under review",
-      projectStatus: "tender successfully submitted",
-      budget: "Rp 150.000.000",
+      title: 'Co-working Space Design',
+      client: 'Studio Arsitek Modern',
+      status: 'Under Review',
+      budget: 'Rp 150,000,000',
+      startDate: '2024-02-01',
+      deadline: '2024-08-30',
       progress: 45,
-      // Additional fields for under review projects
-      submittedDate: "2024-06-10",
-      expectedDecision: "2024-06-25",
-      reviewStage: "Technical Evaluation",
-      reviewProgress: 65,
-      daysRemaining: 6,
-      reviewer: "Technical Review Committee",
-      estimatedDuration: "4 months",
-      client: {
-        name: "PT. Modern Workspace",
-        contact: "Lisa Ananda",
-        email: "lisa@modernworkspace.co.id"
-      }
+      category: 'Architecture',
+      location: 'Kemang, Jakarta',
+      description: 'Modern co-working space design with flexible layouts, collaborative areas, and sustainable features.',
+      team: ['Emma Thompson', 'Alex Smith'],
+      milestones: [
+        { name: 'Site Analysis', completed: true, date: '2024-02-15' },
+        { name: 'Concept Design', completed: true, date: '2024-03-15' },
+        { name: 'Detailed Design', completed: false, date: '2024-06-30' },
+        { name: 'Construction Docs', completed: false, date: '2024-08-15' },
+      ]
     },
     {
       id: 4,
-      projectType: "Renovation",
-      title: "Boutique Store Renovation",
-      location: "PIK Jakarta",
-      profileName: "Renovasi Pro",
-      contractType: "Tender",
-      status: "pending",
-      projectStatus: "migrating to history",
-      budget: "Rp 95.000.000",
-      progress: 25,
-      // Additional fields for pending projects
-      submittedDate: "2024-05-15",
-      lastUpdate: "2024-06-10",
-      pendingReason: "Client Documentation Review",
-      actionRequired: "Awaiting client approval",
-      priority: "Medium",
-      daysWaiting: 35,
-      nextFollowUp: "2024-06-20",
-      assignedTo: "Project Manager",
-      estimatedDuration: "3 months",
-      client: {
-        name: "Boutique Style Co.",
-        contact: "Maria Santoso",
-        email: "maria@boutiquestyle.co.id"
-      }
-    },
-    {
-      id: 5,
-      projectType: "Interior Design",
-      title: "Modern Office Interior Design",
-      location: "Sudirman, Jakarta",
-      profileName: "Design Hub Indonesia",
-      contractType: "Contract",
-      status: "completed",
-      projectStatus: "Project",
-      budget: "Rp 275.000.000",
-      progress: 100,
-      // Additional fields for completed projects
-      completedDate: "2024-04-15",
-      duration: "3.5 months",
-      startDate: "2024-01-01",
-      rating: 4.7,
-      review: "Professional team with excellent project management. The modern office design improved our workplace productivity and employee satisfaction significantly.",
-      client: {
-        name: "PT. Teknologi Maju",
-        contact: "Ahmad Rahman",
-        email: "ahmad@teknologimaju.com"
-      }
-    },
-    {
-      id: 6,
-      projectType: "Interior Design",
-      title: "Modern Rooftop Bar Interior",
-      location: "SCBD Jakarta",
-      profileName: "Design Excellence",
-      contractType: "Contract",
-      status: "in progress",
-      projectStatus: "contract signing",
-      budget: "Rp 125.000.000",
-      progress: 30
-    },
-    {
-      id: 7,
-      projectType: "Construction",
-      title: "Office Building Construction",
-      location: "Kuningan, Jakarta",
-      profileName: "Konstruksi Mandiri",
-      contractType: "Tender",
-      status: "rejected",
-      projectStatus: "tender rejected by client",
-      budget: "Rp 850.000.000",
-      progress: 0
+      title: 'Luxury Villa Construction',
+      client: 'Premium Properties Indonesia',
+      status: 'On Hold',
+      budget: 'Rp 850,000,000',
+      startDate: '2024-01-15',
+      deadline: '2024-11-30',
+      progress: 30,
+      category: 'Construction',
+      location: 'Jakarta Selatan',
+      description: 'High-end luxury villa with modern amenities, smart home integration, and sustainable design features.',
+      team: ['Maria Garcia', 'John Wilson'],
+      milestones: [
+        { name: 'Planning Phase', completed: true, date: '2024-02-01' },
+        { name: 'Foundation', completed: true, date: '2024-03-15' },
+        { name: 'Structure', completed: false, date: '2024-08-30' },
+        { name: 'Completion', completed: false, date: '2024-11-15' },
+      ]
     }
   ]);
 
+  const handleViewProject = (project) => {
+    setSelectedProject(project);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
-      case 'in progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'completed':
+      case 'Completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'under review':
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'Under Review':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'pending':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'rejected':
+      case 'On Hold':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
-  const getProjectStatusColor = (status) => {
-    switch (status) {
-      case 'Project':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'Dashboard':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'tender successfully submitted':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'migrating to history':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'contract signing':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
-      case 'tender rejected by client':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case 'Construction':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        );
+      case 'Interior Design':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+          </svg>
+        );
+      case 'Architecture':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21l0-12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 21l0-12" />
+          </svg>
+        );
+      case 'Renovation':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          </svg>
+        );
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        );
     }
   };
 
   // If a project is selected, show the appropriate detail view
   if (selectedProject) {
     // Show ProjectCompleteComponent for completed projects
-    if (selectedProject.status === 'completed') {
+    if (selectedProject.status === 'Completed') {
       return (
         <ProjectCompleteComponent 
           project={selectedProject} 
@@ -1786,7 +1752,7 @@ export default function HomeComponent() {
     }
     
     // Show UnderReviewComponent for projects under review
-    if (selectedProject.status === 'under review') {
+    if (selectedProject.status === 'Under Review') {
       return (
         <UnderReviewComponent 
           project={selectedProject} 
@@ -1796,19 +1762,9 @@ export default function HomeComponent() {
     }
     
     // Show PendingComponent for pending projects
-    if (selectedProject.status === 'pending') {
+    if (selectedProject.status === 'On Hold') {
       return (
         <PendingComponent 
-          project={selectedProject} 
-          onBack={() => setSelectedProject(null)} 
-        />
-      );
-    }
-    
-    // Show RejectedComponent for rejected projects
-    if (selectedProject.status === 'rejected') {
-      return (
-        <RejectedComponent 
           project={selectedProject} 
           onBack={() => setSelectedProject(null)} 
         />
@@ -1826,90 +1782,161 @@ export default function HomeComponent() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">All Projects</h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">
-              Manage and track all your projects
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Create New Project</span>
-          </button>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">All Projects</h2>
+          <p className="text-slate-600 dark:text-slate-400">Manage and track all your projects</p>
         </div>
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
+          Create New Project
+        </button>
       </div>
 
-      {/* Project Cards */}
-      <div className="space-y-3">
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {projects.map((project) => (
-          <div 
-            key={project.id} 
-            className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setSelectedProject(project)}
+          <div
+            key={project.id}
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
           >
-            <div className="grid grid-cols-12 gap-4 items-center">
-              {/* Column 1 - Project Type */}
-              <div className="col-span-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                  {project.projectType}
+            <div className="p-6">
+              {/* Project Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+                    {getCategoryIcon(project.category)}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                      {project.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {project.client} • {project.location}
+                    </p>
+                  </div>
+                </div>
+                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>
+                  {project.status}
                 </span>
               </div>
 
-              {/* Column 2 - Title, Location, Profile Name */}
-              <div className="col-span-4">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 leading-tight">
-                  {project.title}
-                </h3>
-                <div className="space-y-0.5 text-xs text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center">
-                    <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="truncate">{project.location}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span className="truncate">{project.profileName}</span>
-                  </div>
+              {/* Description */}
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                {project.description}
+              </p>
+
+              {/* Progress */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Progress</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">{project.progress}%</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${project.progress}%` }}
+                  ></div>
                 </div>
               </div>
 
-              {/* Column 3 - Contract Type and Status */}
-              <div className="col-span-3">
-                <div className="space-y-2">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                    project.contractType === 'Contract' 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
-                  }`}>
-                    {project.contractType}
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getStatusColor(project.status)}`}>
-                    {project.status}
-                  </span>
+              {/* Milestones */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Milestones</h4>
+                <div className="space-y-1">
+                  {project.milestones.slice(0, 2).map((milestone, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                      <span className={`text-xs ${milestone.completed ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {milestone.name} {milestone.completed && `(${milestone.date})`}
+                      </span>
+                    </div>
+                  ))}
+                  {project.milestones.length > 2 && (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        +{project.milestones.length - 2} more milestones
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Column 4 - Project Status */}
-              <div className="col-span-3">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getProjectStatusColor(project.projectStatus)} max-w-full`}>
-                  <span className="truncate">{project.projectStatus}</span>
-                </span>
+              {/* Project Info */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.budget}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Deadline</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {new Date(project.deadline).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Team */}
+              <div className="mb-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Team</p>
+                <div className="flex -space-x-2">
+                  {project.team.slice(0, 3).map((member, index) => (
+                    <div
+                      key={index}
+                      className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white dark:border-slate-800"
+                    >
+                      {member.split(' ').map(n => n[0]).join('')}
+                    </div>
+                  ))}
+                  {project.team.length > 3 && (
+                    <div className="w-8 h-8 bg-slate-300 dark:bg-slate-600 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs font-medium border-2 border-white dark:border-slate-800">
+                      +{project.team.length - 3}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-3">
+                <button 
+                  onClick={() => handleViewProject(project)}
+                  className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  View Details
+                </button>
+                <button className="px-3 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                  Update
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Empty State */}
+      {projects.length === 0 && (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No projects found</h3>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">
+            You haven&apos;t created any projects yet. Start by creating your first project.
+          </p>
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+          >
+            Create New Project
+          </button>
+        </div>
+      )}
 
       {/* Create Project Modal */}
       {showCreateModal && <CreateProjectModal onClose={() => setShowCreateModal(false)} />}
