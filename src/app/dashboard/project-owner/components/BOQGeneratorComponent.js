@@ -852,7 +852,7 @@ export default function BOQGeneratorComponent() {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-8 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -889,7 +889,7 @@ export default function BOQGeneratorComponent() {
 
       {/* Bulk Add Modal */}
       {bulkAddModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 max-w-md mx-4 border border-slate-200 dark:border-slate-600">
             <div className="text-center">
               <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">

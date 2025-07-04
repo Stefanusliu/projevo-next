@@ -1852,7 +1852,7 @@ function BOQMakerContent() {
         
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1898,7 +1898,7 @@ function BOQMakerContent() {
         
         {/* Bulk Add Modal */}
         {showBulkAddModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -2012,7 +2012,7 @@ function BOQMakerContent() {
         
         {/* Bulk Add Jenis Pekerjaan Modal */}
         {showBulkAddJenisModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -2129,7 +2129,7 @@ function BOQMakerContent() {
         
         {/* Bulk Add Uraian Modal */}
         {showBulkAddUraianModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">

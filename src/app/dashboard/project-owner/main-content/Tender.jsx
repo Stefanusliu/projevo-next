@@ -9,6 +9,10 @@ const Tender = () => {
   const [showPropertyFilter, setShowPropertyFilter] = useState(false);
   const [sortBy, setSortBy] = useState('Paling Relevan');
   const [showSortFilter, setShowSortFilter] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [bookmarkedProjects, setBookmarkedProjects] = useState([]);
   const projectTypeFilterRef = useRef(null);
   const scopeFilterRef = useRef(null);
   const propertyFilterRef = useRef(null);
@@ -206,6 +210,30 @@ const Tender = () => {
   const handleSortChange = (sortOption) => {
     setSortBy(sortOption);
     setShowSortFilter(false);
+  };
+
+  const handleCreateOffer = (project) => {
+    setSelectedProject(project);
+    setShowOfferModal(true);
+  };
+
+  const handleViewDetails = (project) => {
+    setSelectedProject(project);
+    setShowDetailsModal(true);
+  };
+
+  const closeModals = () => {
+    setShowOfferModal(false);
+    setShowDetailsModal(false);
+    setSelectedProject(null);
+  };
+
+  const toggleBookmark = (projectId) => {
+    setBookmarkedProjects(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
   };
 
   // Close filter dropdowns when clicking outside
@@ -551,9 +579,25 @@ const Tender = () => {
                     </p>
                   </div>
                   <div className="text-right ml-4">
-                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getBidCountdownColor(project.bidCountdown)}`}>
-                      {project.bidCountdown}
-                    </span>
+                    {/* Bookmark Button */}
+                    <button
+                      onClick={() => toggleBookmark(project.id)}
+                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors mb-2"
+                      title={bookmarkedProjects.includes(project.id) ? "Remove bookmark" : "Add bookmark"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 ${
+                          bookmarkedProjects.includes(project.id) 
+                            ? "text-yellow-500 fill-yellow-500" 
+                            : "text-slate-400 hover:text-yellow-500"
+                        }`} 
+                        fill={bookmarkedProjects.includes(project.id) ? "currentColor" : "none"} 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -573,7 +617,7 @@ const Tender = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.budget}</p>
@@ -584,13 +628,31 @@ const Tender = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Deadline</p>
+                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getBidCountdownColor(project.bidCountdown)}`}>
+                      {project.bidCountdown}
+                    </span>
+                  </div>
+                  <div>
+                    {/* Empty space for alignment */}
+                  </div>
+                </div>
+
                 {/* Actions */}
                 <div className="flex space-x-3">
-                  <button className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                    View Bids
+                  <button 
+                    onClick={() => handleCreateOffer(project)}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    Buat Penawaran
                   </button>
-                  <button className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                    Edit Project
+                  <button 
+                    onClick={() => handleViewDetails(project)}
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    View Details
                   </button>
                 </div>
               </div>
@@ -604,6 +666,340 @@ const Tender = () => {
             Load More Projects
           </button>
         </div>
+
+        {/* Create Offer Modal */}
+        {showOfferModal && selectedProject && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+              <div className="p-6">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Buat Penawaran
+                  </h2>
+                  <button
+                    onClick={closeModals}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Project Info */}
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    {selectedProject.projectTitle}
+                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                      selectedProject.projectType === "Desain"
+                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+                        : selectedProject.projectType === "Bangun"
+                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                        : selectedProject.projectType === "Renovasi"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                        : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                    }`}>
+                      {selectedProject.projectType}
+                    </span>
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                      {selectedProject.propertyType}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Budget: {selectedProject.budget} | Duration: {selectedProject.duration}
+                  </p>
+                </div>
+
+                {/* Offer Form */}
+                <form className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Penawaran Harga
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Masukkan penawaran harga Anda"
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Estimasi Waktu Pengerjaan
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: 3 bulan"
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Deskripsi Penawaran
+                    </label>
+                    <textarea
+                      rows={4}
+                      placeholder="Jelaskan detail penawaran, metodologi, dan keunggulan Anda..."
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Upload Portfolio/Dokumen Pendukung
+                    </label>
+                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-6 text-center">
+                      <svg className="w-12 h-12 mx-auto text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Drag & drop files here, or click to select
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeModals}
+                      className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      Kirim Penawaran
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Details Modal */}
+        {showDetailsModal && selectedProject && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+              <div className="p-6">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Detail Proyek
+                  </h2>
+                  <button
+                    onClick={closeModals}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Project Details */}
+                <div className="space-y-6">
+                  {/* Project Title */}
+                  <div>
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Judul Proyek</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                        {selectedProject.projectTitle}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Basic Information Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Location */}
+                    <div>
+                      <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Lokasi Proyek</h4>
+                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">{selectedProject.location}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Budget */}
+                    <div>
+                      <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Budget Proyek</h4>
+                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">{selectedProject.budget}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Duration */}
+                    <div>
+                      <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Durasi Pengerjaan</h4>
+                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">{selectedProject.duration}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Deadline */}
+                    <div>
+                      <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Batas Waktu Tender</h4>
+                      <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className={`px-3 py-1.5 text-sm font-medium rounded-lg ${getBidCountdownColor(selectedProject.bidCountdown)}`}>
+                            Tersisa {selectedProject.bidCountdown}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Project Type and Property */}
+                  <div>
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Kategori Proyek</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <div className="flex flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Jenis Proyek:</span>
+                          <span className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                            selectedProject.projectType === "Desain"
+                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+                              : selectedProject.projectType === "Bangun"
+                              ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                              : selectedProject.projectType === "Renovasi"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                          }`}>
+                            {selectedProject.projectType}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Tipe Property:</span>
+                          <span className="px-3 py-1.5 text-sm font-medium rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                            {selectedProject.propertyType}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scope of Work */}
+                  <div>
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Ruang Lingkup Pekerjaan</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProject.scope.map((scopeItem, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800"
+                          >
+                            {scopeItem}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Project Description */}
+                  <div>
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Deskripsi Proyek</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Proyek {selectedProject.projectType.toLowerCase()} {selectedProject.propertyType.toLowerCase()} yang berlokasi di {selectedProject.location}. 
+                        Kami mencari kontraktor berpengalaman untuk menyelesaikan proyek ini dengan standar kualitas tinggi sesuai dengan timeline dan budget yang telah ditentukan. 
+                        Proyek ini meliputi ruang lingkup {selectedProject.scope.join(', ').toLowerCase()} dengan estimasi durasi pengerjaan {selectedProject.duration}.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Requirements */}
+                  <div>
+                    <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-3">Persyaratan Kontraktor</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+                      <ul className="space-y-3 text-slate-600 dark:text-slate-400">
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Memiliki pengalaman minimal 3 tahun di bidang {selectedProject.scope.join(', ').toLowerCase()}</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Menyediakan portfolio proyek {selectedProject.projectType.toLowerCase()} sejenis</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Memiliki sertifikasi dan izin yang relevan untuk jenis pekerjaan ini</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Dapat memberikan garansi pekerjaan sesuai standar industri</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Tersedia untuk konsultasi dan komunikasi regular selama proses pengerjaan</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Mampu menyelesaikan proyek sesuai timeline yang telah disepakati</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="flex space-x-3 pt-4 border-t border-slate-200 dark:border-slate-600">
+                    <button
+                      onClick={closeModals}
+                      className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      onClick={() => {
+                        closeModals();
+                        handleCreateOffer(selectedProject);
+                      }}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      Buat Penawaran
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
   )
 }
