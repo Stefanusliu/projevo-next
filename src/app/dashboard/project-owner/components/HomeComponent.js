@@ -18,6 +18,7 @@ function CreateProjectModal({ onClose }) {
     
     // II. Klasifikasi & Ruang Lingkup Proyek
     projectType: '',
+    procurementMethod: '',
     projectScope: [],
     propertyType: '',
     otherProperty: '',
@@ -60,6 +61,10 @@ function CreateProjectModal({ onClose }) {
     'Desain', 'Bangun', 'Renovasi'
   ];
 
+  const procurementMethods = [
+    'Penunjukan Langsung', 'Tender'
+  ];
+
   const projectScopes = [
     'Interior', 'Furniture', 'Sipil', 'Eksterior', 'Taman & Hardscape'
   ];
@@ -85,6 +90,33 @@ function CreateProjectModal({ onClose }) {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Format number with thousand separators for display
+  const formatNumberWithCommas = (num) => {
+    if (!num) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // Remove commas and return clean number
+  const cleanNumber = (str) => {
+    return str.replace(/,/g, '');
+  };
+
+  // Handle budget input with automatic formatting
+  const handleBudgetChange = (value) => {
+    // Remove any non-digit characters except commas
+    const cleanValue = value.replace(/[^\d,]/g, '');
+    // Remove existing commas to get pure number
+    const numberOnly = cleanValue.replace(/,/g, '');
+    
+    // Update the form data with clean number
+    setFormData(prev => ({ ...prev, estimatedBudget: numberOnly }));
+  };
+
+  // Get formatted budget for display
+  const getFormattedBudget = () => {
+    return formatNumberWithCommas(formData.estimatedBudget);
   };
 
   const handleScopeToggle = (scope) => {
@@ -145,7 +177,7 @@ function CreateProjectModal({ onClose }) {
     
     // Validate required fields
     if (!formData.projectTitle || !formData.province || !formData.city || !formData.fullAddress || 
-        !formData.projectType || formData.projectScope.length === 0 || !formData.propertyType ||
+        !formData.projectType || !formData.procurementMethod || formData.projectScope.length === 0 || !formData.propertyType ||
         !formData.estimatedBudget || !formData.estimatedDuration || !formData.tenderDuration || !formData.estimatedStartDate) {
       alert('Silakan lengkapi semua field yang wajib diisi (*)');
       return;
@@ -153,6 +185,38 @@ function CreateProjectModal({ onClose }) {
     
     // Handle form submission here
     console.log('Project created:', formData);
+    onClose();
+  };
+
+  const handleSaveDraft = () => {
+    // Basic validation - only require project title
+    if (!formData.projectTitle.trim()) {
+      alert('Judul proyek harus diisi untuk menyimpan draft');
+      return;
+    }
+
+    // Get existing drafts from localStorage
+    const existingDrafts = JSON.parse(localStorage.getItem('projevo_project_drafts') || '[]');
+    
+    // Create new draft
+    const newDraft = {
+      id: Date.now().toString(),
+      ...formData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'draft'
+    };
+
+    // Add to drafts array
+    const updatedDrafts = [...existingDrafts, newDraft];
+    
+    // Save to localStorage
+    localStorage.setItem('projevo_project_drafts', JSON.stringify(updatedDrafts));
+    
+    // Trigger custom event to update drafts in parent component
+    window.dispatchEvent(new CustomEvent('draftSaved'));
+    
+    alert('Draft proyek berhasil disimpan!');
     onClose();
   };
 
@@ -375,6 +439,8 @@ function CreateProjectModal({ onClose }) {
           </select>
         </div>
 
+
+
         {/* 2. Ruang Lingkup */}
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -494,7 +560,7 @@ function CreateProjectModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              8. Desired Style *
+              7.1. Desired Style *
             </label>
             <select
               value={formData.desiredStyle}
@@ -510,28 +576,57 @@ function CreateProjectModal({ onClose }) {
           </div>
         </div>
 
-        {/* 8. Budget Details */}
+        {/* 8. Metode Pengadaan */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            8. Metode Pengadaan *
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Pilih metode pengadaan untuk proyek ini
+          </p>
+          <select
+            value={formData.procurementMethod}
+            onChange={(e) => handleInputChange('procurementMethod', e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Pilih Metode Pengadaan</option>
+            {procurementMethods.map(method => (
+              <option key={method} value={method}>{method}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* 9. Budget Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               9. Estimasi Anggaran *
             </label>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-              Masukkan estimasi anggaran Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+              Masukkan estimasi anggaran tetap Anda sebagai referensi bagi vendor. Angka ini tidak mengikat.
             </p>
-            <input
-              type="text"
-              value={formData.estimatedBudget}
-              onChange={(e) => handleInputChange('estimatedBudget', e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Contoh: Rp 100.000.000 - Rp 200.000.000"
-              required
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400">
+                Rp
+              </span>
+              <input
+                type="text"
+                value={getFormattedBudget()}
+                onChange={(e) => handleBudgetChange(e.target.value)}
+                className="w-full pl-12 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="100,000,000"
+                required
+              />
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Contoh: 100,000,000 (untuk Rp 100.000.000)
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              10. Prioritas Budget
+              9.1. Prioritas Budget
             </label>
             <select
               value={formData.budgetPriority}
@@ -546,39 +641,49 @@ function CreateProjectModal({ onClose }) {
           </div>
         </div>
 
-        {/* 9. Timeline Details */}
+        {/* 10. Timeline Details */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              11. Estimasi Durasi Proyek *
+              10. Estimasi Durasi Proyek *
             </label>
-            <input
-              type="text"
+            <select
               value={formData.estimatedDuration}
               onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Contoh: 3-6 bulan"
               required
-            />
+            >
+              <option value="">Pilih durasi proyek</option>
+              <option value="&lt; 3 Bulan">&lt; 3 Bulan</option>
+              <option value="3-6 Bulan">3-6 Bulan</option>
+              <option value="&lt; 1 Tahun">&lt; 1 Tahun</option>
+              <option value="&gt; 1 Tahun">&gt; 1 Tahun</option>
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              12. Durasi Tender *
+              10.1. Durasi Tender *
             </label>
-            <input
-              type="text"
+            <select
               value={formData.tenderDuration}
               onChange={(e) => handleInputChange('tenderDuration', e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Contoh: 2 minggu"
               required
-            />
+            >
+              <option value="">Pilih durasi tender</option>
+              <option value="2 Minggu">2 Minggu</option>
+              <option value="1 Bulan">1 Bulan</option>
+              <option value="2 Bulan">2 Bulan</option>
+              <option value="3 Bulan">3 Bulan</option>
+              <option value="4 Bulan">4 Bulan</option>
+              <option value="5 Bulan">5 Bulan</option>
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              13. Estimasi Mulai Proyek *
+              10.2. Estimasi Mulai Proyek *
             </label>
             <input
               type="date"
@@ -590,11 +695,11 @@ function CreateProjectModal({ onClose }) {
           </div>
         </div>
 
-        {/* 10. Project Urgency & Working Hours */}
+        {/* 11. Project Urgency & Working Hours */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              14. Tingkat Urgensi
+              11. Tingkat Urgensi
             </label>
             <select
               value={formData.projectUrgency}
@@ -610,7 +715,7 @@ function CreateProjectModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              15. Jam Kerja Preferensi
+              11.1. Jam Kerja Preferensi
             </label>
             <select
               value={formData.workingHours}
@@ -625,10 +730,10 @@ function CreateProjectModal({ onClose }) {
           </div>
         </div>
 
-        {/* 11. Access Restrictions */}
+        {/* 12. Access Restrictions */}
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            16. Pembatasan Akses/Kendala Khusus
+            12. Pembatasan Akses/Kendala Khusus
           </label>
           <textarea
             value={formData.accessRestrictions}
@@ -1187,6 +1292,8 @@ function CreateProjectModal({ onClose }) {
                 </select>
               </div>
 
+
+
               {/* 2. Ruang Lingkup */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -1247,16 +1354,24 @@ function CreateProjectModal({ onClose }) {
                   4. Estimasi Anggaran *
                 </label>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                  Masukkan estimasi anggaran Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                  Masukkan estimasi anggaran tetap Anda sebagai referensi bagi vendor. Angka ini tidak mengikat.
                 </p>
-                <input
-                  type="text"
-                  value={formData.estimatedBudget}
-                  onChange={(e) => handleInputChange('estimatedBudget', e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Contoh: Rp 50.000.000 - Rp 100.000.000"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400">
+                    Rp
+                  </span>
+                  <input
+                    type="text"
+                    value={getFormattedBudget()}
+                    onChange={(e) => handleBudgetChange(e.target.value)}
+                    className="w-full pl-12 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="50,000,000"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                  Contoh: 50,000,000 (untuk Rp 50.000.000)
+                </p>
               </div>
 
               {/* 5. Estimasi Durasi Proyek */}
@@ -1265,16 +1380,20 @@ function CreateProjectModal({ onClose }) {
                   5. Estimasi Durasi Proyek *
                 </label>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                  Masukkan estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                  Pilih estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor.
                 </p>
-                <input
-                  type="text"
+                <select
                   value={formData.estimatedDuration}
                   onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Contoh: 2-3 bulan"
                   required
-                />
+                >
+                  <option value="">Pilih durasi proyek</option>
+                  <option value="&lt; 3 Bulan">&lt; 3 Bulan</option>
+                  <option value="3-6 Bulan">3-6 Bulan</option>
+                  <option value="&lt; 1 Tahun">&lt; 1 Tahun</option>
+                  <option value="&gt; 1 Tahun">&gt; 1 Tahun</option>
+                </select>
               </div>
 
               {/* 6. Durasi Tender */}
@@ -1283,16 +1402,22 @@ function CreateProjectModal({ onClose }) {
                   6. Durasi Tender *
                 </label>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                  Masukkan estimasi durasi pekerjaan proyek Anda sebagai referensi bagi vendor. Angka ini bisa berupa kisaran dan tidak mengikat.
+                  Pilih berapa lama tender akan dibuka untuk menerima penawaran dari vendor.
                 </p>
-                <input
-                  type="text"
+                <select
                   value={formData.tenderDuration}
                   onChange={(e) => handleInputChange('tenderDuration', e.target.value)}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Contoh: 2 minggu"
                   required
-                />
+                >
+                  <option value="">Pilih durasi tender</option>
+                  <option value="2 Minggu">2 Minggu</option>
+                  <option value="1 Bulan">1 Bulan</option>
+                  <option value="2 Bulan">2 Bulan</option>
+                  <option value="3 Bulan">3 Bulan</option>
+                  <option value="4 Bulan">4 Bulan</option>
+                  <option value="5 Bulan">5 Bulan</option>
+                </select>
               </div>
 
               {/* 7. Estimasi Mulai Proyek */}
@@ -1312,11 +1437,32 @@ function CreateProjectModal({ onClose }) {
                 />
               </div>
 
-              {/* 8. Upload Dokumen Pendukung */}
+              {/* 8. Metode Pengadaan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  8. Metode Pengadaan *
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Pilih metode pengadaan untuk proyek ini
+                </p>
+                <select
+                  value={formData.procurementMethod}
+                  onChange={(e) => handleInputChange('procurementMethod', e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Pilih Metode Pengadaan</option>
+                  {procurementMethods.map(method => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 9. Upload Dokumen Pendukung */}
               {isDesignProject() && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    8. Upload Dokumen Pendukung (Referensi)
+                    9. Upload Dokumen Pendukung (Referensi)
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                     Hanya muncul untuk jenis proyek desain.
@@ -1360,7 +1506,7 @@ function CreateProjectModal({ onClose }) {
               {isBuildRenovateProject() && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    8. Upload Dokumen Pendukung (BOQ & Gambar Kerja)
+                    9. Upload Dokumen Pendukung (BOQ & Gambar Kerja)
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                     Hanya muncul untuk jenis proyek bangun & renovasi.
@@ -1522,21 +1668,31 @@ function CreateProjectModal({ onClose }) {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200 dark:border-slate-600">
+            {/* Submit Buttons */}
+            <div className="flex justify-between items-center pt-6 border-t border-slate-200 dark:border-slate-600">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-6 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                onClick={handleSaveDraft}
+                className="px-6 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors"
               >
-                Batal
+                Save Draft
               </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Buat Proyek
-              </button>
+              
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Buat Proyek
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -1600,6 +1756,34 @@ function CreateProjectModal({ onClose }) {
 export default function HomeComponent() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [projectDrafts, setProjectDrafts] = useState([]);
+  
+  // Load drafts from localStorage when component mounts
+  useEffect(() => {
+    const loadDrafts = () => {
+      const savedDrafts = JSON.parse(localStorage.getItem('projevo_project_drafts') || '[]');
+      setProjectDrafts(savedDrafts);
+    };
+    
+    loadDrafts();
+    
+    // Listen for storage changes (when draft is saved)
+    const handleStorageChange = () => {
+      loadDrafts();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events from the same tab
+    window.addEventListener('draftSaved', loadDrafts);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('draftSaved', loadDrafts);
+    };
+  }, []);
+  
   const [projects] = useState([
     {
       id: 1,
@@ -1685,6 +1869,26 @@ export default function HomeComponent() {
 
   const handleViewProject = (project) => {
     setSelectedProject(project);
+  };
+
+  const handleViewDraft = (draft) => {
+    // For now, just show an alert with draft details
+    // In a real app, you might open the modal with pre-filled data
+    alert(`Viewing draft: ${draft.projectTitle}\nCreated: ${new Date(draft.createdAt).toLocaleDateString()}`);
+  };
+
+  const handleEditDraft = (draft) => {
+    // For now, just show an alert
+    // In a real app, you might open the create modal with pre-filled data
+    alert(`Editing draft: ${draft.projectTitle}`);
+  };
+
+  const handleDeleteDraft = (draftId) => {
+    if (confirm('Apakah Anda yakin ingin menghapus draft ini?')) {
+      const updatedDrafts = projectDrafts.filter(draft => draft.id !== draftId);
+      localStorage.setItem('projevo_project_drafts', JSON.stringify(updatedDrafts));
+      setProjectDrafts(updatedDrafts);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -1788,13 +1992,122 @@ export default function HomeComponent() {
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">All Projects</h2>
           <p className="text-slate-600 dark:text-slate-400">Manage and track all your projects</p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-        >
-          Create New Project
-        </button>
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => setShowDrafts(!showDrafts)}
+            className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200"
+          >
+            {showDrafts ? 'Hide Drafts' : 'Show Drafts'} ({projectDrafts.length})
+          </button>
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          >
+            Create New Project
+          </button>
+        </div>
       </div>
+
+      {/* Saved Drafts Section */}
+      {showDrafts && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Saved Drafts</h3>
+          </div>
+          
+          {projectDrafts.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No drafts saved</h4>
+              <p className="text-slate-500 dark:text-slate-400">Create a new project and save it as draft to see it here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {projectDrafts.map((draft) => (
+                <div
+                  key={draft.id}
+                  className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                      <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/20 px-2 py-1 rounded-md">
+                        DRAFT
+                      </span>
+                    </div>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => handleViewDraft(draft)}
+                        className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+                        title="View Draft"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleEditDraft(draft)}
+                        className="p-1 text-slate-400 hover:text-green-600 dark:hover:text-green-400"
+                        title="Edit Draft"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+                        title="Delete Draft"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2">
+                    {draft.projectTitle || 'Untitled Draft'}
+                  </h4>
+                  
+                  <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                    {draft.projectType && (
+                      <div className="flex items-center">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+                        <span>Type: {draft.projectType}</span>
+                      </div>
+                    )}
+                    {draft.province && draft.city && (
+                      <div className="flex items-center">
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                        <span>Location: {draft.city}, {draft.province}</span>
+                      </div>
+                    )}
+                    {draft.estimatedBudget && (
+                      <div className="flex items-center">
+                        <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+                        <span>Budget: {draft.estimatedBudget}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                      <span>Created: {new Date(draft.createdAt).toLocaleDateString()}</span>
+                      <span>{Math.round((Date.now() - new Date(draft.createdAt)) / (1000 * 60 * 60 * 24))} days ago</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
