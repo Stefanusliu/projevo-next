@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../../../../lib/firebase';
 import ProjectDetailComponent from './ProjectDetailComponent';
 import ProjectCompleteComponent from './ProjectCompleteComponent';
 import UnderReviewComponent from './UnderReviewComponent';
@@ -1754,10 +1757,47 @@ function CreateProjectModal({ onClose }) {
 }
 
 export default function HomeComponent() {
+  const { user, userProfile } = useAuth();
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDrafts, setShowDrafts] = useState(false);
   const [projectDrafts, setProjectDrafts] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Load projects from Firestore
+  useEffect(() => {
+    if (!user?.uid) return;
+    
+    console.log('Loading projects for user:', user.uid);
+    setLoading(true);
+    
+    // Query projects where the current user is the owner
+    const projectsQuery = query(
+      collection(db, 'projects'),
+      where('ownerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribe = onSnapshot(projectsQuery, (snapshot) => {
+      const projectsData = [];
+      snapshot.forEach((doc) => {
+        projectsData.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded projects:', projectsData);
+      setProjects(projectsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading projects:', error);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user?.uid]);
   
   // Load drafts from localStorage when component mounts
   useEffect(() => {
@@ -1783,89 +1823,6 @@ export default function HomeComponent() {
       window.removeEventListener('draftSaved', loadDrafts);
     };
   }, []);
-  
-  const [projects] = useState([
-    {
-      id: 1,
-      title: 'Modern Cafe Interior Design',
-      client: 'CV. Kreasi Interior',
-      status: 'In Progress',
-      budget: 'Rp 185,000,000',
-      startDate: '2024-03-15',
-      deadline: '2024-12-15',
-      progress: 75,
-      category: 'Interior Design',
-      location: 'South Jakarta',
-      description: 'Contemporary cafe interior design featuring modern aesthetics with comfortable seating and efficient workflow.',
-      team: ['John Doe', 'Sarah Wilson', 'Mike Chen'],
-      milestones: [
-        { name: 'Design Concept', completed: true, date: '2024-03-25' },
-        { name: 'Material Selection', completed: true, date: '2024-04-10' },
-        { name: 'Installation', completed: false, date: '2024-11-30' },
-        { name: 'Final Touches', completed: false, date: '2024-12-10' },
-      ]
-    },
-    {
-      id: 2,
-      title: 'Traditional Restaurant Construction',
-      client: 'PT. Kuliner Nusantara',
-      status: 'Completed',
-      budget: 'Rp 320,000,000',
-      startDate: '2023-11-20',
-      deadline: '2024-05-20',
-      progress: 100,
-      category: 'Construction',
-      location: 'Menteng, Jakarta',
-      description: 'Complete construction of traditional Indonesian restaurant with authentic architectural elements and modern amenities.',
-      team: ['Robert Chen', 'Lisa Park', 'David Kumar'],
-      milestones: [
-        { name: 'Foundation', completed: true, date: '2023-12-15' },
-        { name: 'Structure', completed: true, date: '2024-02-28' },
-        { name: 'MEP Installation', completed: true, date: '2024-04-15' },
-        { name: 'Finishing', completed: true, date: '2024-05-15' },
-      ]
-    },
-    {
-      id: 3,
-      title: 'Co-working Space Design',
-      client: 'Studio Arsitek Modern',
-      status: 'Under Review',
-      budget: 'Rp 150,000,000',
-      startDate: '2024-02-01',
-      deadline: '2024-08-30',
-      progress: 45,
-      category: 'Architecture',
-      location: 'Kemang, Jakarta',
-      description: 'Modern co-working space design with flexible layouts, collaborative areas, and sustainable features.',
-      team: ['Emma Thompson', 'Alex Smith'],
-      milestones: [
-        { name: 'Site Analysis', completed: true, date: '2024-02-15' },
-        { name: 'Concept Design', completed: true, date: '2024-03-15' },
-        { name: 'Detailed Design', completed: false, date: '2024-06-30' },
-        { name: 'Construction Docs', completed: false, date: '2024-08-15' },
-      ]
-    },
-    {
-      id: 4,
-      title: 'Luxury Villa Construction',
-      client: 'Premium Properties Indonesia',
-      status: 'On Hold',
-      budget: 'Rp 850,000,000',
-      startDate: '2024-01-15',
-      deadline: '2024-11-30',
-      progress: 30,
-      category: 'Construction',
-      location: 'Jakarta Selatan',
-      description: 'High-end luxury villa with modern amenities, smart home integration, and sustainable design features.',
-      team: ['Maria Garcia', 'John Wilson'],
-      milestones: [
-        { name: 'Planning Phase', completed: true, date: '2024-02-01' },
-        { name: 'Foundation', completed: true, date: '2024-03-15' },
-        { name: 'Structure', completed: false, date: '2024-08-30' },
-        { name: 'Completion', completed: false, date: '2024-11-15' },
-      ]
-    }
-  ]);
 
   const handleViewProject = (project) => {
     setSelectedProject(project);

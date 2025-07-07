@@ -5,11 +5,12 @@ import Link from "next/link";
 import ProjectMarketplace from "./main-content/ProjectMarketplace";
 import HomePage from "./main-content/HomePage";
 import Profile from "./main-content/Profile";
+import ProtectedRoute from "../../../components/auth/ProtectedRoute";
 
 // Note: For client components, we'll handle SEO with next/head
 import Head from 'next/head';
 
-export default function VendorDashboard() {
+function VendorDashboardContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [activeView, setActiveView] = useState("projects"); // Add state for active view
@@ -254,5 +255,13 @@ export default function VendorDashboard() {
         {activeView === "projects" ? <ProjectMarketplace /> : activeView === "profile" ? <Profile /> : <HomePage />}
       </div>
     </>
+  );
+}
+
+export default function VendorDashboard() {
+  return (
+    <ProtectedRoute requiredUserType="vendor">
+      <VendorDashboardContent />
+    </ProtectedRoute>
   );
 }

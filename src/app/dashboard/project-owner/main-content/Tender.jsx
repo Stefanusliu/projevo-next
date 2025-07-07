@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { db } from '../../../../lib/firebase';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
 const Tender = () => {
+  const { user } = useAuth();
   const [selectedProjectTypes, setSelectedProjectTypes] = useState([]);
   const [selectedScopes, setSelectedScopes] = useState([]);
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState([]);
@@ -13,105 +17,146 @@ const Tender = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [bookmarkedProjects, setBookmarkedProjects] = useState([]);
+  const [marketData, setMarketData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const projectTypeFilterRef = useRef(null);
   const scopeFilterRef = useRef(null);
   const propertyFilterRef = useRef(null);
   const sortFilterRef = useRef(null);
 
-  const [marketData, setMarketData] = useState([
-    {
-      id: 1,
-      projectTitle: "Bangun Interior Rumah BSD Minimalis Modern",
-      location: "Jakarta Selatan",
-      scope: ["Interior", "Furniture"],
-      projectType: "Bangun",
-      propertyType: "Rumah Tinggal",
-      budget: "Rp 750,000,000",
-      duration: "4 bulan",
-      bidCountdown: "2 hari 14 jam",
-    },
-    {
-      id: 2,
-      projectTitle: "Renovasi Kantor Modern SCBD",
-      location: "Jakarta Pusat",
-      scope: ["Interior", "Sipil"],
-      projectType: "Renovasi",
-      propertyType: "Kantor",
-      budget: "Rp 2,500,000,000",
-      duration: "8 bulan",
-      bidCountdown: "5 hari 8 jam",
-    },
-    {
-      id: 3,
-      projectTitle: "Desain Interior Apartemen Luxury Sudirman",
-      location: "Jakarta Pusat",
-      scope: ["Interior", "Furniture"],
-      projectType: "Desain",
-      propertyType: "Apartemen",
-      budget: "Rp 520,000,000",
-      duration: "12 minggu",
-      bidCountdown: "1 minggu 3 hari",
-    },
-    {
-      id: 4,
-      projectTitle: "Bangun Ruko 3 Lantai Kelapa Gading",
-      location: "Jakarta Utara",
-      scope: ["Sipil", "Eksterior"],
-      projectType: "Bangun",
-      propertyType: "Ruko",
-      budget: "Rp 1,200,000,000",
-      duration: "6 bulan",
-      bidCountdown: "3 hari 6 jam",
-    },
-    {
-      id: 5,
-      projectTitle: "Renovasi Restaurant Modern PIK",
-      location: "Jakarta Utara",
-      scope: ["Interior", "Furniture"],
-      projectType: "Renovasi",
-      propertyType: "Restoran",
-      budget: "Rp 850,000,000",
-      duration: "4 bulan",
-      bidCountdown: "2 minggu 1 hari",
-    },
-    {
-      id: 6,
-      projectTitle: "Desain Hotel Boutique Kemang",
-      location: "Jakarta Selatan",
-      scope: ["Interior", "Eksterior", "Taman & Hardscape"],
-      projectType: "Desain",
-      propertyType: "Hotel / Penginapan",
-      budget: "Rp 3,800,000,000",
-      duration: "10 bulan",
-      bidCountdown: "1 minggu 2 hari",
-    },
-    {
-      id: 7,
-      projectTitle: "Bangun Gudang Industri Cakung",
-      location: "Jakarta Timur",
-      scope: ["Sipil"],
-      projectType: "Bangun",
-      propertyType: "Gudang",
-      budget: "Rp 4,200,000,000",
-      duration: "8 bulan",
-      bidCountdown: "4 hari 12 jam",
-    },
-    {
-      id: 8,
-      projectTitle: "Renovasi Sekolah Dasar Tangerang",
-      location: "Tangerang",
-      scope: ["Interior", "Sipil"],
-      projectType: "Renovasi",
-      propertyType: "Sekolah",
-      budget: "Rp 680,000,000",
-      duration: "5 bulan",
-      bidCountdown: "6 hari 4 jam",
-    },
-  ]);
+  // Load tender projects from Firestore
+  useEffect(() => {
+    const loadTenderProjects = async () => {
+      if (!user) {
+        console.log('No user found, skipping tender projects load');
+        setLoading(false);
+        return;
+      }
 
-  // Get unique filter options
+      console.log('Loading tender projects for user:', user.uid);
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Import Firestore functions
+        const { getDocs } = await import('firebase/firestore');
+        
+        // Simple query to get all projects first
+        const projectsQuery = query(collection(db, 'projects'));
+        console.log('Executing query for all projects...');
+        
+        const snapshot = await getDocs(projectsQuery);
+        console.log('Query successful! Retrieved', snapshot.size, 'documents');
+        
+        const projects = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('Processing project:', doc.id, {
+            procurementMethod: data.procurementMethod,
+            status: data.status,
+            title: data.title || data.projectTitle
+          });
+          
+          // Filter for tender projects
+          if (data.procurementMethod === 'Tender') {
+            console.log('Found tender project:', doc.id, data.status);
+            
+            const project = {
+              id: doc.id,
+              projectTitle: data.title || data.projectTitle || 'Untitled Project',
+              location: data.location || data.city || 'Location not specified',
+              scope: data.scope || data.scopes || (data.category ? [data.category] : ['General']),
+              projectType: data.projectType || data.category || 'General',
+              propertyType: data.propertyType || 'Commercial',
+              budget: data.estimatedBudget || data.budget || 'Budget not specified',
+              duration: data.estimatedDuration || data.duration || 'Duration not specified',
+              bidCountdown: calculateBidCountdown(data.tenderDeadline || data.deadline),
+              tenderDeadline: data.tenderDeadline,
+              deadline: data.deadline,
+              description: data.description || '',
+              client: data.client || 'Client not specified',
+              estimatedStartDate: data.estimatedStartDate || data.startDate,
+              status: data.status,
+              ...data
+            };
+            projects.push(project);
+          }
+        });
+
+        console.log('Processed tender projects:', projects);
+        setMarketData(projects);
+        setLoading(false);
+        
+      } catch (error) {
+        console.error('Error loading tender projects:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        let errorMessage = 'Failed to load tender projects. Please try again.';
+        if (error.code === 'permission-denied') {
+          errorMessage = 'Permission denied. Please check your authentication and try again.';
+        } else if (error.code === 'unavailable') {
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+        } else if (error.message) {
+          errorMessage = `Failed to load tender projects: ${error.message}`;
+        }
+        
+        setError(errorMessage);
+        setLoading(false);
+      }
+    };
+
+    loadTenderProjects();
+  }, [user]);
+
+  // Calculate bid countdown
+  const calculateBidCountdown = (deadline) => {
+    if (!deadline) return 'No deadline set';
+    
+    try {
+      let deadlineDate;
+      if (deadline?.toDate) {
+        // Firestore timestamp
+        deadlineDate = deadline.toDate();
+      } else if (typeof deadline === 'string') {
+        // String date
+        deadlineDate = new Date(deadline);
+      } else {
+        return 'Invalid deadline';
+      }
+
+      const now = new Date();
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      
+      if (diffTime <= 0) {
+        return 'Deadline passed';
+      }
+
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
+      if (diffDays > 7) {
+        const weeks = Math.floor(diffDays / 7);
+        const remainingDays = diffDays % 7;
+        return `${weeks} minggu${remainingDays > 0 ? ` ${remainingDays} hari` : ''}`;
+      } else if (diffDays > 0) {
+        return `${diffDays} hari ${diffHours} jam`;
+      } else {
+        return `${diffHours} jam`;
+      }
+    } catch (error) {
+      console.error('Error calculating countdown:', error);
+      return 'Invalid deadline';
+    }
+  };
+
+  // Get unique filter options from real data
   const allProjectTypes = [...new Set(marketData.map(item => item.projectType))];
-  const allScopes = [...new Set(marketData.flatMap(item => item.scope))];
+  const allScopes = [...new Set(marketData.flatMap(item => {
+    if (Array.isArray(item.scope)) return item.scope;
+    return item.scope ? [item.scope] : [];
+  }))];
   const allPropertyTypes = [...new Set(marketData.map(item => item.propertyType))];
   const sortOptions = [
     'Paling Relevan',
@@ -125,7 +170,12 @@ const Tender = () => {
   // Filter data based on selected filters
   const filteredData = marketData.filter(item => {
     const projectTypeMatch = selectedProjectTypes.length === 0 || selectedProjectTypes.includes(item.projectType);
-    const scopeMatch = selectedScopes.length === 0 || selectedScopes.some(scope => item.scope.includes(scope));
+    const scopeMatch = selectedScopes.length === 0 || selectedScopes.some(scope => {
+      if (Array.isArray(item.scope)) {
+        return item.scope.includes(scope);
+      }
+      return item.scope === scope;
+    });
     const propertyMatch = selectedPropertyTypes.length === 0 || selectedPropertyTypes.includes(item.propertyType);
     
     return projectTypeMatch && scopeMatch && propertyMatch;
@@ -135,18 +185,18 @@ const Tender = () => {
   const sortedData = [...filteredData].sort((a, b) => {
     switch (sortBy) {
       case 'Budget Tertinggi':
-        const budgetA = parseInt(a.budget.replace(/[^\d]/g, ''));
-        const budgetB = parseInt(b.budget.replace(/[^\d]/g, ''));
+        const budgetA = extractBudgetNumber(a.budget);
+        const budgetB = extractBudgetNumber(b.budget);
         return budgetB - budgetA;
       
       case 'Budget Terendah':
-        const budgetAsc = parseInt(a.budget.replace(/[^\d]/g, ''));
-        const budgetBsc = parseInt(b.budget.replace(/[^\d]/g, ''));
+        const budgetAsc = extractBudgetNumber(a.budget);
+        const budgetBsc = extractBudgetNumber(b.budget);
         return budgetAsc - budgetBsc;
       
       case 'Kompetisi Terendah':
-        // Assuming lower project ID means fewer competitors (mock logic)
-        return a.id - b.id;
+        // Sort by creation date (newer projects might have fewer bids)
+        return new Date(b.createdAt?.toDate?.() || b.createdAt || 0) - new Date(a.createdAt?.toDate?.() || a.createdAt || 0);
       
       case 'Deadline Terlama':
         const hoursA = getHoursFromCountdown(a.bidCountdown);
@@ -162,6 +212,13 @@ const Tender = () => {
         return 0; // Keep original order
     }
   });
+
+  // Helper function to extract budget number for sorting
+  const extractBudgetNumber = (budget) => {
+    if (!budget || typeof budget !== 'string') return 0;
+    const numbers = budget.replace(/[^\d]/g, '');
+    return parseInt(numbers) || 0;
+  };
 
   // Helper function to convert countdown to hours
   const getHoursFromCountdown = (countdown) => {
@@ -181,6 +238,14 @@ const Tender = () => {
     }
     
     return totalHours;
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    setMarketData([]); // Clear existing data
+    // Trigger re-load by changing a dependency
+    window.location.reload();
   };
 
   const handleProjectTypeFilter = (projectType) => {
@@ -291,13 +356,52 @@ const Tender = () => {
             Tender
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
-            Discover and connect with qualified contractors for your projects
+            Discover projects open for tender and bidding
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-3 mb-6">
-          <div className="flex items-center gap-2 flex-wrap">
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <svg className="w-5 h-5 text-red-400 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error loading tender projects</h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>{error}</p>
+                </div>
+                <div className="mt-3">
+                  <button
+                    onClick={handleRetry}
+                    className="bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-800 dark:text-red-200 px-3 py-1 rounded text-sm font-medium transition-colors mr-2"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded text-sm font-medium transition-colors"
+                  >
+                    Refresh Page
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-slate-600 dark:text-slate-400">Loading tender projects...</p>
+          </div>
+        ) : (
+          <>
+            {/* Filters */}
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-3 mb-6">
+              <div className="flex items-center gap-2 flex-wrap">
             {/* Jenis Proyek Filter */}
             <div className="relative min-w-[160px] flex-1" ref={projectTypeFilterRef}>
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
@@ -539,12 +643,26 @@ const Tender = () => {
         </div>
 
         {/* Project Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {sortedData.map((project) => (
-            <div
-              key={project.id}
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-            >
+        {sortedData.length === 0 ? (
+          <div className="text-center py-12">
+            <svg className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No tender projects found</h3>
+            <p className="text-slate-500 dark:text-slate-400">
+              {marketData.length === 0 
+                ? "There are no projects currently open for tender."
+                : "No projects match your current filter criteria. Try adjusting your filters."
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {sortedData.map((project) => (
+              <div
+                key={project.id}
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+              >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -607,7 +725,7 @@ const Tender = () => {
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">Ruang Lingkup</h4>
                   <div className="flex flex-wrap gap-1">
-                    {project.scope.map((scopeItem, index) => (
+                    {(Array.isArray(project.scope) ? project.scope : [project.scope]).filter(Boolean).map((scopeItem, index) => (
                       <span
                         key={index}
                         className="px-2 py-1 text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded"
@@ -660,14 +778,17 @@ const Tender = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
-        {/* Load More */}
-        <div className="text-center mt-8">
-          <button className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-            Load More Projects
-          </button>
-        </div>
+        {/* Load More - only show if there are projects */}
+        {sortedData.length > 0 && (
+          <div className="text-center mt-8">
+            <button className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              Load More Projects
+            </button>
+          </div>
+        )}
 
         {/* Create Offer Modal */}
         {showOfferModal && selectedProject && (
@@ -919,7 +1040,7 @@ const Tender = () => {
                         <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 tracking-wide uppercase">Ruang Lingkup</h4>
                       </div>
                       <div className="flex flex-wrap gap-3">
-                        {selectedProject.scope.map((scopeItem, index) => (
+                        {(Array.isArray(selectedProject.scope) ? selectedProject.scope : [selectedProject.scope]).filter(Boolean).map((scopeItem, index) => (
                           <span
                             key={index}
                             className="inline-flex items-center px-4 py-2 text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
@@ -1054,6 +1175,8 @@ const Tender = () => {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
   )

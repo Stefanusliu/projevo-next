@@ -1,0 +1,95 @@
+// Firestore Security Rules
+// To deploy: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow user creation during signup even if profile isn't complete yet
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Projects - allow broader access for tender marketplace functionality
+    match /projects/{projectId} {
+      // Users can read and write their own projects
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.ownerId;
+      
+      // All authenticated users can read projects that are open for tender (marketplace functionality)
+      allow read: if request.auth != null && 
+        resource.data.procurementMethod == 'Tender';
+      
+      // All authenticated users can read projects for discovery and bidding
+      allow read: if request.auth != null;
+      
+      // Only the owner can create and update projects
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.ownerId;
+    }
+    
+    // Bids - vendors can create bids, project owners can read bids for their projects
+    match /bids/{bidId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.vendorId || 
+         request.auth.uid == get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.ownerId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.vendorId;
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.vendorId ||
+         request.auth.uid == get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.ownerId);
+    }
+    
+    // BOQs (Bill of Quantities) - associated with projects
+    match /boqs/{boqId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.createdBy ||
+         request.auth.uid == get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.ownerId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.createdBy;
+    }
+    
+    // Vendor profiles - vendors can edit their own profiles, everyone can read
+    match /vendors/{vendorId} {
+      allow read: if true; // Public readable for discovery
+      allow write: if request.auth != null && request.auth.uid == vendorId;
+    }
+    
+    // Reviews and ratings
+    match /reviews/{reviewId} {
+      allow read: if true; // Reviews are publicly readable
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.reviewerId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.reviewerId;
+    }
+    
+    // Payments and transactions
+    match /payments/{paymentId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.projectOwnerId || 
+         request.auth.uid == resource.data.vendorId ||
+         request.auth.uid == resource.data.payerId || 
+         request.auth.uid == resource.data.payeeId);
+      allow create: if request.auth != null && 
+        (request.auth.uid == request.resource.data.projectOwnerId ||
+         request.auth.uid == request.resource.data.vendorId ||
+         request.auth.uid == request.resource.data.payerId || 
+         request.auth.uid == request.resource.data.payeeId);
+    }
+    
+    // Admin only collections
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Email OTPs - managed by server-side only (Admin SDK)
+    match /email_otps/{document=**} {
+      allow read, write: if false; // Block all client access, only server-side Admin SDK
+    }
+    
+    // Email verification documents
+    match /email-verifications/{email} {
+      allow read, write: if request.auth != null && request.auth.token.email == email;
+      allow create: if true; // Allow creation for signup flow
+    }
+  }
+}

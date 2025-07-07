@@ -1,0 +1,63 @@
+// Firebase Storage Security Rules
+// To deploy: firebase deploy --only storage
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images
+    match /profile-images/{userId}/{allPaths=**} {
+      allow read: if true; // Profile images are publicly readable
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Project files and images
+    match /project-files/{projectId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == getProjectOwner(projectId) ||
+         hasPermissionToProject(projectId))
+        && request.resource.size < 10 * 1024 * 1024; // Max 10MB
+    }
+    
+    // BOQ files
+    match /boq-files/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024; // Max 5MB
+    }
+    
+    // Vendor portfolio images
+    match /vendor-portfolio/{vendorId}/{allPaths=**} {
+      allow read: if true; // Portfolio images are publicly readable
+      allow write: if request.auth != null && request.auth.uid == vendorId
+        && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Document uploads (contracts, certificates, etc.)
+    match /documents/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 20 * 1024 * 1024; // Max 20MB
+    }
+    
+    // Admin files
+    match /admin/{allPaths=**} {
+      allow read, write: if request.auth != null && 
+        getUserRole() == 'admin';
+    }
+    
+    // Helper functions (these would need to be implemented with actual Firestore calls)
+    function getProjectOwner(projectId) {
+      return true; // Placeholder - implement with actual Firestore query
+    }
+    
+    function hasPermissionToProject(projectId) {
+      return true; // Placeholder - implement permission checking logic
+    }
+    
+    function getUserRole() {
+      return 'user'; // Placeholder - implement with actual Firestore query
+    }
+  }
+}

@@ -1,13 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../../../../lib/firebase';
 import Link from 'next/link';
 
 export default function HistoryComponent() {
+  const { user, userProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [selectedTimeRange, setSelectedTimeRange] = useState('All Time');
+  const [completedProjects, setCompletedProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load completed projects from Firestore
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+    
+    console.log('Loading completed projects for user:', user.uid);
+    setLoading(true);
+    
+    // Simple query first - get all user's projects and filter client-side
+    const projectsQuery = query(
+      collection(db, 'projects'),
+      where('ownerId', '==', user.uid)
+    );
+    
+    const unsubscribe = onSnapshot(projectsQuery, (snapshot) => {
+      const projectsData = [];
+      snapshot.forEach((doc) => {
+        const data = { id: doc.id, ...doc.data() };
+        // Filter completed projects on the client side
+        if (['Completed', 'Cancelled', 'Terminated', 'Expired'].includes(data.status)) {
+          projectsData.push(data);
+        }
+      });
+      
+      // Sort by completedDate or createdAt
+      projectsData.sort((a, b) => {
+        const dateA = new Date(a.completedDate || a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt || 0);
+        const dateB = new Date(b.completedDate || b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt || 0);
+        return dateB - dateA; // Newest first
+      });
+      
+      console.log('Loaded completed projects:', projectsData);
+      setCompletedProjects(projectsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading completed projects:', error);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const locations = [
     'All Locations',
@@ -38,129 +88,6 @@ export default function HistoryComponent() {
     'This Year',
     'Last Year'
   ];
-
-  const [completedProjects, setCompletedProjects] = useState([
-    {
-      id: 1,
-      projectType: "Interior Design",
-      title: "Luxury Restaurant Interior Renovation",
-      location: "Jakarta Selatan",
-      profileName: "CV. Kreasi Interior",
-      contractType: "Contract",
-      status: "Completed",
-      finalStatus: "Successfully Completed",
-      completedDate: "2024-05-15",
-      startDate: "2024-02-01",
-      budget: "Rp 450.000.000",
-      duration: "3.5 months",
-      rating: 4.8
-    },
-    {
-      id: 2,
-      projectType: "Construction",
-      title: "Office Building Construction Phase 1",
-      location: "Menteng, Jakarta",
-      profileName: "PT. Bangun Jaya",
-      contractType: "Tender",
-      status: "Completed",
-      finalStatus: "Delivered on Time",
-      completedDate: "2024-04-20",
-      startDate: "2023-10-15",
-      budget: "Rp 2.500.000.000",
-      duration: "6 months",
-      rating: 4.5
-    },
-    {
-      id: 3,
-      projectType: "Architecture",
-      title: "Modern Villa Design & Construction",
-      location: "Kemang, Jakarta",
-      profileName: "Studio Arsitek Modern",
-      contractType: "Contract",
-      status: "Completed",
-      finalStatus: "Excellent Results",
-      completedDate: "2024-03-30",
-      startDate: "2023-08-01",
-      budget: "Rp 1.800.000.000",
-      duration: "8 months",
-      rating: 5.0
-    },
-    {
-      id: 4,
-      projectType: "Renovation",
-      title: "Shopping Center Food Court Renovation",
-      location: "PIK Jakarta",
-      profileName: "Renovasi Pro",
-      contractType: "Tender",
-      status: "Cancelled",
-      finalStatus: "Cancelled by Client",
-      completedDate: "2024-01-15",
-      startDate: "2023-12-01",
-      budget: "Rp 750.000.000",
-      duration: "1.5 months",
-      rating: null
-    },
-    {
-      id: 5,
-      projectType: "Interior Design",
-      title: "Corporate Office Interior Design",
-      location: "SCBD Jakarta",
-      profileName: "Design Excellence",
-      contractType: "Contract",
-      status: "Completed",
-      finalStatus: "Outstanding Performance",
-      completedDate: "2023-12-10",
-      startDate: "2023-09-15",
-      budget: "Rp 950.000.000",
-      duration: "3 months",
-      rating: 4.9
-    },
-    {
-      id: 6,
-      projectType: "Construction",
-      title: "Warehouse Construction Project",
-      location: "Tangerang",
-      profileName: "Konstruksi Mandiri",
-      contractType: "Tender",
-      status: "Terminated",
-      finalStatus: "Contract Terminated",
-      completedDate: "2023-11-20",
-      startDate: "2023-07-01",
-      budget: "Rp 1.200.000.000",
-      duration: "4.5 months",
-      rating: 2.5
-    },
-    {
-      id: 7,
-      projectType: "Architecture",
-      title: "Residential Complex Master Plan",
-      location: "Depok",
-      profileName: "Arsitek Nusantara",
-      contractType: "Contract",
-      status: "Completed",
-      finalStatus: "Project Excellence Award",
-      completedDate: "2023-10-05",
-      startDate: "2023-03-01",
-      budget: "Rp 3.200.000.000",
-      duration: "7 months",
-      rating: 4.7
-    },
-    {
-      id: 8,
-      projectType: "Renovation",
-      title: "Hotel Lobby Renovation",
-      location: "Jakarta Pusat",
-      profileName: "Renovasi Master",
-      contractType: "Contract",
-      status: "Expired",
-      finalStatus: "Contract Expired",
-      completedDate: "2023-09-15",
-      startDate: "2023-06-01",
-      budget: "Rp 680.000.000",
-      duration: "3.5 months",
-      rating: null
-    }
-  ]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -235,12 +162,13 @@ export default function HistoryComponent() {
   };
 
   const filteredProjects = completedProjects.filter(project => {
-    const matchesLocation = selectedLocation === 'All Locations' || project.location.includes(selectedLocation);
+    const matchesLocation = selectedLocation === 'All Locations' || 
+      (project.location || project.city || '').includes(selectedLocation);
     const matchesStatus = selectedStatus === 'All Status' || project.status === selectedStatus;
     const matchesSearch = searchQuery === '' || 
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.profileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.projectType.toLowerCase().includes(searchQuery.toLowerCase());
+      (project.title || project.projectTitle || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (project.profileName || project.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (project.projectType || project.category || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesLocation && matchesStatus && matchesSearch;
   });
@@ -255,6 +183,16 @@ export default function HistoryComponent() {
   };
 
   const stats = getProjectStats();
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading project history...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -371,7 +309,7 @@ export default function HistoryComponent() {
 
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 leading-tight">
-                {project.title}
+                {project.title || project.projectTitle}
               </h3>
               <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400">
                 <div className="flex items-center">
@@ -379,13 +317,13 @@ export default function HistoryComponent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>{project.location}</span>
+                  <span>{project.location || project.city || 'Location not specified'}</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span>{project.profileName}</span>
+                  <span>{project.profileName || project.companyName || 'Client not specified'}</span>
                 </div>
               </div>
             </div>
@@ -393,11 +331,15 @@ export default function HistoryComponent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Budget</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(project.budget)}</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {formatCurrency(project.budget || project.estimatedBudget || '0')}
+                </div>
               </div>
               <div>
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Duration</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">{project.duration}</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {project.duration || project.estimatedDuration || 'Not specified'}
+                </div>
               </div>
               <div>
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Final Status</div>

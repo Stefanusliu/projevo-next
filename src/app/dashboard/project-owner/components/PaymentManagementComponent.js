@@ -1,53 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from '../../../../contexts/AuthContext';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../../../../lib/firebase';
 
 export default function PaymentManagementComponent() {
+  const { user, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState("pending");
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Load payments from Firestore
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+    
+    console.log('Loading payments for user:', user.uid);
+    setLoading(true);
+    
+    // Query payments where the current user is the owner
+    const paymentsQuery = query(
+      collection(db, 'payments'),
+      where('projectOwnerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribe = onSnapshot(paymentsQuery, (snapshot) => {
+      const paymentsData = [];
+      snapshot.forEach((doc) => {
+        paymentsData.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded payments:', paymentsData);
+      setPayments(paymentsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading payments:', error);
+      // If no payments collection exists, use empty array
+      setPayments([]);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  // Organize payments by status
   const paymentData = {
-    pending: [
-      {
-        id: 1,
-        projectTitle: "Bangun Interior Rumah BSD Minimalis Modern",
-        vendor: "CV Berkah Interior",
-        amount: "Rp 37,500,000",
-        milestone: "Milestone 1 - Design Phase",
-        dueDate: "2025-01-15",
-        status: "pending"
-      },
-      {
-        id: 2,
-        projectTitle: "Renovasi Kantor Modern SCBD",
-        vendor: "PT Konstruksi Prima",
-        amount: "Rp 125,000,000",
-        milestone: "Milestone 2 - Construction Phase",
-        dueDate: "2025-01-20",
-        status: "pending"
-      }
-    ],
-    completed: [
-      {
-        id: 3,
-        projectTitle: "Desain Interior Apartemen Luxury Sudirman",
-        vendor: "Studio Design Elite",
-        amount: "Rp 26,000,000",
-        milestone: "Milestone 1 - Initial Design",
-        paidDate: "2024-12-15",
-        status: "completed"
-      }
-    ],
-    overdue: [
-      {
-        id: 4,
-        projectTitle: "Bangun Ruko 3 Lantai Kelapa Gading",
-        vendor: "CV Mandiri Construction",
-        amount: "Rp 60,000,000",
-        milestone: "Milestone 1 - Foundation",
-        dueDate: "2024-12-20",
-        status: "overdue"
-      }
-    ]
+    pending: payments.filter(p => p.status === 'pending'),
+    completed: payments.filter(p => p.status === 'completed'),
+    overdue: payments.filter(p => p.status === 'overdue')
   };
 
   const handlePayment = (paymentId) => {
@@ -66,6 +73,16 @@ export default function PaymentManagementComponent() {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading payment data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
@@ -102,18 +119,33 @@ export default function PaymentManagementComponent() {
 
         {/* Payment List */}
         <div className="space-y-4 mb-8">
-          {paymentData[activeTab].map((payment) => (
+          {paymentData[activeTab].length === 0 ? (
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                No {activeTab} payments
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                {activeTab === 'pending' ? 'No pending payments at the moment.' :
+                 activeTab === 'completed' ? 'No completed payments yet.' :
+                 'No overdue payments found.'}
+              </p>
+            </div>
+          ) : (
+            paymentData[activeTab].map((payment) => (
             <div key={payment.id} className="bg-slate-50 dark:bg-slate-700 rounded-lg p-6 border border-slate-200 dark:border-slate-600">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                    {payment.projectTitle}
+                    {payment.projectTitle || payment.title || 'Payment'}
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400 mb-1">
-                    <span className="font-medium">Vendor:</span> {payment.vendor}
+                    <span className="font-medium">Vendor:</span> {payment.vendor || payment.vendorName || 'Not specified'}
                   </p>
                   <p className="text-slate-600 dark:text-slate-400 mb-1">
-                    <span className="font-medium">Milestone:</span> {payment.milestone}
+                    <span className="font-medium">Milestone:</span> {payment.milestone || payment.description || 'Payment milestone'}
                   </p>
                   {payment.dueDate && (
                     <p className="text-slate-600 dark:text-slate-400 mb-1">
@@ -163,22 +195,7 @@ export default function PaymentManagementComponent() {
                 )}
               </div>
             </div>
-          ))}
-          
-          {paymentData[activeTab].length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-slate-400 dark:text-slate-500 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-                No {activeTab} payments
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                You don&apos;t have any {activeTab} payments at the moment.
-              </p>
-            </div>
+            ))
           )}
         </div>
 

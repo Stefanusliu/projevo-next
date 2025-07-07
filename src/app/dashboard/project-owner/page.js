@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from '../../../contexts/AuthContext';
 import Tender from "./main-content/Tender";
 import HomePage from "./main-content/HomePage";
 import Profile from "./main-content/Profile";
+import ProtectedRoute from "../../../components/auth/ProtectedRoute";
 
 // Note: For client components, we'll handle SEO with next/head
 import Head from 'next/head';
 
-export default function ProjectOwnerDashboard() {
+function ProjectOwnerDashboardContent() {
+  const { user, userProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [activeView, setActiveView] = useState("tender"); // Add state for active view
@@ -227,9 +231,28 @@ export default function ProjectOwnerDashboard() {
                 <div className="flex items-center">
                   <button 
                     onClick={() => setActiveView("profile")}
-                    className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-3 hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 transform hover:scale-105"
+                    className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-3 hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 transform hover:scale-105 overflow-hidden"
                   >
-                    <span className="text-white text-sm font-medium">JD</span>
+                    {userProfile?.photoURL || user?.photoURL ? (
+                      <Image 
+                        src={userProfile?.photoURL || user?.photoURL} 
+                        alt="Profile" 
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-sm font-medium">
+                        {userProfile?.firstName && userProfile?.lastName 
+                          ? `${userProfile.firstName.charAt(0)}${userProfile.lastName.charAt(0)}`
+                          : userProfile?.displayName
+                          ? userProfile.displayName.charAt(0).toUpperCase()
+                          : user?.displayName
+                          ? user.displayName.charAt(0).toUpperCase()
+                          : 'U'
+                        }
+                      </span>
+                    )}
                   </button>
                   <div className="hidden sm:block">
                     <button 
@@ -237,10 +260,15 @@ export default function ProjectOwnerDashboard() {
                       className="text-left hover:bg-blue-50 dark:hover:bg-slate-700 p-1 rounded transition-colors"
                     >
                       <p className="text-sm font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
-                        John Doe
+                        {userProfile?.firstName && userProfile?.lastName 
+                          ? `${userProfile.firstName} ${userProfile.lastName}`
+                          : userProfile?.displayName 
+                          ? userProfile.displayName
+                          : user?.displayName || 'User'
+                        }
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Project Owner
+                        {userProfile?.userType || 'Project Owner'}
                       </p>
                     </button>
                   </div>
@@ -254,5 +282,13 @@ export default function ProjectOwnerDashboard() {
         {activeView === "tender" ? <Tender /> : activeView === "profile" ? <Profile /> : <HomePage />}
       </div>
     </>
+  );
+}
+
+export default function ProjectOwnerDashboard() {
+  return (
+    <ProtectedRoute requiredUserType="project-owner">
+      <ProjectOwnerDashboardContent />
+    </ProtectedRoute>
   );
 }

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
   const router = useRouter();
+  const { user, userProfile, signIn, signInWithGoogle, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -14,6 +16,7 @@ export default function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -26,39 +29,89 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+    
+    console.log('Login form submitted with:', { email: formData.email, password: formData.password ? '[HIDDEN]' : 'empty' });
+    
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      setError('Please enter both email and password');
+      setIsLoading(false);
+      return;
+    }
     
     try {
-      // Handle traditional email/password login logic here
-      // Backend will automatically determine if user is Project Owner or Vendor
-      console.log('Traditional login attempt:', formData);
+      console.log('Attempting to sign in...');
+      const result = await signIn(formData.email, formData.password);
+      console.log('Sign in result:', result);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Immediate redirect after successful login
+      console.log('Login successful, redirecting to dashboard...');
+      window.location.href = '/dashboard/project-owner';
       
-      // Handle successful login (redirect to dashboard)
-      router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
+      
+      let errorMessage = 'Failed to sign in. Please check your credentials.';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email. Please sign up first.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please try again.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed login attempts. Please try again later.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled. Please contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
+    setIsLoading(true);
+    
     try {
-      // Handle Google OAuth login logic here
-      // Backend will automatically determine if user is Project Owner or Vendor
-      console.log('Google login initiated');
-      
-      // Simulate successful Google login
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Redirect to dashboard
-      router.push('/dashboard');
+      await signInWithGoogle();
+      // Immediate redirect after successful Google login
+      console.log('Google login successful, redirecting to dashboard...');
+      window.location.href = '/dashboard/project-owner';
     } catch (error) {
       console.error('Google login error:', error);
+      
+      let errorMessage = 'Failed to sign in with Google';
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was cancelled. Please try again.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Show loading while auth state is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -104,6 +157,13 @@ export default function Login() {
 
           {/* Login card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+            {/* Error message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Login form */}
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Email field */}
@@ -220,7 +280,8 @@ export default function Login() {
             <button
               onClick={handleGoogleLogin}
               type="button"
-              className="w-full bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-all duration-200 shadow-sm hover:shadow-md group"
+              disabled={isLoading}
+              className="w-full bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-all duration-200 shadow-sm hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center justify-center space-x-3">
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">

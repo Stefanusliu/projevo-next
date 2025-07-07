@@ -1,12 +1,18 @@
+// app/signup/page.js
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
+import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
+import OTPModal from '../../components/auth/OTPModal';
+import PhoneOTPModal from '../../components/auth/PhoneOTPModal';
+import FirebaseConfigInstructions from '../../components/auth/FirebaseConfigInstructions';
 
 export default function SignUp() {
   const router = useRouter();
+  const { signUp, signInWithGoogle, verifyCustomOTP, resendEmailVerification, sendPhoneVerification, verifyPhoneForSignup, setupRecaptcha } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,39 +21,373 @@ export default function SignUp() {
     confirmPassword: '',
     company: '',
     userType: '',
+    phoneNumber: '',
     agreeToTerms: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [step, setStep] = useState(1); // 1: form, 2: email verification, 3: phone verification, 4: success
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  
+  // Phone verification states
+  const [showPhoneOTPModal, setShowPhoneOTPModal] = useState(false);
+  const [phoneOtpLoading, setPhoneOtpLoading] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [phoneVerificationStep, setPhoneVerificationStep] = useState('send'); // 'send' or 'verify'
+  const [showFirebaseConfigInstructions, setShowFirebaseConfigInstructions] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    
+    if (name === 'phoneNumber') {
+      // Only allow numbers and limit length
+      const numericValue = value.replace(/\D/g, '');
+      // Ensure it starts with 8 and limit to reasonable length (10-12 digits after 8)
+      if (numericValue === '' || (numericValue.startsWith('8') && numericValue.length <= 13)) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: numericValue
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+  };
+
+  // Format phone number for display (add spaces for readability)
+  const formatPhoneDisplay = (phone) => {
+    if (!phone) return '';
+    // Format: 8xx xxx xxxx or 8xx xxxx xxxx
+    if (phone.length <= 3) return phone;
+    if (phone.length <= 6) return `${phone.slice(0, 3)} ${phone.slice(3)}`;
+    if (phone.length <= 10) return `${phone.slice(0, 3)} ${phone.slice(3, 6)} ${phone.slice(6)}`;
+    return `${phone.slice(0, 3)} ${phone.slice(3, 7)} ${phone.slice(7)}`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
     // Validate required fields
     if (!formData.userType) {
-      alert('Please select whether you are a Project Owner or Vendor');
+      setError('Please select whether you are a Project Owner or Vendor');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (!formData.agreeToTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
     
+    setLoading(true);
+    
     try {
-      // Handle signup logic here
-      console.log('Signup attempt:', formData);
+      // Create Firebase user with the expected userData object
+      const userData = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber ? `+62${formData.phoneNumber}` : '', // Prepend +62
+        userType: formData.userType,
+        companyName: formData.company
+      };
+
+      const result = await signUp(userData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Handle potential profile save error
+      if (result.profileSaveError) {
+        console.warn('User created but profile data could not be saved. Will retry on next login.');
+      }
       
-      // Handle successful signup (redirect to dashboard)
-      router.push('/dashboard');
+      // Send OTP email automatically after successful signup
+      try {
+        await sendOTP();
+        setShowOTPModal(true);
+        setVerificationSent(true);
+      } catch (otpError) {
+        console.error('Failed to send OTP:', otpError);
+        // Show OTP modal anyway so user can try resending
+        setShowOTPModal(true);
+        setVerificationSent(false); // Indicate that initial send failed
+        setError(`OTP sending failed: ${otpError.message}. Please try resending.`);
+      }
+      
     } catch (error) {
       console.error('Signup error:', error);
+      
+      // Handle specific Firebase errors
+      let errorMessage = 'Failed to create account. Please try again.';
+      
+      if (error.code === 'auth/admin-restricted-operation') {
+        errorMessage = 'Account creation is currently restricted. Please contact support or try again later.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'permission-denied' || error.code === 'insufficient-permissions') {
+        errorMessage = 'Account created but profile data could not be saved. Please complete your profile after signing in.';
+        // Still move to verification step since user was created
+        setStep(2);
+        return;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setLoading(true);
+    
+    try {
+      const result = await signInWithGoogle();
+      
+      // Google sign-in is handled by AuthContext
+      // Redirect based on user profile completion status
+      router.push('/dashboard');
+      
+    } catch (error) {
+      console.error('Google signup error:', error);
+      
+      let errorMessage = 'Failed to sign up with Google';
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-up was cancelled. Please try again.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send OTP Email
+  const sendOTP = async () => {
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          name: `${formData.firstName} ${formData.lastName}`,
+          userData: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phoneNumber: formData.phoneNumber ? `+62${formData.phoneNumber}` : '',
+            userType: formData.userType,
+            companyName: formData.company || '',
+            displayName: `${formData.firstName} ${formData.lastName}`
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send verification code');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      throw error;
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOTP = async (otp) => {
+    setOtpLoading(true);
+    
+    try {
+      // Use the AuthContext's verifyCustomOTP function
+      // This will verify the OTP and update the user's emailVerified status in Firestore
+      await verifyCustomOTP(otp);
+      
+      // OTP verified successfully
+      setShowOTPModal(false);
+      
+      // Check if user has a phone number to verify
+      if (formData.phoneNumber) {
+        // Proceed to phone verification
+        setStep(3);
+        await initPhoneVerification();
+      } else {
+        // Skip phone verification, go to success
+        setStep(4);
+      }
+      
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      
+      // Check if it's a profile refresh error but OTP was actually verified
+      if (error.message && error.message.includes('Missing or insufficient permissions')) {
+        console.warn('Profile refresh failed but OTP verification might have succeeded. Continuing...');
+        setShowOTPModal(false);
+        
+        // Try to proceed anyway
+        if (formData.phoneNumber) {
+          setStep(3);
+          await initPhoneVerification();
+        } else {
+          setStep(4);
+        }
+      } else {
+        // Re-throw other errors to be handled by the OTP modal
+        throw error;
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOTP = async () => {
+    try {
+      // Use AuthContext's resendEmailVerification which now uses our custom OTP system
+      await resendEmailVerification();
+    } catch (error) {
+      console.error('Error resending OTP:', error);
+      throw error;
+    }
+  };
+
+  // Initialize phone verification
+  const initPhoneVerification = async () => {
+    try {
+      setError(''); // Clear any previous errors
+      console.log('Initializing phone verification...');
+      
+      // Just show the modal - let the modal handle reCAPTCHA setup
+      setShowPhoneOTPModal(true);
+      setPhoneVerificationStep('send');
+      
+      console.log('Phone verification modal opened');
+    } catch (error) {
+      console.error('Error initializing phone verification:', error);
+      setError(`Failed to initialize phone verification: ${error.message}. Please try again.`);
+    }
+  };
+
+  // Send phone verification code
+  const handleSendPhoneVerification = async () => {
+    setPhoneOtpLoading(true);
+    
+    try {
+      console.log('Setting up reCAPTCHA...');
+      // Setup reCAPTCHA first if not already done
+      await setupRecaptcha('phone-recaptcha-container');
+      
+      const phoneNumber = `+62${formData.phoneNumber}`;
+      console.log('Sending verification code to:', phoneNumber);
+      
+      const confirmation = await sendPhoneVerification(phoneNumber);
+      setConfirmationResult(confirmation);
+      setPhoneVerificationStep('verify');
+      
+      console.log('Verification code sent successfully');
+      return confirmation;
+    } catch (error) {
+      console.error('Error sending phone verification:', error);
+      
+      // Check if it's a Firebase configuration error
+      if (error.message === 'FIREBASE_PHONE_AUTH_NOT_CONFIGURED') {
+        // Close the phone modal and show configuration instructions
+        setShowPhoneOTPModal(false);
+        setShowFirebaseConfigInstructions(true);
+        return;
+      }
+      
+      // Provide helpful error messages based on the specific error
+      let userFriendlyMessage = 'Failed to send verification code. ';
+      
+      if (error.message && error.message.includes('invalid-app-credential')) {
+        userFriendlyMessage = 'Phone verification is not properly configured in Firebase. Please skip this step for now and complete it later in your account settings.';
+      } else if (error.message && error.message.includes('missing-app-credentials')) {
+        userFriendlyMessage = 'Authentication service configuration error. Please skip phone verification for now.';
+      } else if (error.message && error.message.includes('auth/invalid-phone-number')) {
+        userFriendlyMessage = 'The phone number format is invalid. Please check the number and try again.';
+      } else if (error.message && error.message.includes('auth/quota-exceeded')) {
+        userFriendlyMessage = 'SMS quota exceeded. Please try again later or skip for now.';
+      } else if (error.message && error.message.includes('reCAPTCHA')) {
+        userFriendlyMessage = 'reCAPTCHA verification failed. Please refresh the page and try again.';
+      } else if (error.message) {
+        userFriendlyMessage += error.message;
+      } else {
+        userFriendlyMessage += 'Please try again or skip this step.';
+      }
+      
+      // Create a more detailed error for logging
+      const detailedError = new Error(userFriendlyMessage);
+      detailedError.originalError = error;
+      
+      throw detailedError;
+    } finally {
+      setPhoneOtpLoading(false);
+    }
+  };
+
+  // Verify phone OTP
+  const handleVerifyPhoneOTP = async (code) => {
+    setPhoneOtpLoading(true);
+    
+    try {
+      if (!confirmationResult) {
+        throw new Error('No confirmation result available. Please request a new code.');
+      }
+      
+      await verifyPhoneForSignup(confirmationResult, code);
+      
+      // Phone verification successful
+      setShowPhoneOTPModal(false);
+      setStep(4); // Move to success step
+      
+    } catch (error) {
+      console.error('Phone verification error:', error);
+      throw error;
+    } finally {
+      setPhoneOtpLoading(false);
+    }
+  };
+
+  // Resend phone verification
+  const handleResendPhoneOTP = async () => {
+    try {
+      const phoneNumber = `+62${formData.phoneNumber}`;
+      const confirmation = await sendPhoneVerification(phoneNumber);
+      setConfirmationResult(confirmation);
+      return confirmation;
+    } catch (error) {
+      console.error('Error resending phone verification:', error);
+      throw error;
     }
   };
 
@@ -95,7 +435,14 @@ export default function SignUp() {
 
           {/* Signup form */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+              </div>
+            )}
+
+            {step === 1 && (
+              <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Name fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -162,6 +509,32 @@ export default function SignUp() {
                   className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Your company name"
                 />
+              </div>
+
+              {/* Phone Number field */}
+              <div>
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-slate-500 dark:text-slate-400 sm:text-sm">+62</span>
+                  </div>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    required
+                    value={formatPhoneDisplay(formData.phoneNumber)}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="812 3456 7890"
+                    maxLength="15"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Enter your number starting with 8 (e.g., 812 3456 7890)
+                </p>
               </div>
 
               {/* User Type dropdown */}
@@ -284,14 +657,24 @@ export default function SignUp() {
               <div>
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {formData.userType === 'project-owner' 
-                    ? 'Start Finding Vendors' 
-                    : formData.userType === 'vendor' 
-                    ? 'Start Getting Projects' 
-                    : 'Create your Projevo account'
-                  }
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating account...
+                    </span>
+                  ) : (
+                    formData.userType === 'project-owner' 
+                      ? 'Start Finding Vendors' 
+                      : formData.userType === 'vendor' 
+                      ? 'Start Getting Projects' 
+                      : 'Create your Projevo account'
+                  )}
                 </button>
               </div>
 
@@ -311,40 +694,203 @@ export default function SignUp() {
               <div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      console.log('Google signup initiated');
-                      await new Promise(resolve => setTimeout(resolve, 500));
-                      router.push('/dashboard');
-                    } catch (error) {
-                      console.error('Google signup error:', error);
-                    }
-                  }}
-                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg shadow-sm bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all duration-200 group"
+                  onClick={handleGoogleSignUp}
+                  disabled={loading}
+                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg shadow-sm bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  <span className="ml-2">Continue with Google</span>
+                  {loading ? (
+                    <svg className="animate-spin h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      <span className="ml-2">Continue with Google</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
+            )}
 
-            {/* Sign in link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Already have an account?{' '}
-                <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                  Sign in
-                </Link>
-              </p>
-            </div>
+            {/* Email Verification Step */}
+            {step === 2 && (
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    Check your email
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    We&apos;ve sent a verification code to <strong>{formData.email}</strong>
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                    Enter the 6-digit code from your email to continue.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setShowOTPModal(true)}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  >
+                    Enter Verification Code
+                  </button>
+                  <button
+                    onClick={() => setStep(1)}
+                    className="w-full text-slate-600 dark:text-slate-400 py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+                  >
+                    Back to form
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Phone Verification Step */}
+            {step === 3 && (
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    Verify your phone number
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Secure your account with phone verification
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                    Phone: <strong>+62{formatPhoneDisplay(formData.phoneNumber)}</strong>
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={initPhoneVerification}
+                    disabled={phoneOtpLoading}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:from-green-400 disabled:to-emerald-400 transition-all duration-200"
+                  >
+                    {phoneOtpLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Setting up verification...
+                      </span>
+                    ) : (
+                      'Start Phone Verification'
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setStep(4)} // Skip phone verification
+                    className="w-full text-slate-600 dark:text-slate-400 py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Success Step */}
+            {step === 4 && (
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    Welcome to Projevo!
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Your account has been created successfully. You can now access your dashboard and start using the platform.
+                  </p>
+                  {formData.phoneNumber && (
+                    <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                      📱 Phone verification {phoneVerificationStep === 'verify' || step === 4 ? 'completed' : 'can be completed later in settings'}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  >
+                    Continue to Dashboard
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Sign in link - only show on step 1 */}
+            {step === 1 && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Already have an account?{' '}
+                  <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* OTP Modal */}
+      <OTPModal
+        isOpen={showOTPModal}
+        onClose={() => setShowOTPModal(false)}
+        onVerify={handleVerifyOTP}
+        email={formData.email}
+        name={`${formData.firstName} ${formData.lastName}`}
+        onResendOTP={handleResendOTP}
+        loading={otpLoading}
+      />
+
+      {/* Phone OTP Modal */}
+      <PhoneOTPModal
+        isOpen={showPhoneOTPModal}
+        onClose={() => {
+          setShowPhoneOTPModal(false);
+          setStep(4); // Go to success step if they close
+        }}
+        onVerify={handleVerifyPhoneOTP}
+        onResend={handleResendPhoneOTP}
+        onSendCode={handleSendPhoneVerification}
+        phoneNumber={`+62${formData.phoneNumber}`}
+        loading={phoneOtpLoading}
+        step={phoneVerificationStep}
+      />
+
+      {/* Firebase Configuration Instructions Modal */}
+      {showFirebaseConfigInstructions && (
+        <FirebaseConfigInstructions
+          onSkip={() => {
+            setShowFirebaseConfigInstructions(false);
+            setStep(4); // Go to success step
+          }}
+          onRetry={() => {
+            setShowFirebaseConfigInstructions(false);
+            // Try to initialize phone verification again
+            initPhoneVerification();
+          }}
+        />
+      )}
     </>
   );
 }

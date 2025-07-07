@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import HomeComponent from '../components/HomeComponent';
+import HomeComponent from '../components/HomeComponentNew';
 import HistoryComponent from '../components/HistoryComponent';
 import SavedBOQComponent from '../components/SavedBOQComponent';
 import PaymentManagementComponent from '../components/PaymentManagementComponent';
+import Tender from './Tender';
 
 export default function HomePage() {
   const [activeMenu, setActiveMenu] = useState("Project");
   
-  const menuItems = ['Project', 'BOQ Generator', 'Payment', 'History'];
+  const menuItems = ['Project', 'Tender', 'BOQ Generator', 'Payment', 'History'];
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -38,6 +39,7 @@ export default function HomePage() {
         {/* Main Content Area */}
         <div className="flex-1">
           {activeMenu === "Project" && <HomeComponent />}
+          {activeMenu === "Tender" && <Tender />}
           {activeMenu === "BOQ Generator" && <SavedBOQComponent />}
           {activeMenu === "Payment" && <PaymentManagementComponent />}
           {activeMenu === "History" && <HistoryComponent />}
