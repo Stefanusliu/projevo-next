@@ -25,9 +25,10 @@ export default function HomePage() {
                   onClick={() => setActiveMenu(item)}
                   className={`block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
                     activeMenu === item
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50 dark:text-slate-300 dark:hover:text-blue-400 dark:hover:bg-blue-900/20'
+                      ? 'text-white shadow-md'
+                      : 'text-slate-600 hover:text-gray-700 hover:bg-gray-50 dark:text-slate-300 dark:hover:text-gray-800 dark:hover:bg-gray-100'
                   }`}
+                  style={activeMenu === item ? { backgroundColor: '#2373FF' } : {}}
                 >
                   {item}
                 </button>

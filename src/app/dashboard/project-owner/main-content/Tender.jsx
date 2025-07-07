@@ -254,6 +254,8 @@ const Tender = () => {
         ? prev.filter(type => type !== projectType)
         : [...prev, projectType]
     );
+    // Auto-close filter after selection
+    setTimeout(() => setShowProjectTypeFilter(false), 100);
   };
 
   const handleScopeFilter = (scope) => {
@@ -262,6 +264,8 @@ const Tender = () => {
         ? prev.filter(s => s !== scope)
         : [...prev, scope]
     );
+    // Auto-close filter after selection
+    setTimeout(() => setShowScopeFilter(false), 100);
   };
 
   const handlePropertyFilter = (propertyType) => {
@@ -270,6 +274,8 @@ const Tender = () => {
         ? prev.filter(type => type !== propertyType)
         : [...prev, propertyType]
     );
+    // Auto-close filter after selection
+    setTimeout(() => setShowPropertyFilter(false), 100);
   };
 
   const handleSortChange = (sortOption) => {
@@ -352,10 +358,10 @@ const Tender = () => {
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tender Title */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Tender
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
+          <p className="text-gray-600 mt-2">
             Discover projects open for tender and bidding
           </p>
         </div>
@@ -393,29 +399,29 @@ const Tender = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-slate-600 dark:text-slate-400">Loading tender projects...</p>
+          <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-tender-blue mb-6"></div>
+            <p className="text-gray-600 text-lg">Loading tender projects...</p>
           </div>
         ) : (
           <>
             {/* Filters */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-3 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
               <div className="flex items-center gap-2 flex-wrap">
             {/* Jenis Proyek Filter */}
             <div className="relative min-w-[160px] flex-1" ref={projectTypeFilterRef}>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Jenis Proyek
               </label>
               <button
                 onClick={() => setShowProjectTypeFilter(!showProjectTypeFilter)}
-                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-left text-sm"
+                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-left text-sm"
               >
                 <div className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <span className="text-xs font-medium text-slate-900 dark:text-white">
+                  <span className="text-xs font-medium text-gray-900">
                     {selectedProjectTypes.length > 0 
                       ? `${selectedProjectTypes.length} dipilih` 
                       : 'Semua'
@@ -429,9 +435,9 @@ const Tender = () => {
 
               {/* Project Type Filter Dropdown */}
               {showProjectTypeFilter && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg z-10">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
                   <div className="p-3">
-                    <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Pilih Jenis Proyek</h3>
+                    <h3 className="text-xs font-semibold text-gray-900 mb-2">Pilih Jenis Proyek</h3>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto">
                       {allProjectTypes.map(type => (
                         <label key={type} className="flex items-center space-x-2 cursor-pointer">
@@ -439,9 +445,15 @@ const Tender = () => {
                             type="checkbox"
                             checked={selectedProjectTypes.includes(type)}
                             onChange={() => handleProjectTypeFilter(type)}
-                            className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            className="w-3.5 h-3.5 border-slate-300 rounded focus:ring-2"
+                            style={{ 
+                              accentColor: '#2373FF',
+                              '&:focus': { 
+                                boxShadow: `0 0 0 2px rgba(35, 115, 255, 0.2)` 
+                              }
+                            }}
                           />
-                          <span className="text-xs text-slate-700 dark:text-slate-300">{type}</span>
+                          <span className="text-xs text-gray-700">{type}</span>
                         </label>
                       ))}
                     </div>
@@ -449,7 +461,8 @@ const Tender = () => {
                       <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
                         <button
                           onClick={() => setSelectedProjectTypes([])}
-                          className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-xs hover:underline"
+                          style={{ color: '#2373FF' }}
                         >
                           Clear All
                         </button>
@@ -462,18 +475,18 @@ const Tender = () => {
 
             {/* Ruang Lingkup Filter */}
             <div className="relative min-w-[160px] flex-1" ref={scopeFilterRef}>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Ruang Lingkup
               </label>
               <button
                 onClick={() => setShowScopeFilter(!showScopeFilter)}
-                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-left text-sm"
+                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-left text-sm"
               >
                 <div className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  <span className="text-xs font-medium text-slate-900 dark:text-white">
+                  <span className="text-xs font-medium text-gray-900">
                     {selectedScopes.length > 0 
                       ? `${selectedScopes.length} dipilih` 
                       : 'Semua'
@@ -487,9 +500,9 @@ const Tender = () => {
 
               {/* Scope Filter Dropdown */}
               {showScopeFilter && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg z-10">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
                   <div className="p-3">
-                    <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Pilih Ruang Lingkup</h3>
+                    <h3 className="text-xs font-semibold text-gray-900 mb-2">Pilih Ruang Lingkup</h3>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto">
                       {allScopes.map(scope => (
                         <label key={scope} className="flex items-center space-x-2 cursor-pointer">
@@ -497,17 +510,24 @@ const Tender = () => {
                             type="checkbox"
                             checked={selectedScopes.includes(scope)}
                             onChange={() => handleScopeFilter(scope)}
-                            className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            className="w-3.5 h-3.5 border-gray-300 rounded focus:ring-2"
+                            style={{ 
+                              accentColor: '#2373FF',
+                              '&:focus': { 
+                                boxShadow: `0 0 0 2px rgba(35, 115, 255, 0.2)` 
+                              }
+                            }}
                           />
-                          <span className="text-xs text-slate-700 dark:text-slate-300">{scope}</span>
+                          <span className="text-xs text-gray-700">{scope}</span>
                         </label>
                       ))}
                     </div>
                     {selectedScopes.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+                      <div className="mt-2 pt-2 border-t border-gray-200">
                         <button
                           onClick={() => setSelectedScopes([])}
-                          className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-xs hover:underline"
+                          style={{ color: '#2373FF' }}
                         >
                           Clear All
                         </button>
@@ -520,19 +540,19 @@ const Tender = () => {
 
             {/* Property Filter */}
             <div className="relative min-w-[160px] flex-1" ref={propertyFilterRef}>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Property
               </label>
               <button
                 onClick={() => setShowPropertyFilter(!showPropertyFilter)}
-                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-left text-sm"
+                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-left text-sm"
               >
                 <div className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21l8-12" />
                   </svg>
-                  <span className="text-xs font-medium text-slate-900 dark:text-white">
+                  <span className="text-xs font-medium text-gray-900">
                     {selectedPropertyTypes.length > 0 
                       ? `${selectedPropertyTypes.length} dipilih` 
                       : 'Semua'
@@ -546,9 +566,9 @@ const Tender = () => {
 
               {/* Property Filter Dropdown */}
               {showPropertyFilter && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg z-10">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
                   <div className="p-3">
-                    <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Pilih Property</h3>
+                    <h3 className="text-xs font-semibold text-gray-900 mb-2">Pilih Property</h3>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto">
                       {allPropertyTypes.map(property => (
                         <label key={property} className="flex items-center space-x-2 cursor-pointer">
@@ -556,17 +576,24 @@ const Tender = () => {
                             type="checkbox"
                             checked={selectedPropertyTypes.includes(property)}
                             onChange={() => handlePropertyFilter(property)}
-                            className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            className="w-3.5 h-3.5 border-gray-300 rounded focus:ring-2"
+                            style={{ 
+                              accentColor: '#2373FF',
+                              '&:focus': { 
+                                boxShadow: `0 0 0 2px rgba(35, 115, 255, 0.2)` 
+                              }
+                            }}
                           />
-                          <span className="text-xs text-slate-700 dark:text-slate-300">{property}</span>
+                          <span className="text-xs text-gray-700">{property}</span>
                         </label>
                       ))}
                     </div>
                     {selectedPropertyTypes.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+                      <div className="mt-2 pt-2 border-t border-gray-200">
                         <button
                           onClick={() => setSelectedPropertyTypes([])}
-                          className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-xs hover:underline"
+                          style={{ color: '#2373FF' }}
                         >
                           Clear All
                         </button>
@@ -579,18 +606,18 @@ const Tender = () => {
 
             {/* Sort By Filter */}
             <div className="relative min-w-[160px] flex-1" ref={sortFilterRef}>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Sort By
               </label>
               <button
                 onClick={() => setShowSortFilter(!showSortFilter)}
-                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-left text-sm"
+                className="w-full flex items-center justify-between gap-1 px-2 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-left text-sm"
               >
                 <div className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                   </svg>
-                  <span className="text-xs font-medium text-slate-900 dark:text-white truncate">
+                  <span className="text-xs font-medium text-gray-900 truncate">
                     {sortBy}
                   </span>
                 </div>
@@ -601,19 +628,20 @@ const Tender = () => {
 
               {/* Sort Filter Dropdown */}
               {showSortFilter && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg z-10">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
                   <div className="p-3">
-                    <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Pilih Urutan</h3>
+                    <h3 className="text-xs font-semibold text-gray-900 mb-2">Pilih Urutan</h3>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto">
                       {sortOptions.map(option => (
                         <button
                           key={option}
                           onClick={() => handleSortChange(option)}
-                          className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
+                          className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 transition-colors ${
                             sortBy === option 
-                              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' 
-                              : 'text-slate-700 dark:text-slate-300'
+                              ? 'text-white' 
+                              : 'text-gray-700'
                           }`}
+                          style={sortBy === option ? { backgroundColor: '#2373FF' } : {}}
                         >
                           {option}
                         </button>
@@ -622,22 +650,6 @@ const Tender = () => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Apply Filters Button */}
-            <div className="ml-2">
-              <label className="block text-xs font-medium text-transparent mb-1">Apply</label>
-              <button 
-                onClick={() => {
-                  setShowProjectTypeFilter(false);
-                  setShowScopeFilter(false);
-                  setShowPropertyFilter(false);
-                  setShowSortFilter(false);
-                }}
-                className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-md font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs"
-              >
-                Apply Filters
-              </button>
             </div>
           </div>
         </div>
@@ -661,7 +673,7 @@ const Tender = () => {
             {sortedData.map((project) => (
               <div
                 key={project.id}
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
               >
               <div className="p-6">
                 {/* Header */}
@@ -673,24 +685,24 @@ const Tender = () => {
                           project.projectType === "Desain"
                             ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
                             : project.projectType === "Bangun"
-                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                            ? "bg-orange-100 text-orange-800"
                             : project.projectType === "Renovasi"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {project.projectType}
                       </span>
-                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                         {project.propertyType}
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 line-clamp-2 h-14 flex items-start">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 h-14 flex items-start">
                       <span className="leading-tight">
                         {project.projectTitle}
                       </span>
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center">
+                    <p className="text-sm text-gray-600 flex items-center">
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -702,7 +714,7 @@ const Tender = () => {
                     {/* Bookmark Button */}
                     <button
                       onClick={() => toggleBookmark(project.id)}
-                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors mb-2"
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors mb-2"
                       title={bookmarkedProjects.includes(project.id) ? "Remove bookmark" : "Add bookmark"}
                     >
                       <svg 
@@ -723,12 +735,13 @@ const Tender = () => {
 
                 {/* Scope */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">Ruang Lingkup</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Ruang Lingkup</h4>
                   <div className="flex flex-wrap gap-1">
                     {(Array.isArray(project.scope) ? project.scope : [project.scope]).filter(Boolean).map((scopeItem, index) => (
                       <span
                         key={index}
-                        className="px-2 py-1 text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded"
+                        className="px-2 py-1 text-xs text-white rounded"
+                        style={{ backgroundColor: '#2373FF' }}
                       >
                         {scopeItem}
                       </span>
@@ -739,18 +752,18 @@ const Tender = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.budget}</p>
+                    <p className="text-xs text-gray-500">Budget</p>
+                    <p className="text-sm font-semibold text-gray-900">{project.budget}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Duration</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.duration}</p>
+                    <p className="text-xs text-gray-500">Duration</p>
+                    <p className="text-sm font-semibold text-gray-900">{project.duration}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Deadline</p>
+                    <p className="text-xs text-gray-500">Deadline</p>
                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getBidCountdownColor(project.bidCountdown)}`}>
                       {project.bidCountdown}
                     </span>
@@ -764,13 +777,16 @@ const Tender = () => {
                 <div className="flex space-x-3">
                   <button 
                     onClick={() => handleCreateOffer(project)}
-                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    className="flex-1 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: '#2373FF' }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                   >
                     Buat Penawaran
                   </button>
                   <button 
                     onClick={() => handleViewDetails(project)}
-                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     View Details
                   </button>
@@ -781,28 +797,19 @@ const Tender = () => {
           </div>
         )}
 
-        {/* Load More - only show if there are projects */}
-        {sortedData.length > 0 && (
-          <div className="text-center mt-8">
-            <button className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-              Load More Projects
-            </button>
-          </div>
-        )}
-
         {/* Create Offer Modal */}
         {showOfferModal && selectedProject && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
               <div className="p-6">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-2xl font-bold text-gray-900">
                     Buat Penawaran
                   </h2>
                   <button
                     onClick={closeModals}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -811,23 +818,23 @@ const Tender = () => {
                 </div>
 
                 {/* Project Info */}
-                <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 mb-6">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     {selectedProject.projectTitle}
                   </h3>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
                       selectedProject.projectType === "Desain"
-                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+                        ? "bg-purple-100 text-purple-800"
                         : selectedProject.projectType === "Bangun"
-                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                        ? "bg-orange-100 text-orange-800"
                         : selectedProject.projectType === "Renovasi"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                        : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
                     }`}>
                       {selectedProject.projectType}
                     </span>
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                       {selectedProject.propertyType}
                     </span>
                   </div>
@@ -845,7 +852,18 @@ const Tender = () => {
                     <input
                       type="text"
                       placeholder="Masukkan penawaran harga Anda"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                      style={{ '--focus-ring-color': '#2373FF' }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#2373FF';
+                        e.target.style.outline = '2px solid #2373FF';
+                        e.target.style.outlineOffset = '2px';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '';
+                        e.target.style.outline = '';
+                        e.target.style.outlineOffset = '';
+                      }}
                     />
                   </div>
 
@@ -856,7 +874,17 @@ const Tender = () => {
                     <input
                       type="text"
                       placeholder="Contoh: 3 bulan"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#2373FF';
+                        e.target.style.outline = '2px solid #2373FF';
+                        e.target.style.outlineOffset = '2px';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '';
+                        e.target.style.outline = '';
+                        e.target.style.outlineOffset = '';
+                      }}
                     />
                   </div>
 
@@ -867,7 +895,17 @@ const Tender = () => {
                     <textarea
                       rows={4}
                       placeholder="Jelaskan detail penawaran, metodologi, dan keunggulan Anda..."
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white resize-none"
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white resize-none"
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#2373FF';
+                        e.target.style.outline = '2px solid #2373FF';
+                        e.target.style.outlineOffset = '2px';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '';
+                        e.target.style.outline = '';
+                        e.target.style.outlineOffset = '';
+                      }}
                     />
                   </div>
 
@@ -896,7 +934,10 @@ const Tender = () => {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                      style={{ backgroundColor: '#2373FF' }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                     >
                       Kirim Penawaran
                     </button>
@@ -1164,7 +1205,10 @@ const Tender = () => {
                       closeModals();
                       handleCreateOffer(selectedProject);
                     }}
-                    className="flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 hover:from-blue-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-3 group"
+                    className="flex-1 px-6 py-3.5 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-3 group"
+                    style={{ backgroundColor: '#2373FF' }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                   >
                     <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
