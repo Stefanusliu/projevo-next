@@ -15,39 +15,40 @@ function DashboardContent() {
   const [error, setError] = useState('');
   
   useEffect(() => {
-    console.log('Dashboard useEffect - userProfile:', userProfile, 'user:', user);
+    console.log('🔍 Dashboard useEffect - userProfile:', userProfile, 'user:', user);
+    console.log('🔍 Dashboard - userProfile?.userType:', userProfile?.userType);
     
     if (userProfile?.userType) {
-      console.log('User has userType:', userProfile.userType);
+      console.log('✅ User has userType:', userProfile.userType);
       // Redirect to appropriate dashboard based on user type
       if (userProfile.userType === 'project-owner') {
-        console.log('Redirecting to project-owner dashboard');
+        console.log('🚀 Redirecting to project-owner dashboard');
         router.push('/dashboard/project-owner');
       } else if (userProfile.userType === 'vendor') {
-        console.log('Redirecting to vendor dashboard');
+        console.log('🚀 Redirecting to vendor dashboard');
         router.push('/dashboard/vendor');
       } else {
-        // Unknown user type, stay on this page to select
-        console.log('Unknown user type, showing selection');
-        setIsRedirecting(false);
+        // Unknown user type, redirect to user type selection
+        console.log('❓ Unknown user type, redirecting to user type selection');
+        router.push('/select-user-type');
       }
     } else if (userProfile && !userProfile.userType) {
-      // User exists but no userType set, show selection
-      console.log('User profile exists but no userType, showing selection');
-      setIsRedirecting(false);
+      // User exists but no userType set, redirect to selection
+      console.log('⚠️ User profile exists but no userType, redirecting to user type selection');
+      router.push('/select-user-type');
     } else if (user && userProfile === null) {
       // User is authenticated but profile is still loading or doesn't exist
-      // Give it a moment, then show selection if still no profile
-      console.log('User authenticated but profile loading/missing, waiting...');
+      // Give it a moment, then redirect to selection if still no profile
+      console.log('⏳ User authenticated but profile loading/missing, waiting...');
       const timer = setTimeout(() => {
-        console.log('Timeout reached, showing selection');
-        setIsRedirecting(false);
+        console.log('⏰ Timeout reached, redirecting to user type selection');
+        router.push('/select-user-type');
       }, 3000); // Increased timeout to 3 seconds
       
       return () => clearTimeout(timer);
     } else if (!user) {
       // No user, should be redirected by ProtectedRoute
-      console.log('No user found');
+      console.log('❌ No user found');
     }
   }, [userProfile, user, router]);
 
@@ -83,13 +84,13 @@ function DashboardContent() {
 
   if (isRedirecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#2373FF' }}></div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Setting up your dashboard...
           </h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-gray-600">
             Redirecting you to the right place.
           </p>
         </div>

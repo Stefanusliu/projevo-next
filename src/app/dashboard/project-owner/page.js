@@ -8,6 +8,13 @@ import Tender from "./main-content/Tender";
 import HomePage from "./main-content/HomePage";
 import Profile from "./main-content/Profile";
 import ProtectedRoute from "../../../components/auth/ProtectedRoute";
+import Avatar from "../../../components/ui/Avatar";
+import { 
+  FiHome, 
+  FiSearch, 
+  FiBell, 
+  FiMail 
+} from 'react-icons/fi';
 
 // Note: For client components, we'll handle SEO with next/head
 import Head from 'next/head';
@@ -76,6 +83,14 @@ function ProjectOwnerDashboardContent() {
                   How it Works?
                 </Link>
                 <Link
+                  href="/boq-maker"
+                  className="text-white font-medium transition-colors hover:text-blue-400"
+                  onMouseEnter={(e) => e.target.style.color = '#2373FF'}
+                  onMouseLeave={(e) => e.target.style.color = ''}
+                >
+                  BOQ Generator
+                </Link>
+                <Link
                   href="/contact"
                   className="text-white font-medium transition-colors hover:text-blue-400"
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
@@ -119,12 +134,8 @@ function ProjectOwnerDashboardContent() {
               <div className="flex items-center flex-1">
                 <button
                   onClick={() => setActiveView("tender")}
-                  className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mr-4 ${
-                    activeView === "tender"
-                      ? "text-white shadow-lg hover:shadow-xl"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                  style={activeView === "tender" ? { backgroundColor: '#2373FF' } : {}}
+                  className="px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mr-4 text-white"
+                  style={{ backgroundColor: '#2373FF' }}
                 >
                   Tender
                 </button>
@@ -133,19 +144,7 @@ function ProjectOwnerDashboardContent() {
                   className="p-2.5 rounded-full transition-colors mr-4 text-white"
                   style={{ backgroundColor: '#2373FF' }}
                 >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                    />
-                  </svg>
+                  <FiHome className="w-6 h-6" />
                 </button>
                 <div className="flex items-center flex-1 mr-6">
                   <div className="relative flex-1 flex items-center bg-white border border-gray-300 rounded-lg shadow-md">
@@ -170,19 +169,7 @@ function ProjectOwnerDashboardContent() {
                     <button 
                       className="p-2.5 text-gray-500 hover:text-gray-700 rounded-r-lg transition-colors border-l border-gray-300"
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
+                      <FiSearch className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -194,19 +181,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+                  <FiBell className="w-5 h-5" />
                   <span 
                     className="absolute -top-1 -right-1 w-5 h-5 text-white text-xs rounded-full flex items-center justify-center"
                     style={{ backgroundColor: '#2373FF' }}
@@ -220,19 +195,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
+                  <FiMail className="w-5 h-5" />
                   <span 
                     className="absolute -top-1 -right-1 w-5 h-5 text-white text-xs rounded-full flex items-center justify-center"
                     style={{ backgroundColor: '#2373FF' }}
@@ -242,31 +205,15 @@ function ProjectOwnerDashboardContent() {
                 </button>
                 <button 
                   onClick={() => setActiveView("profile")}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 transform hover:scale-105 overflow-hidden"
-                  style={{ backgroundColor: '#2373FF' }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
+                  className="rounded-full transition-all duration-200 transform hover:scale-105"
                 >
-                  {userProfile?.photoURL || user?.photoURL ? (
-                    <Image 
-                      src={userProfile?.photoURL || user?.photoURL} 
-                      alt="Profile" 
-                      width={40}
-                      height={40}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-white text-sm font-medium">
-                      {userProfile?.firstName && userProfile?.lastName 
-                        ? `${userProfile.firstName.charAt(0)}${userProfile.lastName.charAt(0)}`
-                        : userProfile?.displayName
-                        ? userProfile.displayName.charAt(0).toUpperCase()
-                        : user?.displayName
-                        ? user.displayName.charAt(0).toUpperCase()
-                        : 'U'
-                      }
-                    </span>
-                  )}
+                  <Avatar
+                    src={userProfile?.photoURL || user?.photoURL}
+                    alt="Profile"
+                    name={userProfile?.displayName || user?.displayName || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim()}
+                    size={40}
+                    className="hover:ring-2 hover:ring-blue-300"
+                  />
                 </button>
               </div>
             </div>

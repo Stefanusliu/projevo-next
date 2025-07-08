@@ -165,16 +165,16 @@ const ProjectMarketplace = () => {
   const getBidCountdownColor = (countdown) => {
     const days = parseInt(countdown.split(" ")[0]);
     if (days <= 3)
-      return "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20";
+      return "text-red-600 bg-red-50";
     if (days <= 7)
-      return "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20";
-    return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20";
+      return "text-blue-600 bg-blue-50";
+    return "text-gray-600 bg-gray-50";
   };
 
   const getMatchColor = (match) => {
-    if (match >= 90) return "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20";
-    if (match >= 80) return "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20";
-    return "text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20";
+    if (match >= 90) return "text-blue-600 bg-blue-50";
+    if (match >= 80) return "text-gray-600 bg-gray-50";
+    return "text-gray-500 bg-gray-50";
   };
 
   const filterAndSortData = () => {
@@ -265,25 +265,25 @@ const ProjectMarketplace = () => {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
           Project Marketplace 🏗️
         </h1>
-        <p className="text-slate-600 dark:text-slate-400">
+        <p className="text-slate-600">
           Discover projects and submit proposals to win new business opportunities.
         </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Category
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>
@@ -293,13 +293,13 @@ const ProjectMarketplace = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Industry
             </label>
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {industries.map((industry) => (
                 <option key={industry} value={industry}>
@@ -309,13 +309,13 @@ const ProjectMarketplace = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Sort By
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="match">Best Match</option>
               <option value="budget">Highest Budget</option>
@@ -324,7 +324,7 @@ const ProjectMarketplace = () => {
             </select>
           </div>
           <div className="flex items-end">
-            <button className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               Apply Filters
             </button>
           </div>
@@ -336,24 +336,24 @@ const ProjectMarketplace = () => {
         {filteredData.map((project) => (
           <div
             key={project.id}
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
           >
             <div className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
                       {project.category}
                     </span>
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
                       {project.industry}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-600">
                     {project.client} • {project.location}
                   </p>
                 </div>
@@ -365,24 +365,24 @@ const ProjectMarketplace = () => {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-3">
+              <p className="text-sm text-slate-600 mb-4 line-clamp-3">
                 {project.description}
               </p>
 
               {/* Requirements */}
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">Requirements</h4>
+                <h4 className="text-sm font-medium text-slate-900 mb-2">Requirements</h4>
                 <div className="flex flex-wrap gap-1">
                   {project.requirements.slice(0, 2).map((req, index) => (
                     <span
                       key={index}
-                      className="px-2 py-1 text-xs bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded"
+                      className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
                     >
                       {req}
                     </span>
                   ))}
                   {project.requirements.length > 2 && (
-                    <span className="px-2 py-1 text-xs bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 rounded">
+                    <span className="px-2 py-1 text-xs bg-slate-100 text-slate-600 rounded">
                       +{project.requirements.length - 2} more
                     </span>
                   )}
@@ -392,19 +392,19 @@ const ProjectMarketplace = () => {
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.budget}</p>
+                  <p className="text-xs text-slate-500">Budget</p>
+                  <p className="text-sm font-semibold text-slate-900">{project.budget}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Duration</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.timeEstimation}</p>
+                  <p className="text-xs text-slate-500">Duration</p>
+                  <p className="text-sm font-semibold text-slate-900">{project.timeEstimation}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Proposals</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.proposals} submitted</p>
+                  <p className="text-xs text-slate-500">Proposals</p>
+                  <p className="text-sm font-semibold text-slate-900">{project.proposals} submitted</p>
                 </div>
                 <div>
                   <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getBidCountdownColor(project.bidCountdown)}`}>
@@ -417,13 +417,13 @@ const ProjectMarketplace = () => {
               <div className="flex space-x-3">
                 <button 
                   onClick={() => handleCreateProposal(project)}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
-                  Create Proposal
+                  Tender
                 </button>
                 <button 
                   onClick={() => handleViewProject(project)}
-                  className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   View Details
                 </button>
@@ -435,7 +435,7 @@ const ProjectMarketplace = () => {
 
       {/* Load More */}
       <div className="text-center mt-8">
-        <button className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+        <button className="px-6 py-3 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
           Load More Projects
         </button>
       </div>

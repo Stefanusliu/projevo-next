@@ -1,7 +1,6 @@
 // app/api/auth/send-phone-otp/route.js
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../lib/firebase-admin';
-import { sendOTPSMS } from '../../../../lib/smsService';
 
 export async function POST(request) {
   try {
@@ -38,16 +37,6 @@ export async function POST(request) {
 
     // Save OTP to Firestore
     await adminDb.collection('phone_otps').doc(phoneNumber).set(otpData);
-
-    // Send SMS with OTP
-    try {
-      const smsResult = await sendOTPSMS(phoneNumber, otp);
-      console.log('SMS sent successfully:', smsResult);
-    } catch (smsError) {
-      console.error('SMS sending failed:', smsError);
-      // In production, you might want to return an error here
-      // For now, we'll continue and log the OTP for development
-    }
 
     // Log OTP for development/debugging
     if (process.env.NODE_ENV === 'development') {

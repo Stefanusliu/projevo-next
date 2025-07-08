@@ -77,12 +77,32 @@ export async function POST(request) {
         // First check if user document exists
         const userDoc = await adminDb.collection('users').doc(userId).get();
         
+        console.log('OTP verification - userDoc.exists:', userDoc.exists);
+        
         if (userDoc.exists) {
-          // Document exists, just update it
-          await adminDb.collection('users').doc(userId).update({
+          console.log('OTP verification - User document EXISTS, updating emailVerified and preserving userType');
+          const existingData = userDoc.data();
+          console.log('OTP verification - Existing userType:', existingData.userType);
+          
+          // If the existing document has an empty userType but we have userData with userType, update it
+          let updateData = {
             emailVerified: true,
             updatedAt: new Date()
-          });
+          };
+          
+          // If existing userType is empty/missing but we have it in OTP userData, preserve it
+          if ((!existingData.userType || existingData.userType === '') && otpData.userData && otpData.userData.userType) {
+            console.log('OTP verification - Existing userType is empty, updating from OTP data:', otpData.userData.userType);
+            updateData.userType = otpData.userData.userType;
+            updateData.companyName = otpData.userData.companyName || existingData.companyName || '';
+            updateData.displayName = otpData.userData.displayName || existingData.displayName || '';
+            updateData.firstName = otpData.userData.firstName || existingData.firstName || '';
+            updateData.lastName = otpData.userData.lastName || existingData.lastName || '';
+            updateData.phoneNumber = otpData.userData.phoneNumber || existingData.phoneNumber || '';
+          }
+          
+          await adminDb.collection('users').doc(userId).update(updateData);
+          console.log('OTP verification - Document updated with:', updateData);
         } else {
           // Document doesn't exist, create it with complete signup data if available
           console.log('User document not found, creating document for:', userId);
@@ -98,6 +118,8 @@ export async function POST(request) {
 
           // If we have complete user data from signup, use it
           if (otpData.userData) {
+            console.log('OTP verification - Using userData from OTP, userType:', otpData.userData.userType);
+            
             userDocData = {
               ...userDocData,
               firstName: otpData.userData.firstName || '',
@@ -109,7 +131,7 @@ export async function POST(request) {
               phoneVerified: false,
               profileComplete: true // Set to true since we have the signup data
             };
-            console.log('Using complete signup data for user document');
+            console.log('OTP verification - Creating document with userType:', userDocData.userType);
           } else {
             userDocData.profileComplete = false; // Will need to complete profile later
             console.log('Using basic user data - profile will need to be completed');

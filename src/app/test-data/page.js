@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { createTestProject, createTestCompletedProject, createTestTenderProject } from '../../test-create-project';
+import { createTestProject, createTestTenderProject, createTestCompletedProject } from '../../test-create-project';
+import { createDiverseTestProjects } from '../../test-create-diverse-projects';
+import { createAllStatusTestProjects } from '../../test-create-all-status-projects';
+import CreateTestPayments from '../dashboard/project-owner/components/CreateTestPayments';
 
 export default function TestDataPage() {
   const { user } = useAuth();
@@ -53,6 +56,68 @@ export default function TestDataPage() {
       setMessage(`Test completed project created successfully with ID: ${projectId}`);
     } catch (error) {
       setMessage(`Error creating test completed project: ${error.message}`);
+    }
+    setLoading(false);
+  };
+
+  const handleCreateDiverseProjects = async () => {
+    if (!user?.uid) {
+      setMessage('Please log in first');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const projects = await createDiverseTestProjects(user.uid);
+      setMessage(`Created ${projects.length} diverse test projects successfully:\n${projects.map(p => `- ${p.title} (${p.procurementMethod} - ${p.status})`).join('\n')}`);
+    } catch (error) {
+      setMessage(`Error creating diverse test projects: ${error.message}`);
+    }
+    setLoading(false);
+  };
+
+  const handleCreateAllStatusProjects = async () => {
+    if (!user?.uid) {
+      setMessage('Please log in first');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const projects = await createAllStatusTestProjects(user.uid);
+      setMessage(`Created ${projects.length} projects with all statuses successfully:\n${projects.map(p => `- ${p.title} (${p.status})`).join('\n')}`);
+    } catch (error) {
+      setMessage(`Error creating all status test projects: ${error.message}`);
+    }
+    setLoading(false);
+  };
+
+  const handleShowPayments = async () => {
+    if (!user?.uid) {
+      setMessage('Please log in first');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Query for payments specifically
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const { db } = await import('../../lib/firebase');
+      
+      const paymentsQuery = query(
+        collection(db, 'payments'),
+        where('projectOwnerId', '==', user.uid)
+      );
+      
+      const snapshot = await getDocs(paymentsQuery);
+      const payments = [];
+      snapshot.forEach((doc) => {
+        payments.push({ id: doc.id, ...doc.data() });
+      });
+      
+      setMessage(`Found ${payments.length} payments for user ${user.uid}:\n${JSON.stringify(payments, null, 2)}`);
+    } catch (error) {
+      setMessage(`Error fetching payments: ${error.message}`);
     }
     setLoading(false);
   };
@@ -147,6 +212,22 @@ export default function TestDataPage() {
         </button>
 
         <button
+          onClick={handleCreateDiverseProjects}
+          disabled={loading}
+          className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg ml-4"
+        >
+          {loading ? 'Creating...' : 'Create Diverse Test Projects (All Types)'}
+        </button>
+
+        <button
+          onClick={handleCreateAllStatusProjects}
+          disabled={loading}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg ml-4"
+        >
+          {loading ? 'Creating...' : 'Create All Status Projects (On Going, Open, Completed, etc.)'}
+        </button>
+
+        <button
           onClick={handleShowProjects}
           disabled={loading}
           className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg ml-4"
@@ -163,11 +244,11 @@ export default function TestDataPage() {
         </button>
 
         <button
-          onClick={handleShowTenderProjects}
+          onClick={handleShowPayments}
           disabled={loading}
-          className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg ml-4"
+          className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg ml-4"
         >
-          {loading ? 'Loading...' : 'Show Tender Projects'}
+          {loading ? 'Loading...' : 'Show Payments'}
         </button>
       </div>
       
@@ -178,6 +259,11 @@ export default function TestDataPage() {
           </pre>
         </div>
       )}
+      
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Payment Test Data</h2>
+        <CreateTestPayments />
+      </div>
       
       <div className="mt-8">
         <p className="text-gray-600">

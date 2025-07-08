@@ -27,15 +27,15 @@ export const AuthContextProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
-    console.log('AuthContext: Setting up onAuthStateChanged listener');
+    console.log('🔍 AuthContext: Setting up onAuthStateChanged listener');
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('AuthContext: Auth state changed:', user ? `User ${user.uid}` : 'No user');
+      console.log('🔍 AuthContext: Auth state changed:', user ? `User ${user.uid}` : 'No user');
       
       if (user) {
         // Reload user to get latest verification status
         await reload(user);
-        console.log('AuthContext: User reloaded, setting user data');
+        console.log('🔍 AuthContext: User reloaded, setting user data');
         
         const userData = {
           uid: user.uid,
@@ -47,14 +47,14 @@ export const AuthContextProvider = ({ children }) => {
         };
         
         setUser(userData);
-        console.log('AuthContext: User state set, now fetching profile');
+        console.log('🔍 AuthContext: User state set, now fetching profile');
 
         // Fetch user profile from Firestore with retry logic
         const maxRetries = 3;
         let retryCount = 0;
         
         const fetchUserProfile = async () => {
-          console.log(`AuthContext: Fetching user profile (attempt ${retryCount + 1})`);
+          console.log(`🔍 AuthContext: Fetching user profile (attempt ${retryCount + 1})`);
           
           try {
             // Wait a bit for auth token to propagate
@@ -64,13 +64,13 @@ export const AuthContextProvider = ({ children }) => {
             
             const userDoc = await getDoc(doc(db, 'users', user.uid));
             if (userDoc.exists()) {
-              console.log('AuthContext: User profile fetched successfully');
+              console.log('✅ AuthContext: User profile fetched successfully');
               const userData = userDoc.data();
-              console.log('AuthContext: Raw user data from Firestore:', userData);
+              console.log('🔍 AuthContext: Raw user data from Firestore:', userData);
               
               // Check if data is nested under userData
               if (userData.userData) {
-                console.log('AuthContext: Found nested userData, extracting...');
+                console.log('🔍 AuthContext: Found nested userData, extracting...');
                 const nestedData = userData.userData;
                 const flatProfile = {
                   uid: user.uid,
@@ -88,10 +88,13 @@ export const AuthContextProvider = ({ children }) => {
                   updatedAt: userData.updatedAt,
                   status: userData.status || 'active'
                 };
-                console.log('AuthContext: Flattened profile data:', flatProfile);
+                console.log('🔍 AuthContext: Flattened profile data:', flatProfile);
+                console.log('🔍 AuthContext: Final userType:', flatProfile.userType);
                 setUserProfile(flatProfile);
               } else {
                 // Data is already flat
+                console.log('🔍 AuthContext: Using flat data structure:', userData);
+                console.log('🔍 AuthContext: userType from flat data:', userData.userType);
                 setUserProfile(userData);
               }
               return true;
@@ -254,14 +257,14 @@ export const AuthContextProvider = ({ children }) => {
         };
         
         await fetchUserProfile();
-        console.log('AuthContext: Profile fetch completed, setting loading to false');
+        console.log('🔍 AuthContext: Profile fetch completed, setting loading to false');
       } else {
-        console.log('AuthContext: No user, clearing state');
+        console.log('🔍 AuthContext: No user, clearing state');
         setUser(null);
         setUserProfile(null);
       }
       setLoading(false);
-      console.log('AuthContext: Loading state set to false');
+      console.log('🔍 AuthContext: Loading state set to false');
     });
 
     return () => unsubscribe();
@@ -269,7 +272,9 @@ export const AuthContextProvider = ({ children }) => {
 
   // Enhanced Sign Up with user data saving
   const signUp = async (userData) => {
+    console.log('AuthContext signUp called with userData:', userData);
     const { email, password, firstName, lastName, phoneNumber, userType, companyName } = userData;
+    console.log('Extracted userType:', userType);
     
     let userCredential = null;
     
@@ -288,7 +293,7 @@ export const AuthContextProvider = ({ children }) => {
 
       // Save user data to Firestore
       try {
-        await setDoc(doc(db, 'users', user.uid), {
+        const userDataToSave = {
           uid: user.uid,
           email: email,
           firstName: firstName,
@@ -303,8 +308,10 @@ export const AuthContextProvider = ({ children }) => {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           status: 'active'
-        });
-        console.log('User document saved successfully to Firestore');
+        };
+        console.log('AuthContext signUp - Saving user data to Firestore:', userDataToSave);
+        await setDoc(doc(db, 'users', user.uid), userDataToSave);
+        console.log('AuthContext signUp - User document saved successfully to Firestore');
       } catch (firestoreError) {
         console.error('Failed to save user document to Firestore:', firestoreError);
         // Continue with the signup process even if Firestore save fails

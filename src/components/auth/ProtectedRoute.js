@@ -12,17 +12,19 @@ export default function ProtectedRoute({ children, requiredUserType = null, allo
   const [hasWaitedForAuth, setHasWaitedForAuth] = useState(false);
 
   useEffect(() => {
-    console.log('ProtectedRoute - loading:', loading, 'user:', user?.uid, 'userProfile:', userProfile, 'hasWaitedForAuth:', hasWaitedForAuth);
+    console.log('🔍 ProtectedRoute - loading:', loading, 'user:', user?.uid, 'userProfile:', userProfile, 'hasWaitedForAuth:', hasWaitedForAuth);
+    console.log('🔍 ProtectedRoute - requiredUserType:', requiredUserType, 'allowedUserTypes:', allowedUserTypes);
+    console.log('🔍 ProtectedRoute - userProfile.userType:', userProfile?.userType);
     
     // Wait for auth to load
     if (loading) {
-      console.log('ProtectedRoute - still loading auth...');
+      console.log('⏳ ProtectedRoute - still loading auth...');
       return;
     }
 
     // If we haven't waited for auth yet, wait a bit longer to ensure Firebase auth state is fully loaded
     if (!hasWaitedForAuth) {
-      console.log('ProtectedRoute - waiting for auth state to stabilize...');
+      console.log('⏳ ProtectedRoute - waiting for auth state to stabilize...');
       const timer = setTimeout(() => {
         setHasWaitedForAuth(true);
       }, 1000); // Wait 1 second for auth state to stabilize
@@ -31,17 +33,17 @@ export default function ProtectedRoute({ children, requiredUserType = null, allo
 
     // If no user after waiting, redirect to login
     if (!user) {
-      console.log('ProtectedRoute - no user after waiting, redirecting to login');
+      console.log('❌ ProtectedRoute - no user after waiting, redirecting to login');
       router.push('/login');
       return;
     }
 
     // If user exists but no profile yet, wait longer before giving up
     if (!userProfile) {
-      console.log('ProtectedRoute - user exists but no profile, waiting...');
+      console.log('⏳ ProtectedRoute - user exists but no profile, waiting...');
       const timer = setTimeout(() => {
         if (!userProfile) {
-          console.log('ProtectedRoute - timeout reached, still no profile');
+          console.log('⚠️ ProtectedRoute - timeout reached, still no profile');
           // Instead of redirecting to login, allow access to dashboard
           // The dashboard will handle user type selection
           setIsAuthorized(true);
@@ -52,7 +54,7 @@ export default function ProtectedRoute({ children, requiredUserType = null, allo
 
     // Check if user type is allowed
     if (requiredUserType && userProfile.userType !== requiredUserType) {
-      console.log('ProtectedRoute - user type mismatch, redirecting...');
+      console.log(`❌ ProtectedRoute - user type mismatch: required "${requiredUserType}", got "${userProfile.userType}", redirecting...`);
       // Redirect to correct dashboard based on user type
       if (userProfile.userType === 'project-owner') {
         router.push('/dashboard/project-owner');
@@ -65,7 +67,7 @@ export default function ProtectedRoute({ children, requiredUserType = null, allo
     }
 
     if (allowedUserTypes && !allowedUserTypes.includes(userProfile.userType)) {
-      console.log('ProtectedRoute - user type not in allowed list, redirecting...');
+      console.log(`❌ ProtectedRoute - user type "${userProfile.userType}" not in allowed list ${allowedUserTypes}, redirecting...`);
       // Redirect to correct dashboard based on user type
       if (userProfile.userType === 'project-owner') {
         router.push('/dashboard/project-owner');
@@ -78,20 +80,20 @@ export default function ProtectedRoute({ children, requiredUserType = null, allo
     }
 
     // User is authorized
-    console.log('ProtectedRoute - user authorized');
+    console.log('✅ ProtectedRoute - user authorized');
     setIsAuthorized(true);
   }, [user, userProfile, loading, router, requiredUserType, allowedUserTypes, hasWaitedForAuth]);
 
   // Show loading while checking authentication
   if (loading || !isAuthorized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#2373FF' }}></div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
             {loading ? 'Loading...' : 'Checking authorization...'}
           </h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-gray-600">
             Please wait while we verify your access.
           </p>
         </div>

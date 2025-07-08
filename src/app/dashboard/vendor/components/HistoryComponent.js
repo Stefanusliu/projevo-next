@@ -173,13 +173,13 @@ export default function HistoryComponent() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 text-red-800';
       case 'On Hold':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
@@ -218,7 +218,7 @@ export default function HistoryComponent() {
       stars.push(
         <svg
           key={i}
-          className={`w-4 h-4 ${i <= rating ? 'text-yellow-400' : 'text-slate-300 dark:text-slate-600'}`}
+          className={`w-4 h-4 ${i <= rating ? 'text-blue-400' : 'text-slate-300'}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -246,25 +246,25 @@ export default function HistoryComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Project History</h2>
-          <p className="text-slate-600 dark:text-slate-400">Your complete portfolio of awarded projects and achievements</p>
+          <h2 className="text-2xl font-bold text-slate-900">Project History</h2>
+          <p className="text-slate-600">Your complete portfolio of awarded projects and achievements</p>
         </div>
-        <button className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200">
+        <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200">
           Export Portfolio
         </button>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalProjects}</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">Total Projects</div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-2xl font-bold text-slate-900">{stats.totalProjects}</div>
+          <div className="text-sm text-slate-600">Total Projects</div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-          <div className="text-2xl font-bold text-green-600">{stats.completedProjects}</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">Completed</div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-2xl font-bold text-blue-600">{stats.completedProjects}</div>
+          <div className="text-sm text-slate-600">Completed</div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
           <div className="text-2xl font-bold text-blue-600">
             {new Intl.NumberFormat('id-ID', {
               style: 'currency',
@@ -273,15 +273,15 @@ export default function HistoryComponent() {
               maximumFractionDigits: 1
             }).format(stats.totalEarnings)}
           </div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">Total Earnings</div>
+          <div className="text-sm text-slate-600">Total Earnings</div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-          <div className="text-2xl font-bold text-yellow-600">{stats.averageRating?.toFixed(1) || 'N/A'}</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">Avg Rating</div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-2xl font-bold text-gray-600">{stats.averageRating?.toFixed(1) || 'N/A'}</div>
+          <div className="text-sm text-slate-600">Avg Rating</div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-          <div className="text-2xl font-bold text-purple-600">{stats.successRate}%</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">Success Rate</div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-2xl font-bold text-blue-600">{stats.successRate}%</div>
+          <div className="text-sm text-slate-600">Success Rate</div>
         </div>
       </div>
 
@@ -294,8 +294,8 @@ export default function HistoryComponent() {
               onClick={() => setActiveFilter(filter)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeFilter === filter
-                  ? 'bg-green-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200:bg-slate-600'
               }`}
             >
               {filter}
@@ -305,7 +305,7 @@ export default function HistoryComponent() {
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {years.map((year) => (
             <option key={year} value={year}>
@@ -320,23 +320,23 @@ export default function HistoryComponent() {
         {filteredHistory.map((project) => (
           <div
             key={project.id}
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200"
           >
             <div className="p-6">
               {/* Project Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
+                  <div className="p-3 bg-blue-100 rounded-lg text-blue-600">
                     {getCategoryIcon(project.category)}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">
+                    <h3 className="text-xl font-semibold text-slate-900 mb-1">
                       {project.title}
                     </h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-2">
+                    <p className="text-slate-600 mb-2">
                       {project.client} • {project.location}
                     </p>
-                    <div className="flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center space-x-4 text-sm text-slate-500">
                       <span>Started: {new Date(project.startDate).toLocaleDateString()}</span>
                       {project.endDate && <span>Completed: {new Date(project.endDate).toLocaleDateString()}</span>}
                       <span>Duration: {project.duration}</span>
@@ -350,7 +350,7 @@ export default function HistoryComponent() {
                   {project.rating && (
                     <div className="flex items-center space-x-1 mt-2">
                       {renderStars(project.rating)}
-                      <span className="text-sm text-slate-600 dark:text-slate-400 ml-1">
+                      <span className="text-sm text-slate-600 ml-1">
                         {project.rating.toFixed(1)}
                       </span>
                     </div>
@@ -361,52 +361,52 @@ export default function HistoryComponent() {
               {/* Project Details */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Financial Details</h4>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Financial Details</h4>
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">Budget:</span>
-                      <span className="text-slate-900 dark:text-white">{project.budget}</span>
+                      <span className="text-slate-600">Budget:</span>
+                      <span className="text-slate-900">{project.budget}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">Final Amount:</span>
-                      <span className="text-slate-900 dark:text-white font-medium">{project.finalAmount}</span>
+                      <span className="text-slate-600">Final Amount:</span>
+                      <span className="text-slate-900 font-medium">{project.finalAmount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">Team Size:</span>
-                      <span className="text-slate-900 dark:text-white">{project.teamSize} members</span>
+                      <span className="text-slate-600">Team Size:</span>
+                      <span className="text-slate-900">{project.teamSize} members</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">
                     {project.status === 'Completed' ? 'Achievements' : 'Current Status'}
                   </h4>
                   <div className="space-y-1">
                     {project.achievements.slice(0, 3).map((achievement, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">{achievement}</span>
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm text-slate-600">{achievement}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">
                     {project.status === 'Completed' ? 'Challenges Overcome' : 'Current Challenges'}
                   </h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{project.challenges}</p>
+                  <p className="text-sm text-slate-600">{project.challenges}</p>
                   {project.cancellationReason && (
                     <div className="mt-2">
-                      <span className="text-sm font-medium text-red-600 dark:text-red-400">Cancellation Reason:</span>
-                      <p className="text-sm text-red-600 dark:text-red-400">{project.cancellationReason}</p>
+                      <span className="text-sm font-medium text-red-600">Cancellation Reason:</span>
+                      <p className="text-sm text-red-600">{project.cancellationReason}</p>
                     </div>
                   )}
                   {project.holdReason && (
                     <div className="mt-2">
-                      <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">On Hold:</span>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-400">{project.holdReason}</p>
+                      <span className="text-sm font-medium text-gray-600">On Hold:</span>
+                      <p className="text-sm text-gray-600">{project.holdReason}</p>
                     </div>
                   )}
                 </div>
@@ -414,21 +414,21 @@ export default function HistoryComponent() {
 
               {/* Client Review */}
               {project.review && (
-                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 mb-4">
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Client Review</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 italic">&ldquo;{project.review}&rdquo;</p>
+                <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Client Review</h4>
+                  <p className="text-sm text-slate-600 italic">&ldquo;{project.review}&rdquo;</p>
                 </div>
               )}
 
               {/* Gallery */}
               {project.gallery && project.gallery.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Project Gallery</h4>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Project Gallery</h4>
                   <div className="flex space-x-2">
                     {project.gallery.slice(0, 4).map((image, index) => (
                       <div
                         key={index}
-                        className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center"
+                        className="w-16 h-16 bg-slate-200 rounded-lg flex items-center justify-center"
                       >
                         <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -436,8 +436,8 @@ export default function HistoryComponent() {
                       </div>
                     ))}
                     {project.gallery.length > 4 && (
-                      <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">+{project.gallery.length - 4}</span>
+                      <div className="w-16 h-16 bg-slate-200 rounded-lg flex items-center justify-center">
+                        <span className="text-xs text-slate-500">+{project.gallery.length - 4}</span>
                       </div>
                     )}
                   </div>
@@ -446,14 +446,14 @@ export default function HistoryComponent() {
 
               {/* Actions */}
               <div className="flex space-x-3">
-                <button className="flex-1 px-4 py-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm font-medium rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                <button className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors">
                   View Full Details
                 </button>
-                <button className="px-4 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                <button className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200:bg-slate-600 transition-colors">
                   Download Report
                 </button>
                 {project.status === 'Completed' && (
-                  <button className="px-4 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                  <button className="px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100:bg-blue-900/30 transition-colors">
                     Use as Reference
                   </button>
                 )}
@@ -466,16 +466,16 @@ export default function HistoryComponent() {
       {/* Empty State */}
       {filteredHistory.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No projects found</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-4">
+          <h3 className="text-lg font-medium text-slate-900 mb-2">No projects found</h3>
+          <p className="text-slate-500 mb-4">
             No awarded projects match your current filters for {selectedYear}.
           </p>
-          <button className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200">
+          <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200">
             Browse Marketplace
           </button>
         </div>

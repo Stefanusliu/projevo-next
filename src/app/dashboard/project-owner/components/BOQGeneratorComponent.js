@@ -639,17 +639,20 @@ export default function BOQGeneratorComponent() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+    <div className="bg-white rounded-lg border border-gray-300">
       {/* Main Content without Header/Footer */}
       <div className="p-6">
         {currentView === 'list' ? (
           // List View
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Draft BOQ Generator</h3>
+              <h3 className="text-xl font-semibold text-black">Draft BOQ Generator</h3>
               <button
                 onClick={createNewBOQ}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="text-white px-4 py-2 rounded-lg transition-colors"
+                style={{ backgroundColor: '#2373FF' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
               >
                 Create New BOQ
               </button>
@@ -681,7 +684,7 @@ export default function BOQGeneratorComponent() {
                         Created: {formatDate(boq.createdAt)}
                       </p>
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                        Total: Rp {boq.total.toLocaleString('id-ID')}
+                        Total: Rp {(boq.total || 0).toLocaleString('id-ID')}
                       </p>
                     </div>
                     <div className="flex gap-2">

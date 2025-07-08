@@ -6,42 +6,41 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'In Progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Under Review':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-gray-100 text-gray-800';
       case 'On Hold':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
   const getProgressColor = (progress) => {
-    if (progress >= 90) return 'bg-green-500';
     if (progress >= 75) return 'bg-blue-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 25) return 'bg-blue-400';
+    return 'bg-blue-300';
   };
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
               {project.status}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{project.title}</h2>
-              <p className="text-slate-600 dark:text-slate-400">{project.client}</p>
+              <h2 className="text-xl font-bold text-slate-900">{project.title}</h2>
+              <p className="text-slate-600">{project.client} &bull; {project.location}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -53,18 +52,18 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
           {/* Project Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Description</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Project Description</h3>
+              <p className="text-slate-600 mb-6 leading-relaxed">
                 {project.description}
               </p>
 
               {/* Progress Bar */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Overall Progress</h3>
-                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{project.progress}%</span>
+                  <h3 className="text-lg font-semibold text-slate-900">Progress</h3>
+                  <span className="text-2xl font-bold text-slate-900">{project.progress}%</span>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                <div className="w-full bg-slate-200 rounded-full h-3">
                   <div
                     className={`h-3 rounded-full transition-all duration-300 ${getProgressColor(project.progress)}`}
                     style={{ width: `${project.progress}%` }}
@@ -74,14 +73,14 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
 
               {/* Milestones */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Milestones</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Project Milestones</h3>
                 <div className="space-y-4">
                   {project.milestones?.map((milestone, index) => (
                     <div key={index} className="flex items-center space-x-4">
                       <div className={`w-4 h-4 rounded-full ${
                         milestone.completed 
-                          ? 'bg-green-500' 
-                          : 'bg-slate-300 dark:bg-slate-600'
+                          ? 'bg-blue-500' 
+                          : 'bg-slate-300'
                       }`}>
                         {milestone.completed && (
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -92,12 +91,12 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
                       <div className="flex-1">
                         <p className={`font-medium ${
                           milestone.completed 
-                            ? 'text-slate-900 dark:text-white' 
-                            : 'text-slate-500 dark:text-slate-400'
+                            ? 'text-slate-900'
+                            : 'text-slate-500'
                         }`}>
                           {milestone.name}
                         </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-sm text-slate-500">
                           {milestone.completed ? 'Completed: ' : 'Expected: '}{milestone.date}
                         </p>
                       </div>
@@ -108,16 +107,16 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
 
               {/* Team Members */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Team Members</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Team Members</h3>
                 <div className="flex flex-wrap gap-2">
                   {project.team?.map((member, index) => (
-                    <div key={index} className="flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-full">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <div key={index} className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-full">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-medium">
                           {member.split(' ').map(n => n[0]).join('')}
                         </span>
                       </div>
-                      <span className="text-sm text-green-800 dark:text-green-300">{member}</span>
+                      <span className="text-sm text-blue-800">{member}</span>
                     </div>
                   ))}
                 </div>
@@ -126,51 +125,37 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
 
             <div className="space-y-6">
               {/* Project Details */}
-              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Project Details</h3>
+              <div className="bg-slate-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Project Details</h3>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Budget</p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">{project.budget}</p>
+                    <p className="text-sm text-slate-500">Category:</p>
+                    <span className="inline-block px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">{project.category}</span>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Category</p>
-                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full text-sm font-medium">
-                      {project.category}
-                    </span>
+                    <p className="text-sm text-slate-500">Start Date:</p>
+                    <p className="text-sm text-slate-700">{new Date(project.startDate).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Location</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{project.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Start Date</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      {new Date(project.startDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Deadline</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      {new Date(project.deadline).toLocaleDateString()}
-                    </p>
+                    <p className="text-sm text-slate-500">Deadline:</p>
+                    <p className="text-sm text-slate-700">{new Date(project.deadline).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* Timeline Info */}
-              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Timeline</h3>
+              <div className="bg-slate-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Timeline</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 dark:text-slate-400">Days Elapsed</span>
-                    <span className="text-slate-900 dark:text-white font-medium">
+                    <span className="text-slate-500">Elapsed:</span>
+                    <span className="text-slate-900 font-medium">
                       {Math.floor((new Date() - new Date(project.startDate)) / (1000 * 60 * 60 * 24))} days
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 dark:text-slate-400">Days Remaining</span>
-                    <span className="text-slate-900 dark:text-white font-medium">
+                    <span className="text-slate-500">Remaining:</span>
+                    <span className="text-slate-900 font-medium">
                       {Math.floor((new Date(project.deadline) - new Date()) / (1000 * 60 * 60 * 24))} days
                     </span>
                   </div>
@@ -178,46 +163,43 @@ export default function ProjectStatusModal({ project, isOpen, onClose }) {
               </div>
 
               {/* Quick Actions */}
-              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
+              <div className="bg-slate-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
                 <div className="space-y-2">
                   {project.status === 'In Progress' && (
                     <>
                       <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
                         Update Progress
                       </button>
-                      <button className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium">
+                      <button className="w-full px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
                         Upload Files
                       </button>
                     </>
                   )}
                   {project.status === 'Under Review' && (
-                    <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium">
+                    <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium">
                       View Review Comments
                     </button>
                   )}
                   {project.status === 'Completed' && (
-                    <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                      Request Payment
+                    <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                      View Final Report
                     </button>
                   )}
-                  <button className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium">
-                    Contact Client
-                  </button>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
             >
               Close
             </button>
-            <button className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               View Full Details
             </button>
           </div>

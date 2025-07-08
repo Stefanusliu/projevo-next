@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../../contexts/AuthContext';
 import OTPModal from '../../components/auth/OTPModal';
 import PhoneOTPModal from '../../components/auth/PhoneOTPModal';
@@ -110,6 +111,9 @@ export default function SignUp() {
         companyName: formData.company
       };
 
+      console.log('Signup page - userData being passed to signUp:', userData);
+      console.log('Signup page - formData.userType:', formData.userType);
+
       const result = await signUp(userData);
       
       // Handle potential profile save error
@@ -144,13 +148,23 @@ export default function SignUp() {
         errorMessage = 'Password is too weak. Please choose a stronger password.';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many unsuccessful sign up attempts. Please try again later.';
       } else if (error.code === 'permission-denied' || error.code === 'insufficient-permissions') {
         errorMessage = 'Account created but profile data could not be saved. Please complete your profile after signing in.';
         // Still move to verification step since user was created
         setStep(2);
         return;
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service is temporarily unavailable. Please try again in a few moments.';
+      } else if (error.name === 'NetworkError' || error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
       } else if (error.message) {
-        errorMessage = error.message;
+        // Use the error message but make it more user-friendly
+        errorMessage = error.message.replace(/firebase:/gi, '').replace(/auth\//gi, '').trim();
+        errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
       }
       
       setError(errorMessage);
@@ -178,6 +192,16 @@ export default function SignUp() {
         errorMessage = 'Sign-up was cancelled. Please try again.';
       } else if (error.code === 'auth/popup-blocked') {
         errorMessage = 'Popup was blocked. Please allow popups and try again.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = 'Only one popup request is allowed at a time.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with the same email but different sign-in method.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Google sign-in is not enabled. Please contact support.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.name === 'NetworkError' || error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -191,6 +215,19 @@ export default function SignUp() {
   // Send OTP Email
   const sendOTP = async () => {
     try {
+      const otpUserData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber ? `+62${formData.phoneNumber}` : '',
+        userType: formData.userType,
+        companyName: formData.company || '',
+        displayName: `${formData.firstName} ${formData.lastName}`
+      };
+
+      console.log('SendOTP - formData.userType:', formData.userType);
+      console.log('SendOTP - otpUserData:', otpUserData);
+
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: {
@@ -199,26 +236,28 @@ export default function SignUp() {
         body: JSON.stringify({
           email: formData.email,
           name: `${formData.firstName} ${formData.lastName}`,
-          userData: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phoneNumber: formData.phoneNumber ? `+62${formData.phoneNumber}` : '',
-            userType: formData.userType,
-            companyName: formData.company || '',
-            displayName: `${formData.firstName} ${formData.lastName}`
-          }
+          userData: otpUserData
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send verification code');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error (${response.status}): Failed to send verification code`);
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error sending OTP:', error);
+      
+      // Handle network and API errors more specifically
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Please check your internet connection and try again.');
+      } else if (error.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      } else if (error.message.includes('JSON')) {
+        throw new Error('Server communication error. Please try again.');
+      }
+      
       throw error;
     }
   };
@@ -407,37 +446,38 @@ export default function SignUp() {
         <link rel="canonical" href="https://projevo.com/signup" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         {/* Background effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-gray-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-gray-400/10 to-blue-400/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative max-w-md w-full space-y-8">
           {/* Logo and header */}
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">P</span>
-              </div>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Projevo
-              </span>
+              <Image 
+                src="/logo.png" 
+                alt="Projevo Logo" 
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
             </Link>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-3xl font-bold text-black mb-2">
               Start your evolution
             </h2>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-gray-600">
               Create your account and transform how you manage projects
             </p>
           </div>
 
           {/* Signup form */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
             {error && (
-              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">{error}</p>
               </div>
             )}
 
@@ -446,7 +486,7 @@ export default function SignUp() {
               {/* Name fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                     First name
                   </label>
                   <input
@@ -456,12 +496,12 @@ export default function SignUp() {
                     required
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="First name"
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                     Last name
                   </label>
                   <input
@@ -471,7 +511,7 @@ export default function SignUp() {
                     required
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Last name"
                   />
                 </div>
@@ -479,7 +519,7 @@ export default function SignUp() {
 
               {/* Email field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email address
                 </label>
                 <input
@@ -490,14 +530,14 @@ export default function SignUp() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your email"
                 />
               </div>
 
               {/* Company field */}
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
                   Company (optional)
                 </label>
                 <input
@@ -506,19 +546,19 @@ export default function SignUp() {
                   type="text"
                   value={formData.company}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Your company name"
                 />
               </div>
 
               {/* Phone Number field */}
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-slate-500 dark:text-slate-400 sm:text-sm">+62</span>
+                    <span className="text-gray-500 sm:text-sm">+62</span>
                   </div>
                   <input
                     id="phoneNumber"
@@ -527,19 +567,19 @@ export default function SignUp() {
                     required
                     value={formatPhoneDisplay(formData.phoneNumber)}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="812 3456 7890"
                     maxLength="15"
                   />
                 </div>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-gray-500">
                   Enter your number starting with 8 (e.g., 812 3456 7890)
                 </p>
               </div>
 
               {/* User Type dropdown */}
               <div>
-                <label htmlFor="userType" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-2">
                   I am a
                 </label>
                 <select
@@ -548,13 +588,13 @@ export default function SignUp() {
                   required
                   value={formData.userType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Select your role</option>
                   <option value="project-owner">Project Owner</option>
                   <option value="vendor">Vendor</option>
                 </select>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-gray-500">
                   {formData.userType === 'project-owner' && "Looking for qualified vendors to complete your projects"}
                   {formData.userType === 'vendor' && "Ready to provide services and grow your business"}
                 </p>
@@ -562,7 +602,7 @@ export default function SignUp() {
 
               {/* Password field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -573,7 +613,7 @@ export default function SignUp() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Create a strong password"
                   />
                   <button
@@ -582,11 +622,11 @@ export default function SignUp() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <svg className="h-5 w-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
@@ -597,7 +637,7 @@ export default function SignUp() {
 
               {/* Confirm Password field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm password
                 </label>
                 <div className="relative">
@@ -608,7 +648,7 @@ export default function SignUp() {
                     required
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Confirm your password"
                   />
                   <button
@@ -617,11 +657,11 @@ export default function SignUp() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <svg className="h-5 w-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
@@ -639,15 +679,15 @@ export default function SignUp() {
                   required
                   checked={formData.agreeToTerms}
                   onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded mt-1"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
                 />
-                <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
+                <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-700">
                   I agree to the{' '}
-                  <Link href="/terms" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 underline">
+                  <Link href="/terms" className="text-blue-600 hover:text-blue-500 underline">
                     Terms of Service
                   </Link>
                   {' '}and{' '}
-                  <Link href="/privacy" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 underline">
+                  <Link href="/privacy" className="text-blue-600 hover:text-blue-500 underline">
                     Privacy Policy
                   </Link>
                 </label>
@@ -658,7 +698,8 @@ export default function SignUp() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  style={{ backgroundColor: '#2373FF' }}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">
@@ -681,10 +722,10 @@ export default function SignUp() {
               {/* Social signup divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-300 dark:border-slate-600" />
+                  <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                  <span className="px-2 bg-white text-gray-500">
                     Or sign up with
                   </span>
                 </div>
@@ -696,10 +737,10 @@ export default function SignUp() {
                   type="button"
                   onClick={handleGoogleSignUp}
                   disabled={loading}
-                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg shadow-sm bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-gray-300 hover:border-blue-400 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <svg className="animate-spin h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -722,32 +763,33 @@ export default function SignUp() {
             {/* Email Verification Step */}
             {step === 2 && (
               <div className="text-center space-y-6">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-black mb-2">
                     Check your email
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-gray-600">
                     We&apos;ve sent a verification code to <strong>{formData.email}</strong>
                   </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                  <p className="text-sm text-gray-500 mt-2">
                     Enter the 6-digit code from your email to continue.
                   </p>
                 </div>
                 <div className="space-y-3">
                   <button
                     onClick={() => setShowOTPModal(true)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
+                    style={{ backgroundColor: '#2373FF' }}
                   >
                     Enter Verification Code
                   </button>
                   <button
                     onClick={() => setStep(1)}
-                    className="w-full text-slate-600 dark:text-slate-400 py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+                    className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-all duration-200"
                   >
                     Back to form
                   </button>
@@ -758,19 +800,19 @@ export default function SignUp() {
             {/* Phone Verification Step */}
             {step === 3 && (
               <div className="text-center space-y-6">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-black mb-2">
                     Verify your phone number
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-gray-600">
                     Secure your account with phone verification
                   </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                  <p className="text-sm text-gray-500 mt-2">
                     Phone: <strong>+62{formatPhoneDisplay(formData.phoneNumber)}</strong>
                   </p>
                 </div>
@@ -779,7 +821,7 @@ export default function SignUp() {
                   <button
                     onClick={initPhoneVerification}
                     disabled={phoneOtpLoading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:from-green-400 disabled:to-emerald-400 transition-all duration-200"
+                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400 transition-all duration-200"
                   >
                     {phoneOtpLoading ? (
                       <span className="flex items-center justify-center">
@@ -796,7 +838,7 @@ export default function SignUp() {
                   
                   <button
                     onClick={() => setStep(4)} // Skip phone verification
-                    className="w-full text-slate-600 dark:text-slate-400 py-2 px-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+                    className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-all duration-200"
                   >
                     Skip for now
                   </button>
@@ -807,20 +849,20 @@ export default function SignUp() {
             {/* Success Step */}
             {step === 4 && (
               <div className="text-center space-y-6">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-black mb-2">
                     Welcome to Projevo!
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-gray-600">
                     Your account has been created successfully. You can now access your dashboard and start using the platform.
                   </p>
                   {formData.phoneNumber && (
-                    <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                    <p className="text-sm text-gray-500 mt-2">
                       📱 Phone verification {phoneVerificationStep === 'verify' || step === 4 ? 'completed' : 'can be completed later in settings'}
                     </p>
                   )}
@@ -828,7 +870,8 @@ export default function SignUp() {
                 <div className="space-y-3">
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
+                    style={{ backgroundColor: '#2373FF' }}
                   >
                     Continue to Dashboard
                   </button>
@@ -839,9 +882,9 @@ export default function SignUp() {
             {/* Sign in link - only show on step 1 */}
             {step === 1 && (
               <div className="mt-6 text-center">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-gray-600">
                   Already have an account?{' '}
-                  <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                  <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                     Sign in
                   </Link>
                 </p>

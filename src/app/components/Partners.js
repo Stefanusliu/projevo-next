@@ -7,7 +7,6 @@ export default function Partners() {
         { name: 'AWS', category: 'Cloud Infrastructure', logo: 'AWS' },
         { name: 'Stripe', category: 'Payment Processing', logo: 'STR' },
         { name: 'SendGrid', category: 'Email Services', logo: 'SG' },
-        { name: 'Twilio', category: 'Communications', logo: 'TW' }
       ],
       gradient: 'from-blue-500 to-indigo-500'
     },

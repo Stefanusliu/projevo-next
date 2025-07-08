@@ -130,15 +130,15 @@ export default function MyProjectsComponent() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-blue-100 text-blue-800';
       case 'In Progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Under Review':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-gray-100 text-gray-800';
       case 'On Hold':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
@@ -176,10 +176,10 @@ export default function MyProjectsComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Projects</h2>
-          <p className="text-slate-600 dark:text-slate-400">Manage and track your awarded projects</p>
+          <h2 className="text-2xl font-bold text-slate-900">Projects</h2>
+          <p className="text-slate-600">View and track your awarded projects</p>
         </div>
-        <button className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
           Browse Projects
         </button>
       </div>
@@ -192,8 +192,8 @@ export default function MyProjectsComponent() {
             onClick={() => setActiveFilter(filter)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeFilter === filter
-                ? 'bg-green-600 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             {filter}
@@ -206,21 +206,21 @@ export default function MyProjectsComponent() {
         {filteredProjects.map((project) => (
           <div
             key={project.id}
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
           >
             <div className="p-6">
               {/* Project Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
+                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                     {getCategoryIcon(project.category)}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">
                       {project.title}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {project.client} • {project.location}
+                    <p className="text-sm text-slate-600 mb-1">
+                      {project.client} &bull; {project.location}
                     </p>
                   </div>
                 </div>
@@ -230,19 +230,19 @@ export default function MyProjectsComponent() {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              <p className="text-sm text-slate-600 mb-4">
                 {project.description}
               </p>
 
               {/* Progress */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Progress</span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">{project.progress}%</span>
+                  <span className="text-sm font-medium text-slate-700">Progress</span>
+                  <span className="text-sm text-slate-600">{project.progress}%</span>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-slate-200 rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${project.progress}%` }}
                   ></div>
                 </div>
@@ -250,20 +250,20 @@ export default function MyProjectsComponent() {
 
               {/* Milestones */}
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Milestones</h4>
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Milestones</h4>
                 <div className="space-y-1">
                   {project.milestones.slice(0, 2).map((milestone, index) => (
                     <div key={index} className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <span className={`text-xs ${milestone.completed ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                      <span className={`text-xs ${milestone.completed ? 'text-slate-900' : 'text-slate-500'}`}>
                         {milestone.name} {milestone.completed && `(${milestone.date})`}
                       </span>
                     </div>
                   ))}
                   {project.milestones.length > 2 && (
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <div className="w-2 h-2 rounded-full bg-slate-300"></div>
+                      <span className="text-xs text-slate-500">
                         +{project.milestones.length - 2} more milestones
                       </span>
                     </div>
@@ -274,12 +274,12 @@ export default function MyProjectsComponent() {
               {/* Project Info */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.budget}</p>
+                  <p className="text-xs text-slate-500">Budget</p>
+                  <p className="text-sm font-semibold text-slate-900">{project.budget}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Deadline</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <p className="text-xs text-slate-500">Deadline</p>
+                  <p className="text-sm font-semibold text-slate-900">
                     {new Date(project.deadline).toLocaleDateString()}
                   </p>
                 </div>
@@ -287,18 +287,18 @@ export default function MyProjectsComponent() {
 
               {/* Team */}
               <div className="mb-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Team</p>
+                <p className="text-xs text-slate-500 mb-2">Team</p>
                 <div className="flex -space-x-2">
                   {project.team.slice(0, 3).map((member, index) => (
                     <div
                       key={index}
-                      className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white dark:border-slate-800"
+                      className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white"
                     >
                       {member.split(' ').map(n => n[0]).join('')}
                     </div>
                   ))}
                   {project.team.length > 3 && (
-                    <div className="w-8 h-8 bg-slate-300 dark:bg-slate-600 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs font-medium border-2 border-white dark:border-slate-800">
+                    <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center text-slate-700 text-xs font-medium border-2 border-white">
                       +{project.team.length - 3}
                     </div>
                   )}
@@ -309,11 +309,11 @@ export default function MyProjectsComponent() {
               <div className="flex space-x-3">
                 <button 
                   onClick={() => handleViewProject(project)}
-                  className="flex-1 px-3 py-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm font-medium rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   View Details
                 </button>
-                <button className="px-3 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                <button className="px-3 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors">
                   Update
                 </button>
               </div>
@@ -325,18 +325,18 @@ export default function MyProjectsComponent() {
       {/* Empty State */}
       {filteredProjects.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No projects found</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-4">
+          <h3 className="text-lg font-medium text-slate-900 mb-2">No projects found</h3>
+          <p className="text-slate-500 mb-4">
             {activeFilter === 'All' 
               ? "You haven't been awarded any projects yet. Browse the marketplace to find and bid on projects." 
               : `No projects with status "${activeFilter}".`}
           </p>
-          <button className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200">
+          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
             Browse Marketplace
           </button>
         </div>

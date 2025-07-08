@@ -55,9 +55,9 @@ export default function EarningsComponent() {
   const recentPayments = [
     {
       id: 1,
-      projectTitle: 'Corporate Headquarters Construction',
-      client: 'TechCorp Solutions',
-      amount: 'Rp 240,000,000',
+      projectTitle: 'Office Complex Design',
+      client: 'Global Properties Ltd',
+      amount: 'Rp 125,000,000',
       status: 'Paid',
       date: '2024-06-15',
       paymentMethod: 'Bank Transfer',
@@ -65,38 +65,38 @@ export default function EarningsComponent() {
     },
     {
       id: 2,
-      projectTitle: 'Luxury Restaurant Interior',
-      client: 'Culinary Ventures Indonesia',
-      amount: 'Rp 120,750,000',
+      projectTitle: 'Residential Development',
+      client: 'Urban Living Corp',
+      amount: 'Rp 89,500,000',
       status: 'Paid',
-      date: '2024-06-10',
+      date: '2024-06-12',
       paymentMethod: 'Bank Transfer',
       invoiceNumber: 'INV-2024-002'
     },
     {
       id: 3,
       projectTitle: 'Shopping Mall Extension',
-      client: 'Kemang Properties Ltd',
-      amount: 'Rp 125,000,000',
+      client: 'Retail Spaces Inc',
+      amount: 'Rp 156,750,000',
       status: 'Pending',
       date: '2024-06-20',
       paymentMethod: 'Bank Transfer',
       invoiceNumber: 'INV-2024-003',
-      dueDate: '2024-06-25'
+      dueDate: '2024-07-05'
     },
     {
       id: 4,
-      projectTitle: 'Office Building Renovation',
-      client: 'Metropolitan Properties',
-      amount: 'Rp 180,500,000',
+      projectTitle: 'Hotel Renovation',
+      client: 'Hospitality Group',
+      amount: 'Rp 95,250,000',
       status: 'Paid',
-      date: '2024-06-05',
+      date: '2024-06-08',
       paymentMethod: 'Bank Transfer',
       invoiceNumber: 'INV-2024-004'
     },
     {
       id: 5,
-      projectTitle: 'Startup Office Interior',
+      projectTitle: 'Tech Campus Design',
       client: 'InnovateTech Startup',
       amount: 'Rp 64,000,000',
       status: 'Processing',
@@ -119,15 +119,15 @@ export default function EarningsComponent() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Paid':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-gray-100 text-gray-800';
       case 'Processing':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-blue-100 text-blue-800';
       case 'Overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
+        return 'bg-slate-100 text-slate-800';
     }
   };
 
@@ -147,14 +147,14 @@ export default function EarningsComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Earnings & Payments</h2>
-          <p className="text-slate-600 dark:text-slate-400">Track your income and payment history</p>
+          <h2 className="text-2xl font-bold text-slate-900">Earnings & Payments</h2>
+          <p className="text-slate-600">Track your income and payment history</p>
         </div>
         <div className="flex items-center space-x-3">
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {periods.map((period) => (
               <option key={period} value={period}>
@@ -162,7 +162,7 @@ export default function EarningsComponent() {
               </option>
             ))}
           </select>
-          <button className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200">
+          <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200">
             Export Report
           </button>
         </div>
@@ -170,13 +170,13 @@ export default function EarningsComponent() {
 
       {/* Earnings Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm">Total Earnings</p>
+              <p className="text-blue-100 text-sm">Total Earnings</p>
               <p className="text-2xl font-bold">{currentData.totalEarnings}</p>
               {currentData.growth !== 'N/A' && (
-                <p className="text-green-100 text-sm mt-1">{currentData.growth} from last period</p>
+                <p className="text-blue-100 text-sm mt-1">{currentData.growth} from last period</p>
               )}
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -187,13 +187,13 @@ export default function EarningsComponent() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white rounded-xl p-6 border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Paid Amount</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{currentData.paidAmount}</p>
+              <p className="text-slate-600 text-sm">Paid Amount</p>
+              <p className="text-2xl font-bold text-slate-900">{currentData.paidAmount}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -201,13 +201,13 @@ export default function EarningsComponent() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white rounded-xl p-6 border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Pending Payments</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{currentData.pendingPayments}</p>
+              <p className="text-slate-600 text-sm">Pending Payments</p>
+              <p className="text-2xl font-bold text-slate-900">{currentData.pendingPayments}</p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -215,14 +215,14 @@ export default function EarningsComponent() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white rounded-xl p-6 border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Average Project Value</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{currentData.averageProjectValue}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">{currentData.projectsCompleted} projects</p>
+              <p className="text-slate-600 text-sm">Average Project Value</p>
+              <p className="text-2xl font-bold text-slate-900">{currentData.averageProjectValue}</p>
+              <p className="text-slate-500 text-sm">{currentData.projectsCompleted} projects</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
@@ -232,23 +232,23 @@ export default function EarningsComponent() {
       </div>
 
       {/* Monthly Trend Chart */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Monthly Earnings Trend</h3>
+      <div className="bg-white rounded-xl p-6 border border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900 mb-6">Monthly Earnings Trend</h3>
         <div className="space-y-4">
           {monthlyTrend.map((item, index) => (
             <div key={index} className="flex items-center space-x-4">
-              <div className="w-12 text-sm font-medium text-slate-600 dark:text-slate-400">
+              <div className="w-12 text-sm font-medium text-slate-600">
                 {item.month}
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
-                  <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                  <div className="flex-1 bg-slate-200 rounded-full h-3 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
                       style={{ width: `${(item.amount / maxAmount) * 100}%` }}
                     ></div>
                   </div>
-                  <div className="w-32 text-sm font-medium text-slate-900 dark:text-white text-right">
+                  <div className="w-32 text-sm font-medium text-slate-900 text-right">
                     {formatCurrency(item.amount)}
                   </div>
                 </div>
@@ -259,51 +259,51 @@ export default function EarningsComponent() {
       </div>
 
       {/* Recent Payments */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent Payments</h3>
+      <div className="bg-white rounded-xl border border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900">Recent Payments</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700/50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Project
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-slate-200">
               {recentPayments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <tr key={payment.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      <div className="text-sm font-medium text-slate-900">
                         {payment.projectTitle}
                       </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
+                      <div className="text-sm text-slate-500">
                         {payment.invoiceNumber}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-900 dark:text-white">
+                  <td className="px-6 py-4 text-sm text-slate-900">
                     {payment.client}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-900 dark:text-white font-medium">
+                  <td className="px-6 py-4 text-sm text-slate-900 font-medium">
                     {payment.amount}
                   </td>
                   <td className="px-6 py-4">
@@ -311,26 +311,26 @@ export default function EarningsComponent() {
                       {payment.status}
                     </span>
                     {payment.dueDate && payment.status === 'Pending' && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <div className="text-xs text-slate-500 mt-1">
                         Due: {new Date(payment.dueDate).toLocaleDateString()}
                       </div>
                     )}
                     {payment.processingNote && payment.status === 'Processing' && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <div className="text-xs text-slate-500 mt-1">
                         {payment.processingNote}
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                  <td className="px-6 py-4 text-sm text-slate-500">
                     {new Date(payment.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex space-x-2">
-                      <button className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                         Download
                       </button>
                       {payment.status === 'Pending' && (
-                        <button className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                           Follow Up
                         </button>
                       )}
@@ -344,49 +344,49 @@ export default function EarningsComponent() {
       </div>
 
       {/* Payment Settings */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Payment Settings</h3>
+      <div className="bg-white rounded-xl p-6 border border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Payment Settings</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Bank Account</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Bank Account</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Bank Name:</span>
-                <span className="text-sm text-slate-900 dark:text-white">Bank Central Asia</span>
+                <span className="text-sm text-slate-600">Bank Name:</span>
+                <span className="text-sm text-slate-900">Bank Central Asia</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Account Number:</span>
-                <span className="text-sm text-slate-900 dark:text-white">****-****-1234</span>
+                <span className="text-sm text-slate-600">Account Number:</span>
+                <span className="text-sm text-slate-900">****-****-1234</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Account Name:</span>
-                <span className="text-sm text-slate-900 dark:text-white">Alex Smith</span>
+                <span className="text-sm text-slate-600">Account Name:</span>
+                <span className="text-sm text-slate-900">Alex Smith</span>
               </div>
             </div>
           </div>
           <div>
-            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Tax Information</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Tax Information</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Tax ID (NPWP):</span>
-                <span className="text-sm text-slate-900 dark:text-white">12.345.678.9-012.000</span>
+                <span className="text-sm text-slate-600">Tax ID (NPWP):</span>
+                <span className="text-sm text-slate-900">12.345.678.9-012.000</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Tax Rate:</span>
-                <span className="text-sm text-slate-900 dark:text-white">2.5% (PPh 23)</span>
+                <span className="text-sm text-slate-600">Tax Rate:</span>
+                <span className="text-sm text-slate-900">2.5% (PPh 23)</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600 dark:text-slate-400">VAT Registration:</span>
-                <span className="text-sm text-slate-900 dark:text-white">PKP Registered</span>
+                <span className="text-sm text-slate-600">VAT Registration:</span>
+                <span className="text-sm text-slate-900">PKP Registered</span>
               </div>
             </div>
           </div>
         </div>
         <div className="mt-6 flex space-x-3">
-          <button className="px-4 py-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-lg font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+          <button className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors">
             Update Bank Account
           </button>
-          <button className="px-4 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+          <button className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors">
             Update Tax Info
           </button>
         </div>
