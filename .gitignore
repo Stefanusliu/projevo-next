@@ -46,3 +46,41 @@ ui-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Security - Prevent secrets from being committed
+*.log
+*debug*.js
+*test*.js
+*test*.mjs
+diagnostic.js
+email-configs.js
+
+# Firebase service account keys
+*firebase*adminsdk*.json
+firebase-private-key.json
+
+# Setup and configuration files that might contain secrets
+*SETUP*.md
+*CONFIG*.md
+*AUTH*.md
+*SMS*.md
+*PHONE*.md
+*TEST*.md
+
+# API keys and credentials
+google-services.json
+GoogleService-Info.plist
+credentials.json
+service-account-key.json
+
+# Development and debug files
+debug-*
+test-*
+create-test-*
+browser-test-*
+
+# Documentation with potential secrets
+FIREBASE_*.md
+SMS_*.md
+PHONE_*.md
+VENDOR_*.md
