@@ -882,7 +882,7 @@ const Tender = () => {
                       {selectedProject.propertyType}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-gray-600">
                     Budget: {selectedProject.budget} | Duration: {selectedProject.duration}
                   </p>
                 </div>
@@ -890,13 +890,13 @@ const Tender = () => {
                 {/* Offer Form */}
                 <form className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Penawaran Harga
                     </label>
                     <input
                       type="text"
                       placeholder="Masukkan penawaran harga Anda"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
                       style={{ '--focus-ring-color': '#2373FF' }}
                       onFocus={(e) => {
                         e.target.style.borderColor = '#2373FF';
@@ -912,13 +912,13 @@ const Tender = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Estimasi Waktu Pengerjaan
                     </label>
                     <input
                       type="text"
                       placeholder="Contoh: 3 bulan"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
                       onFocus={(e) => {
                         e.target.style.borderColor = '#2373FF';
                         e.target.style.outline = '2px solid #2373FF';
@@ -933,13 +933,13 @@ const Tender = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Deskripsi Penawaran
                     </label>
                     <textarea
                       rows={4}
                       placeholder="Jelaskan detail penawaran, metodologi, dan keunggulan Anda..."
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white resize-none"
                       onFocus={(e) => {
                         e.target.style.borderColor = '#2373FF';
                         e.target.style.outline = '2px solid #2373FF';
@@ -954,14 +954,14 @@ const Tender = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Portfolio/Dokumen Pendukung
                     </label>
-                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-6 text-center">
-                      <svg className="w-12 h-12 mx-auto text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                      <p className="text-sm text-gray-600">
                         Drag & drop files here, or click to select
                       </p>
                     </div>
@@ -972,7 +972,7 @@ const Tender = () => {
                     <button
                       type="button"
                       onClick={closeModals}
-                      className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Batal
                     </button>
