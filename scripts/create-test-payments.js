@@ -4,7 +4,7 @@ const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
 // Firebase configuration (use your actual config)
 const firebaseConfig = {
-  apiKey: "AIzaSyBYlRtDhCtL4MhoCjKaVoZCMEONQnfV2mE",
+  apiKey: "REDACTED",
   authDomain: "projevo-cc635.firebaseapp.com",
   projectId: "projevo-cc635",
   storageBucket: "projevo-cc635.firebasestorage.app",

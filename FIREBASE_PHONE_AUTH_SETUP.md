@@ -156,7 +156,7 @@ If you want to test without real SMS during development:
 1. **Verify Firebase environment variables:**
    ```bash
    # Check your .env.local file
-   NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCMruxYLeWnvgbhG_PepJPn_HLbCXe6UX4
+   NEXT_PUBLIC_FIREBASE_API_KEY=REDACTED
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=projevo-cc635
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=projevo-cc635.firebaseapp.com
    ```
