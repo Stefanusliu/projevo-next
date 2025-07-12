@@ -17,12 +17,38 @@ export default function CreateProjectPage() {
     startDate: ''
   });
 
+  // Helper function to format budget with Rp and thousand separators
+  const formatBudget = (value) => {
+    if (!value) return '';
+    // Remove non-numeric characters except for digits
+    const numericValue = value.toString().replace(/[^\d]/g, '');
+    if (!numericValue) return '';
+    // Add thousand separators
+    const formatted = parseInt(numericValue).toLocaleString('id-ID');
+    return `Rp ${formatted}`;
+  };
+
+  // Helper function to parse budget input (remove Rp and separators)
+  const parseBudgetInput = (value) => {
+    return value.replace(/[^\d]/g, '');
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'budget') {
+      // Handle budget formatting
+      const rawValue = parseBudgetInput(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: rawValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -155,7 +181,7 @@ export default function CreateProjectPage() {
                   type="text"
                   id="budget"
                   name="budget"
-                  value={formData.budget}
+                  value={formatBudget(formData.budget)}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Rp 150,000,000"

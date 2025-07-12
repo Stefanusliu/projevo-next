@@ -168,16 +168,28 @@ export default function CreateProjectComponent({ onBack }) {
       return;
     }
 
+    // Check required agreements
+    if (!formData.agreementTerms || !formData.agreementData || !formData.agreementValidation) {
+      alert('Please accept all required agreements to continue');
+      return;
+    }
+
     setLoading(true);
     try {
       const projectData = {
         ...formData,
         title: formData.projectTitle,
         ownerId: user.uid,
-        status: 'In Progress',
+        ownerEmail: user.email,
+        ownerName: user.displayName || user.email,
+        status: 'Menunggu Persetujuan', // Set status for moderation
+        moderationStatus: 'pending',
         progress: 0,
+        isPublished: false, // Will be set to true after approval
+        publishedAt: null, // Will be set when approved
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        submittedAt: serverTimestamp(),
         team: [],
         milestones: [
           { name: 'Planning', completed: false, date: '' },
@@ -185,17 +197,41 @@ export default function CreateProjectComponent({ onBack }) {
           { name: 'Development', completed: false, date: '' },
           { name: 'Review', completed: false, date: '' },
           { name: 'Completion', completed: false, date: '' }
-        ]
+        ],
+        // Add metadata for marketplace
+        marketplace: {
+          category: formData.projectType,
+          tags: formData.projectScope,
+          budget: formData.estimatedBudget,
+          duration: formData.estimatedDuration,
+          location: {
+            province: formData.province,
+            city: formData.city,
+            fullAddress: formData.fullAddress
+          }
+        }
       };
 
+      // Include the complete BOQ data if selected
       if (selectedBOQ) {
-        projectData.attachedBOQ = selectedBOQ;
+        console.log('Attaching BOQ to project:', selectedBOQ);
+        projectData.attachedBOQ = {
+          id: selectedBOQ.id,
+          title: selectedBOQ.title,
+          tahapanKerja: selectedBOQ.tahapanKerja,
+          createdAt: selectedBOQ.createdAt,
+          updatedAt: selectedBOQ.updatedAt,
+          attachedAt: new Date().toISOString()
+        };
+        console.log('Project data with BOQ:', projectData);
+      } else {
+        console.log('No BOQ selected for this project');
       }
 
       const docRef = await addDoc(collection(db, 'projects'), projectData);
       console.log('Project created with ID:', docRef.id);
       
-      alert('Project created successfully!');
+      alert('Project submitted successfully! Your project is now pending approval and will be available in the marketplace once approved.');
       onBack();
     } catch (error) {
       console.error('Error creating project:', error);
@@ -571,31 +607,67 @@ export default function CreateProjectComponent({ onBack }) {
             <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
               BOQ Attachment (Optional)
             </h3>
+            <p className="text-sm text-gray-600">
+              Attach a Bill of Quantities (BOQ) to provide detailed project specifications and cost estimates to vendors. 
+              BOQs created in BOQ Maker will be available for selection here.
+            </p>
             
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-gray-900">Bill of Quantities (BOQ)</h4>
-              <button
-                type="button"
-                onClick={() => setShowBOQSelector(true)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                {selectedBOQ ? 'Change BOQ' : 'Attach BOQ'}
-              </button>
+              <div className="flex items-center space-x-3">
+                <a
+                  href="/boq-maker"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                >
+                  Create New BOQ
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowBOQSelector(true)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {selectedBOQ ? 'Change BOQ' : 'Attach BOQ'}
+                </button>
+              </div>
             </div>
             
             {selectedBOQ ? (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm font-medium text-green-800">
-                  BOQ Attached: {selectedBOQ.title || 'Untitled BOQ'}
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  {selectedBOQ.tahapanKerja?.length || 0} work phases included
-                </p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">
+                      BOQ Attached: {selectedBOQ.title || 'Untitled BOQ'}
+                    </p>
+                    <div className="flex items-center space-x-4 text-xs text-green-600 mt-1">
+                      <span>{selectedBOQ.tahapanKerja?.length || 0} work phases</span>
+                      {selectedBOQ.createdAt && (
+                        <span>Created: {new Date(selectedBOQ.createdAt).toLocaleDateString('id-ID')}</span>
+                      )}
+                    </div>
+                    {selectedBOQ.updatedAt && selectedBOQ.updatedAt !== selectedBOQ.createdAt && (
+                      <p className="text-xs text-green-500 mt-1">
+                        Last updated: {new Date(selectedBOQ.updatedAt).toLocaleDateString('id-ID')}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBOQ(null)}
+                    className="text-green-600 hover:text-green-800 transition-colors ml-4"
+                    title="Remove BOQ"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  No BOQ attached. You can attach a saved BOQ to this project.
+                  No BOQ attached. You can attach a saved BOQ from BOQ Maker to this project.
                 </p>
               </div>
             )}
@@ -620,6 +692,93 @@ export default function CreateProjectComponent({ onBack }) {
             </div>
           </div>
 
+          {/* Agreements Section */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
+              Terms and Agreements *
+            </h3>
+            <p className="text-sm text-gray-600">
+              Please review and accept the following agreements to proceed with project submission:
+            </p>
+            
+            <div className="space-y-4">
+              {/* Agreement 1: Terms of Service */}
+              <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="agreementTerms"
+                  checked={formData.agreementTerms}
+                  onChange={(e) => handleInputChange('agreementTerms', e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  required
+                />
+                <div className="flex-1">
+                  <label htmlFor="agreementTerms" className="text-sm font-medium text-gray-900 cursor-pointer">
+                    I agree to the Terms of Service and Project Guidelines
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    By checking this box, you agree to abide by Projevo&apos;s terms of service, project guidelines, and understand the responsibilities as a project owner.
+                  </p>
+                </div>
+              </div>
+
+              {/* Agreement 2: Data Usage */}
+              <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="agreementData"
+                  checked={formData.agreementData}
+                  onChange={(e) => handleInputChange('agreementData', e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  required
+                />
+                <div className="flex-1">
+                  <label htmlFor="agreementData" className="text-sm font-medium text-gray-900 cursor-pointer">
+                    I consent to data processing and marketplace listing
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    You consent to the processing of your project data and agree to have your project listed on the marketplace after approval.
+                  </p>
+                </div>
+              </div>
+
+              {/* Agreement 3: Information Validation */}
+              <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="agreementValidation"
+                  checked={formData.agreementValidation}
+                  onChange={(e) => handleInputChange('agreementValidation', e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  required
+                />
+                <div className="flex-1">
+                  <label htmlFor="agreementValidation" className="text-sm font-medium text-gray-900 cursor-pointer">
+                    I confirm that all information provided is accurate and complete
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    You confirm that all project information, requirements, and specifications provided are accurate, complete, and truthful to the best of your knowledge.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-2">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Moderation Process</p>
+                  <p className="mt-1">
+                    Your project will be submitted for review and approval. Once approved by our team, 
+                    it will be published on the marketplace and vendors will be able to submit proposals.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Submit Button */}
           <div className="flex justify-end pt-6 border-t">
             <button
@@ -635,10 +794,10 @@ export default function CreateProjectComponent({ onBack }) {
               {loading ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-500 rounded-full animate-spin"></div>
-                  <span>Creating...</span>
+                  <span>Submitting for Approval...</span>
                 </div>
               ) : (
-                'Create Project'
+                'Submit Project for Approval'
               )}
             </button>
           </div>

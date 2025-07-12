@@ -17,6 +17,8 @@ import {
   MdClose 
 } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
+import ProjectOwnerDetailModal from '../components/ProjectOwnerDetailModal';
+import ProjectOwnerDetailPage from '../components/ProjectOwnerDetailPage';
 
 const Tender = () => {
   const { user } = useAuth();
@@ -67,41 +69,87 @@ const Tender = () => {
         console.log('Query successful! Retrieved', snapshot.size, 'documents');
         
         const projects = [];
+        const companyPromises = []; // To fetch company names in parallel
+        
         snapshot.forEach((doc) => {
           const data = doc.data();
           console.log('Processing project:', doc.id, {
             procurementMethod: data.procurementMethod,
             status: data.status,
-            title: data.title || data.projectTitle
+            title: data.title || data.projectTitle,
+            tenderDuration: data.tenderDuration,
+            createdAt: data.createdAt
           });
           
-          // Filter for tender projects
-          if (data.procurementMethod === 'Tender') {
+          // Filter for tender projects that are available for bidding
+          if (data.procurementMethod === 'Tender' && 
+              data.status !== 'awarded' && 
+              data.isAvailableForBidding !== false &&
+              !data.selectedVendorId) {
             console.log('Found tender project:', doc.id, data.status);
+            
+            // Calculate tender deadline from createdAt + tenderDuration
+            const calculatedDeadline = calculateTenderDeadline(data.createdAt, data.tenderDuration);
+            console.log(`Deadline calculation for ${doc.id}:`, {
+              createdAt: data.createdAt,
+              tenderDuration: data.tenderDuration,
+              calculatedDeadline,
+              fallbackDeadline: data.tenderDeadline || data.deadline
+            });
+            
+            // Use calculated deadline or fallback to stored deadlines
+            const finalDeadline = calculatedDeadline || data.tenderDeadline || data.deadline;
+            const bidCountdownText = calculateBidCountdown(finalDeadline);
+            
+            console.log(`Final deadline for ${doc.id}:`, {
+              finalDeadline,
+              bidCountdownText
+            });
             
             const project = {
               id: doc.id,
               projectTitle: data.title || data.projectTitle || 'Untitled Project',
-              location: data.location || data.city || 'Location not specified',
-              scope: data.scope || data.scopes || (data.category ? [data.category] : ['General']),
+              location: data.city && data.province ? `${data.city}, ${data.province}` : data.location || data.city || 'Location not specified',
+              scope: data.projectScope || data.scope || data.scopes || (data.category ? [data.category] : ['General']),
               projectType: data.projectType || data.category || 'General',
               propertyType: data.propertyType || 'Commercial',
-              budget: data.estimatedBudget || data.budget || 'Budget not specified',
-              duration: data.estimatedDuration || data.duration || 'Duration not specified',
-              bidCountdown: calculateBidCountdown(data.tenderDeadline || data.deadline),
-              tenderDeadline: data.tenderDeadline,
-              deadline: data.deadline,
-              description: data.description || '',
-              client: data.client || 'Client not specified',
+              budget: formatBudget(data.estimatedBudget || data.marketplace?.budget || data.budget || 0),
+              duration: formatDuration(data.estimatedDuration || data.duration || 'Not specified'),
+              bidCountdown: bidCountdownText,
+              tenderDeadline: finalDeadline,
+              deadline: finalDeadline,
+              description: data.specialNotes || data.description || 'No description available',
+              client: data.ownerName || data.client || data.ownerEmail?.split('@')[0] || 'Client not specified',
               estimatedStartDate: data.estimatedStartDate || data.startDate,
-              status: data.status,
+              status: data.status || data.moderationStatus,
+              ownerId: data.ownerId,
+              tenderDuration: data.tenderDuration || '1 bulan',
+              // Keep original data for debugging
+              originalData: data,
               ...data
             };
+            
             projects.push(project);
+            
+            // Add promise to fetch company name
+            if (data.ownerId) {
+              companyPromises.push(
+                getCompanyName(data.ownerId).then(companyName => {
+                  project.client = companyName;
+                  return project;
+                })
+              );
+            }
           }
         });
 
+        // Wait for all company names to be fetched
+        if (companyPromises.length > 0) {
+          await Promise.all(companyPromises);
+        }
+
         console.log('Processed tender projects:', projects);
+        console.log('Sample project data structure:', projects[0]);
         setMarketData(projects);
         setLoading(false);
         
@@ -127,24 +175,159 @@ const Tender = () => {
     loadTenderProjects();
   }, [user]);
 
-  // Calculate bid countdown
+  // Calculate tender deadline from createdAt + tenderDuration
+  const calculateTenderDeadline = (createdAt, tenderDuration) => {
+    if (!createdAt || !tenderDuration) {
+      console.warn('Missing createdAt or tenderDuration:', { createdAt, tenderDuration });
+      return null;
+    }
+
+    try {
+      let startDate;
+      
+      // Parse createdAt to Date object
+      if (createdAt?.toDate) {
+        startDate = createdAt.toDate();
+      } else if (typeof createdAt === 'string') {
+        startDate = new Date(createdAt);
+      } else if (createdAt instanceof Date) {
+        startDate = createdAt;
+      } else if (typeof createdAt === 'object' && createdAt.seconds) {
+        // Firestore timestamp object format
+        startDate = new Date(createdAt.seconds * 1000);
+      } else {
+        console.warn('Invalid createdAt format:', createdAt);
+        return null;
+      }
+
+      // Validate start date
+      if (!startDate || isNaN(startDate.getTime())) {
+        console.error('Invalid start date:', startDate);
+        return null;
+      }
+
+      // Parse tender duration (e.g., "1 bulan", "2 minggu", "30 hari")
+      const duration = tenderDuration.toLowerCase().trim();
+      console.log('Parsing tender duration:', duration);
+
+      const deadline = new Date(startDate);
+
+      if (duration.includes('bulan')) {
+        const months = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        console.log('Adding months:', months);
+        // Use proper month addition to handle month boundaries
+        deadline.setMonth(deadline.getMonth() + months);
+      } else if (duration.includes('minggu')) {
+        const weeks = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        console.log('Adding weeks:', weeks);
+        deadline.setDate(deadline.getDate() + (weeks * 7));
+      } else if (duration.includes('hari')) {
+        const days = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        console.log('Adding days:', days);
+        deadline.setDate(deadline.getDate() + days);
+      } else {
+        // Try to parse as pure number (assume days)
+        const numericValue = parseInt(duration.match(/(\d+)/)?.[1]);
+        if (!isNaN(numericValue)) {
+          console.log('Adding numeric days:', numericValue);
+          deadline.setDate(deadline.getDate() + numericValue);
+        } else {
+          console.warn('Could not parse tender duration:', tenderDuration);
+          // Default to 30 days (1 month)
+          deadline.setDate(deadline.getDate() + 30);
+        }
+      }
+      
+      // Validate the calculated deadline
+      if (isNaN(deadline.getTime())) {
+        console.error('Invalid deadline calculated:', { createdAt, tenderDuration, startDate, deadline });
+        return null;
+      }
+      
+      console.log('Calculated deadline:', {
+        createdAt,
+        tenderDuration,
+        startDate: startDate.toISOString(),
+        deadline: deadline.toISOString(),
+        daysFromNow: Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24))
+      });
+      
+      return deadline;
+    } catch (error) {
+      console.error('Error calculating tender deadline:', error, { createdAt, tenderDuration });
+      return null;
+    }
+  };
+
+  // Get company name from user profile
+  const getCompanyName = async (ownerId) => {
+    if (!ownerId) return 'Unknown Company';
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', ownerId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        // Try multiple fields for company name
+        const companyName = userData.companyName || 
+                           userData.company || 
+                           userData.businessName ||
+                           userData.organizationName ||
+                           userData.displayName || 
+                           userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` :
+                           userData.email?.split('@')[0] || 
+                           'Unknown Company';
+        
+        console.log(`Fetched company name for ${ownerId}:`, companyName);
+        return companyName;
+      } else {
+        console.warn(`User document not found for ownerId: ${ownerId}`);
+        return 'Unknown Company';
+      }
+    } catch (error) {
+      console.error('Error fetching company name for', ownerId, ':', error);
+      return 'Unknown Company';
+    }
+  };
   const calculateBidCountdown = (deadline) => {
     if (!deadline) return 'No deadline set';
     
     try {
       let deadlineDate;
-      if (deadline?.toDate) {
+      
+      // Handle different deadline formats
+      if (deadline instanceof Date) {
+        deadlineDate = deadline;
+      } else if (deadline?.toDate) {
         // Firestore timestamp
         deadlineDate = deadline.toDate();
       } else if (typeof deadline === 'string') {
         // String date
         deadlineDate = new Date(deadline);
+      } else if (typeof deadline === 'object' && deadline.seconds) {
+        // Firestore timestamp object format
+        deadlineDate = new Date(deadline.seconds * 1000);
       } else {
-        return 'Invalid deadline';
+        console.warn('Unknown deadline format:', deadline);
+        return 'Invalid deadline format';
+      }
+
+      // Validate the date
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+        console.error('Invalid deadline date:', deadline);
+        return 'Invalid deadline date';
       }
 
       const now = new Date();
       const diffTime = deadlineDate.getTime() - now.getTime();
+      
+      console.log('Deadline calculation:', {
+        deadline,
+        deadlineDate,
+        now,
+        diffTime,
+        diffTimeHours: diffTime / (1000 * 60 * 60)
+      });
       
       if (diffTime <= 0) {
         return 'Deadline passed';
@@ -152,20 +335,85 @@ const Tender = () => {
 
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
       
-      if (diffDays > 7) {
+      if (diffDays > 30) {
+        const months = Math.floor(diffDays / 30);
+        const remainingDays = diffDays % 30;
+        return `${months} bulan${remainingDays > 0 ? ` ${remainingDays} hari` : ''}`;
+      } else if (diffDays > 7) {
         const weeks = Math.floor(diffDays / 7);
         const remainingDays = diffDays % 7;
         return `${weeks} minggu${remainingDays > 0 ? ` ${remainingDays} hari` : ''}`;
       } else if (diffDays > 0) {
         return `${diffDays} hari ${diffHours} jam`;
+      } else if (diffHours > 0) {
+        return `${diffHours} jam ${diffMinutes} menit`;
       } else {
-        return `${diffHours} jam`;
+        return `${diffMinutes} menit`;
       }
     } catch (error) {
-      console.error('Error calculating countdown:', error);
-      return 'Invalid deadline';
+      console.error('Error calculating countdown:', error, deadline);
+      return 'Error calculating deadline';
     }
+  };
+
+  // Format budget consistently
+  const formatBudget = (budget) => {
+    if (!budget) return 'Budget not specified';
+    
+    // If it's already a formatted string, return as is
+    if (typeof budget === 'string' && budget.includes('Rp')) {
+      return budget;
+    }
+    
+    // Convert to number
+    let numBudget;
+    if (typeof budget === 'string') {
+      numBudget = parseInt(budget.replace(/[^\d]/g, ''));
+    } else {
+      numBudget = budget;
+    }
+    
+    if (isNaN(numBudget) || numBudget === 0) {
+      return 'Budget not specified';
+    }
+    
+    // Format with Indonesian locale
+    if (numBudget >= 1000000000) {
+      return `Rp ${(numBudget / 1000000000).toFixed(1)}B`;
+    } else if (numBudget >= 1000000) {
+      return `Rp ${(numBudget / 1000000).toFixed(1)}M`;
+    } else {
+      return `Rp ${numBudget.toLocaleString('id-ID')}`;
+    }
+  };
+
+  // Format duration consistently
+  const formatDuration = (duration) => {
+    if (!duration) return 'Duration not specified';
+    
+    // If it's already formatted properly, return as is
+    if (typeof duration === 'string' && (duration.includes('bulan') || duration.includes('minggu') || duration.includes('hari'))) {
+      return duration;
+    }
+    
+    // If it's a number, assume it's in days
+    if (typeof duration === 'number') {
+      if (duration >= 30) {
+        const months = Math.floor(duration / 30);
+        const remainingDays = duration % 30;
+        return `${months} bulan${remainingDays > 0 ? ` ${remainingDays} hari` : ''}`;
+      } else if (duration >= 7) {
+        const weeks = Math.floor(duration / 7);
+        const remainingDays = duration % 7;
+        return `${weeks} minggu${remainingDays > 0 ? ` ${remainingDays} hari` : ''}`;
+      } else {
+        return `${duration} hari`;
+      }
+    }
+    
+    return duration.toString();
   };
 
   // Get unique filter options from real data
@@ -232,9 +480,26 @@ const Tender = () => {
 
   // Helper function to extract budget number for sorting
   const extractBudgetNumber = (budget) => {
-    if (!budget || typeof budget !== 'string') return 0;
-    const numbers = budget.replace(/[^\d]/g, '');
-    return parseInt(numbers) || 0;
+    if (!budget || budget === 'Budget not specified') return 0;
+    
+    if (typeof budget === 'number') return budget;
+    
+    if (typeof budget === 'string') {
+      // Remove all non-digit characters and convert to number
+      const numbers = budget.replace(/[^\d]/g, '');
+      const num = parseInt(numbers) || 0;
+      
+      // Handle abbreviated formats (M for million, B for billion)
+      if (budget.includes('M')) {
+        return num * 1000000;
+      } else if (budget.includes('B')) {
+        return num * 1000000000;
+      }
+      
+      return num;
+    }
+    
+    return 0;
   };
 
   // Helper function to convert countdown to hours
@@ -309,6 +574,12 @@ const Tender = () => {
     setSelectedProject(project);
     setShowDetailsView(true);
   };
+  
+  const handleCloseDetailModal = () => {
+    // Legacy function - kept for compatibility
+    setSelectedProject(null);
+  };
+  
   const handleBackToList = () => {
     setShowDetailsView(false);
     setSelectedProject(null);
@@ -401,54 +672,10 @@ const Tender = () => {
             <p className="text-gray-600 text-lg">Loading tender projects...</p>
           </div>
         ) : showDetailsView && selectedProject ? (
-          <div className="max-w-4xl mx-auto">
-            <button onClick={handleBackToList} className="mb-6 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-              &larr; Back to List
-            </button>
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-blue-700 mb-1">Detail Proyek</h2>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{selectedProject.projectTitle}</h3>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{selectedProject.projectType}</span>
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">{selectedProject.propertyType}</span>
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 flex items-center"><FiMapPin className="mr-1" />{selectedProject.location}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Budget</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedProject.budget}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Duration</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedProject.duration}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Deadline</p>
-                  <span className="px-2.5 py-1 text-xs font-medium rounded-full text-white" style={{ backgroundColor: '#2373FF' }}>{selectedProject.bidCountdown}</span>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Client</p>
-                  <p className="text-gray-900">{selectedProject.client}</p>
-                </div>
-              </div>
-              <div className="mb-6">
-                <h4 className="text-md font-semibold text-blue-700 mb-2">Ruang Lingkup</h4>
-                <div className="flex flex-wrap gap-2">
-                  {(Array.isArray(selectedProject.scope) ? selectedProject.scope : [selectedProject.scope]).filter(Boolean).map((scopeItem, idx) => (
-                    <span key={idx} className="px-2 py-1 text-xs text-white rounded" style={{ backgroundColor: '#2373FF' }}>{scopeItem}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-6">
-                <h4 className="text-md font-semibold text-blue-700 mb-2">Deskripsi Proyek</h4>
-                <p className="text-gray-700 whitespace-pre-line">{selectedProject.description || '-'}</p>
-              </div>
-              <div className="mb-6">
-                <h4 className="text-md font-semibold text-blue-700 mb-2">Tanggal Mulai Estimasi</h4>
-                <p className="text-gray-700">{selectedProject.estimatedStartDate ? (selectedProject.estimatedStartDate.toDate ? selectedProject.estimatedStartDate.toDate().toLocaleDateString() : new Date(selectedProject.estimatedStartDate).toLocaleDateString()) : '-'}</p>
-              </div>
-            </div>
-          </div>
+          <ProjectOwnerDetailPage
+            project={selectedProject}
+            onBack={handleBackToList}
+          />
         ) : (
           <>
             {/* Filters */}
@@ -783,7 +1010,9 @@ const Tender = () => {
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Ruang Lingkup</h4>
                   <div className="flex flex-wrap gap-1">
-                    {(Array.isArray(project.scope) ? project.scope : [project.scope]).filter(Boolean).map((scopeItem, index) => (
+                    {(Array.isArray(project.scope) ? project.scope : 
+                      project.scope ? [project.scope] : ['General']
+                    ).filter(Boolean).slice(0, 3).map((scopeItem, index) => (
                       <span
                         key={index}
                         className="px-2 py-1 text-xs text-white rounded"
@@ -792,6 +1021,13 @@ const Tender = () => {
                         {scopeItem}
                       </span>
                     ))}
+                    {(Array.isArray(project.scope) ? project.scope : 
+                      project.scope ? [project.scope] : []
+                    ).length > 3 && (
+                      <span className="px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded">
+                        +{(Array.isArray(project.scope) ? project.scope : [project.scope]).length - 3} more
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -805,6 +1041,12 @@ const Tender = () => {
                     <p className="text-xs text-gray-500">Duration</p>
                     <p className="text-sm font-semibold text-gray-900">{project.duration}</p>
                   </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="mb-4">
+                  <p className="text-xs text-gray-500">Client</p>
+                  <p className="text-sm font-semibold text-gray-900">{project.client}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
@@ -992,8 +1234,7 @@ const Tender = () => {
           </div>
         )}
 
-        {/* View Details Modal */}
-        {/* Removed showDetailsModal and modal rendering */}
+        {/* Removed Enhanced Project Detail Modal - now using in-page view */}
         </>
         )}
       </main>

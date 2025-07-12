@@ -1,6 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { 
+  MdWarning, 
+  MdCheckCircle, 
+  MdSchedule, 
+  MdError 
+} from 'react-icons/md';
 
 export default function PaymentManagementComponent() {
   const [activeTab, setActiveTab] = useState('pending_payments');
@@ -143,32 +149,32 @@ export default function PaymentManagementComponent() {
   const getPaymentStatusColor = (status) => {
     switch (status) {
       case 'pending_payment':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+        return 'bg-yellow-100 text-yellow-800';
       case 'payment_received':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        return 'bg-green-100 text-green-800';
       case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        return 'bg-red-100 text-red-800';
       case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getDisbursementStatusColor = (status) => {
     switch (status) {
       case 'ready_for_disbursement':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+        return 'bg-blue-100 text-blue-800';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+        return 'bg-yellow-100 text-yellow-800';
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        return 'bg-green-100 text-green-800';
       case 'on_hold':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        return 'bg-red-100 text-red-800';
       case 'dispute':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+        return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -194,11 +200,11 @@ export default function PaymentManagementComponent() {
   const renderPendingPayments = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-slate-900">
           Pending Client Payments
         </h2>
         <div className="flex items-center space-x-4">
-          <select className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+          <select className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900">
             <option>All Status</option>
             <option>Pending Payment</option>
             <option>Payment Received</option>
@@ -212,11 +218,11 @@ export default function PaymentManagementComponent() {
 
       <div className="space-y-4">
         {pendingPayments.map((payment) => (
-          <div key={payment.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div key={payment.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-slate-900">
                     {payment.projectTitle}
                   </h3>
                   <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPaymentStatusColor(payment.status)}`}>
@@ -226,32 +232,32 @@ export default function PaymentManagementComponent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Client</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{payment.client}</p>
+                    <p className="text-sm text-slate-500">Client</p>
+                    <p className="font-medium text-slate-900">{payment.client}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Amount</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatCurrency(payment.amount)}</p>
+                    <p className="text-sm text-slate-500">Amount</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(payment.amount)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Due Date</p>
-                    <p className={`font-medium ${payment.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                    <p className="text-sm text-slate-500">Due Date</p>
+                    <p className={`font-medium ${payment.status === 'overdue' ? 'text-red-600' : 'text-slate-900'}`}>
                       {formatDate(payment.dueDate)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Invoice</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{payment.invoiceNumber}</p>
+                    <p className="text-sm text-slate-500">Invoice</p>
+                    <p className="font-medium text-slate-900">{payment.invoiceNumber}</p>
                   </div>
                 </div>
 
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                <p className="text-slate-600 mb-4">
                   {payment.description}
                 </p>
 
                 {payment.status === 'overdue' && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4">
-                    <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                  <div className="p-3 bg-red-50 rounded-lg mb-4">
+                    <p className="text-sm text-red-700 font-medium">
                       ⚠️ Payment is overdue by {Math.ceil((new Date() - new Date(payment.dueDate)) / (1000 * 60 * 60 * 24))} days
                     </p>
                   </div>
@@ -261,7 +267,7 @@ export default function PaymentManagementComponent() {
               <div className="flex items-center space-x-3 ml-6">
                 <button 
                   onClick={() => setSelectedPayment(payment)}
-                  className="px-4 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                  className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                 >
                   View Details
                 </button>
@@ -310,11 +316,11 @@ export default function PaymentManagementComponent() {
   const renderDisbursements = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-slate-900">
           Vendor Disbursements
         </h2>
         <div className="flex items-center space-x-4">
-          <select className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+          <select className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-900">
             <option>All Status</option>
             <option>Ready for Disbursement</option>
             <option>Pending</option>
@@ -329,11 +335,11 @@ export default function PaymentManagementComponent() {
 
       <div className="space-y-4">
         {completedProjects.map((project) => (
-          <div key={project.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div key={project.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-slate-900">
                     {project.projectTitle}
                   </h3>
                   <span className={`px-3 py-1 text-sm font-medium rounded-full ${getDisbursementStatusColor(project.disbursementStatus)}`}>
@@ -343,51 +349,51 @@ export default function PaymentManagementComponent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Vendor</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{project.vendor}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{project.vendorBankAccount}</p>
+                    <p className="text-sm text-slate-500">Vendor</p>
+                    <p className="font-medium text-slate-900">{project.vendor}</p>
+                    <p className="text-sm text-slate-500">{project.vendorBankAccount}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Total Amount</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatCurrency(project.totalAmount)}</p>
+                    <p className="text-sm text-slate-500">Total Amount</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(project.totalAmount)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Platform Fee</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatCurrency(project.platformFee)}</p>
+                    <p className="text-sm text-slate-500">Platform Fee</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(project.platformFee)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Vendor Amount</p>
-                    <p className="font-medium text-green-600 dark:text-green-400">{formatCurrency(project.vendorAmount)}</p>
+                    <p className="text-sm text-slate-500">Vendor Amount</p>
+                    <p className="font-medium text-green-600">{formatCurrency(project.vendorAmount)}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Completed Date</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatDate(project.completedDate)}</p>
+                    <p className="text-sm text-slate-500">Completed Date</p>
+                    <p className="font-medium text-slate-900">{formatDate(project.completedDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Approved Date</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{formatDate(project.approvedDate)}</p>
+                    <p className="text-sm text-slate-500">Approved Date</p>
+                    <p className="font-medium text-slate-900">{formatDate(project.approvedDate)}</p>
                   </div>
                   {project.disbursedDate && (
                     <div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">Disbursed Date</p>
-                      <p className="font-medium text-slate-900 dark:text-white">{formatDate(project.disbursedDate)}</p>
+                      <p className="text-sm text-slate-500">Disbursed Date</p>
+                      <p className="font-medium text-slate-900">{formatDate(project.disbursedDate)}</p>
                     </div>
                   )}
                 </div>
 
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                <p className="text-slate-600 mb-4">
                   {project.description}
                 </p>
 
                 {project.status === 'dispute' && (
-                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg mb-4">
-                    <p className="text-sm text-orange-700 dark:text-orange-300 font-medium mb-1">
+                  <div className="p-3 bg-orange-50 rounded-lg mb-4">
+                    <p className="text-sm text-orange-700 font-medium mb-1">
                       🔍 Project Under Dispute
                     </p>
-                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                    <p className="text-sm text-orange-600">
                       {project.disputeReason}
                     </p>
                   </div>
@@ -397,7 +403,7 @@ export default function PaymentManagementComponent() {
               <div className="flex items-center space-x-3 ml-6">
                 <button 
                   onClick={() => setSelectedPayment(project)}
-                  className="px-4 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                  className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                 >
                   View Details
                 </button>
@@ -440,10 +446,10 @@ export default function PaymentManagementComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-slate-900">
             Payment Management
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
+          <p className="text-slate-600 mt-2">
             Manage client payments and vendor disbursements
           </p>
         </div>
@@ -457,95 +463,87 @@ export default function PaymentManagementComponent() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending Payments</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+              <p className="text-sm font-medium text-slate-600">Pending Payments</p>
+              <p className="text-2xl font-bold text-slate-900 mt-2">
                 {formatCurrency(pendingPayments.reduce((sum, p) => sum + p.amount, 0))}
               </p>
-              <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+              <p className="text-sm text-orange-600 mt-1">
                 {pendingPayments.filter(p => p.status === 'pending_payment').length} invoices
               </p>
             </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <MdWarning className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Ready to Disburse</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+              <p className="text-sm font-medium text-slate-600">Ready to Disburse</p>
+              <p className="text-2xl font-bold text-slate-900 mt-2">
                 {formatCurrency(completedProjects
                   .filter(p => p.disbursementStatus === 'ready_for_disbursement')
                   .reduce((sum, p) => sum + p.vendorAmount, 0))}
               </p>
-              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+              <p className="text-sm text-green-600 mt-1">
                 {completedProjects.filter(p => p.disbursementStatus === 'ready_for_disbursement').length} projects
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <MdWarning className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Platform Revenue</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+              <p className="text-sm font-medium text-slate-600">Platform Revenue</p>
+              <p className="text-2xl font-bold text-slate-900 mt-2">
                 {formatCurrency(completedProjects.reduce((sum, p) => sum + p.platformFee, 0))}
               </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              <p className="text-sm text-blue-600 mt-1">
                 This month
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <MdWarning className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Disputes</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">
+              <p className="text-sm font-medium text-slate-600">Disputes</p>
+              <p className="text-2xl font-bold text-slate-900 mt-2">
                 {completedProjects.filter(p => p.status === 'dispute').length}
               </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+              <p className="text-sm text-red-600 mt-1">
                 Require attention
               </p>
             </div>
-            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.963-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <MdWarning className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="border-b border-slate-200 dark:border-slate-700">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="border-b border-slate-200">
           <nav className="flex space-x-8 px-6 py-3">
             <button
               onClick={() => setActiveTab('pending_payments')}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'pending_payments'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               Client Payments ({pendingPayments.length})
@@ -554,8 +552,8 @@ export default function PaymentManagementComponent() {
               onClick={() => setActiveTab('disbursements')}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'disbursements'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               Vendor Disbursements ({completedProjects.length})
@@ -571,27 +569,27 @@ export default function PaymentManagementComponent() {
       {/* Action Modal */}
       {actionModal && selectedPayment && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900">
                 {actionType === 'mark_received' ? 'Mark Payment as Received' : 
                  actionType === 'send_reminder' ? 'Send Payment Reminder' :
                  actionType === 'disburse' ? 'Disburse Payment' :
                  actionType === 'resolve_dispute' ? 'Resolve Dispute' :
                  actionType === 'cancel_project' ? 'Cancel Project' : 'Confirm Action'}
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-slate-600 mt-1">
                 {selectedPayment.projectTitle || selectedPayment.title}
               </p>
             </div>
             
             <div className="p-6 space-y-4">
               {actionType === 'disburse' && (
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-2">
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-700 font-medium mb-2">
                     Disbursement Details:
                   </p>
-                  <div className="space-y-1 text-sm text-green-600 dark:text-green-400">
+                  <div className="space-y-1 text-sm text-green-600">
                     <p>Vendor: {selectedPayment.vendor}</p>
                     <p>Bank Account: {selectedPayment.vendorBankAccount}</p>
                     <p>Amount: {formatCurrency(selectedPayment.vendorAmount)}</p>
@@ -600,7 +598,7 @@ export default function PaymentManagementComponent() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   {actionType === 'send_reminder' ? 'Reminder Message' : 
                    actionType === 'resolve_dispute' ? 'Resolution Notes' : 'Notes'}
                 </label>
@@ -608,16 +606,16 @@ export default function PaymentManagementComponent() {
                   value={actionNotes}
                   onChange={(e) => setActionNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                   placeholder={`Enter ${actionType} notes...`}
                 />
               </div>
             </div>
             
-            <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-3">
+            <div className="p-6 border-t border-slate-200 flex justify-end space-x-3">
               <button
                 onClick={() => setActionModal(false)}
-                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>

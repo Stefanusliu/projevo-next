@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import { 
   FiChevronDown, 
@@ -19,9 +19,12 @@ import {
   MdHome,
   MdFolder
 } from 'react-icons/md';
+import ProjectOwnerDetailModal from './ProjectOwnerDetailModal';
+import ProjectOwnerDetailPage from './ProjectOwnerDetailPage';
 
 // Create Project Modal Component
 function CreateProjectModal({ onClose }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     // I. Informasi Umum Proyek
     projectTitle: '',
@@ -179,8 +182,15 @@ function CreateProjectModal({ onClose }) {
     setShowBOQSelector(false);
   };
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!user?.uid) {
+      alert('Please log in to create a project');
+      return;
+    }
     
     // Validation for required fields
     if (!formData.agreementTerms || !formData.agreementData || !formData.agreementValidation) {
@@ -195,10 +205,67 @@ function CreateProjectModal({ onClose }) {
       alert('Silakan lengkapi semua field yang wajib diisi (*)');
       return;
     }
-    
-    // Handle form submission here
-    console.log('Project created:', formData);
-    onClose();
+
+    setLoading(true);
+    try {
+      const projectData = {
+        ...formData,
+        title: formData.projectTitle,
+        ownerId: user.uid,
+        ownerEmail: user.email,
+        ownerName: user.displayName || user.email,
+        status: 'Menunggu Persetujuan',
+        moderationStatus: 'pending',
+        progress: 0,
+        isPublished: false,
+        publishedAt: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        submittedAt: serverTimestamp(),
+        team: [],
+        milestones: [
+          { name: 'Planning', completed: false, date: '' },
+          { name: 'Design', completed: false, date: '' },
+          { name: 'Development', completed: false, date: '' },
+          { name: 'Review', completed: false, date: '' },
+          { name: 'Completion', completed: false, date: '' }
+        ],
+        marketplace: {
+          category: formData.projectType,
+          tags: formData.projectScope,
+          budget: formData.estimatedBudget,
+          duration: formData.estimatedDuration,
+          location: {
+            province: formData.province,
+            city: formData.city,
+            fullAddress: formData.fullAddress
+          }
+        }
+      };
+
+      // Include BOQ data if selected
+      if (formData.selectedBOQ && formData.boqData) {
+        projectData.attachedBOQ = {
+          id: formData.selectedBOQ,
+          title: formData.boqData.title,
+          tahapanKerja: formData.boqData.tahapanKerja,
+          createdAt: formData.boqData.createdAt,
+          updatedAt: formData.boqData.updatedAt,
+          attachedAt: new Date().toISOString()
+        };
+      }
+
+      const docRef = await addDoc(collection(db, 'projects'), projectData);
+      console.log('Project created with ID:', docRef.id);
+      
+      alert('Project submitted successfully! Your project is now pending approval and will be available in the marketplace once approved.');
+      onClose();
+    } catch (error) {
+      console.error('Error creating project:', error);
+      alert('Failed to create project. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -777,9 +844,10 @@ function CreateProjectModal({ onClose }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Buat Proyek
+                  {loading ? 'Creating...' : 'Buat Proyek'}
                 </button>
               </div>
             </div>
@@ -851,6 +919,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [sortBy, setSortBy] = useState('Recent');
   const [filterBy, setFilterBy] = useState('All');
+  const [showDetailsView, setShowDetailsView] = useState(false);
   const sortDropdownRef = useRef(null);
   const filterDropdownRef = useRef(null);
   
@@ -910,6 +979,23 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
   const handleViewProject = (project) => {
     setSelectedProject(project);
+    setShowDetailsView(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    // Legacy function - kept for compatibility
+    setSelectedProject(null);
+  };
+
+  const handleBackToList = () => {
+    setShowDetailsView(false);
+    setSelectedProject(null);
+  };
+
+  const handleEditProject = (project) => {
+    // TODO: Implement edit project functionality
+    console.log('Edit project:', project);
+    setShowDetailsView(false);
   };
 
   const handleCreateProject = () => {
@@ -949,9 +1035,97 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         return 'Pending Signature';
       case 'Under Review':
         return 'Under Review';
+      case 'Menunggu Persetujuan':
+        return 'Pending Approval';
+      case 'Active':
+        return 'Active';
+      case 'Rejected':
+        return 'Rejected';
       default:
         return status || 'On Going'; // Fallback
     }
+  };
+
+  // Helper function to format budget with thousand separators
+  const formatBudget = (budget) => {
+    if (!budget) return 'Not specified';
+    
+    // Convert to number if it's a string
+    const numBudget = typeof budget === 'string' ? parseInt(budget.replace(/[^\d]/g, '')) : budget;
+    
+    if (isNaN(numBudget)) return 'Not specified';
+    
+    return `Rp ${numBudget.toLocaleString('id-ID')}`;
+  };
+
+  // Helper function to get company name from user profile
+  const getCompanyName = (project) => {
+    // Try to get from user profile first
+    if (userProfile?.companyName) {
+      return userProfile.companyName;
+    }
+    
+    // Fallback to owner name or email
+    if (project.ownerName && project.ownerName !== project.ownerEmail) {
+      return project.ownerName;
+    }
+    
+    if (project.ownerEmail) {
+      return project.ownerEmail.split('@')[0];
+    }
+    
+    return 'Unknown Company';
+  };
+
+  // Helper function to get milestones from BOQ data
+  const getMilestones = (project) => {
+    // If project has attached BOQ, create milestones from tahapan kerja
+    if (project.attachedBOQ && project.attachedBOQ.tahapanKerja) {
+      console.log('BOQ tahapanKerja found:', project.attachedBOQ.tahapanKerja);
+      return project.attachedBOQ.tahapanKerja.map((tahapan, index) => {
+        const milestoneName = tahapan.name || tahapan.nama || `Tahapan ${index + 1}`;
+        console.log(`Milestone ${index + 1}:`, milestoneName, 'from tahapan:', tahapan);
+        return {
+          name: milestoneName,
+          completed: false,
+          date: ''
+        };
+      });
+    }
+    
+    // Fallback to existing milestones or default ones
+    if (project.milestones && project.milestones.length > 0) {
+      return project.milestones;
+    }
+    
+    // Default milestones based on project type
+    const defaultMilestones = {
+      'Desain': [
+        { name: 'Concept Design', completed: false, date: '' },
+        { name: 'Design Development', completed: false, date: '' },
+        { name: 'Final Design', completed: false, date: '' },
+        { name: 'Design Approval', completed: false, date: '' }
+      ],
+      'Bangun': [
+        { name: 'Site Preparation', completed: false, date: '' },
+        { name: 'Foundation', completed: false, date: '' },
+        { name: 'Structure', completed: false, date: '' },
+        { name: 'Finishing', completed: false, date: '' }
+      ],
+      'Renovasi': [
+        { name: 'Demolition', completed: false, date: '' },
+        { name: 'Reconstruction', completed: false, date: '' },
+        { name: 'Finishing', completed: false, date: '' },
+        { name: 'Final Inspection', completed: false, date: '' }
+      ]
+    };
+    
+    return defaultMilestones[project.projectType] || [
+      { name: 'Planning', completed: false, date: '' },
+      { name: 'Execution', completed: false, date: '' },
+      { name: 'Review', completed: false, date: '' },
+      { name: 'Completion', completed: false, date: '' }
+    ];
   };
 
   // Helper function to calculate tender time left
@@ -1040,13 +1214,20 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         case 'Draft':
           return project.procurementMethod === 'Draft';
         case 'Tender':
-          return project.procurementMethod === 'Tender';
+          // Only show projects that are available for bidding (not awarded)
+          return project.procurementMethod === 'Tender' && 
+                 project.status !== 'awarded' && 
+                 project.isAvailableForBidding !== false &&
+                 !project.selectedVendorId;
         case 'Contract':
           return project.procurementMethod === 'Contract';
         case 'Negotiation':
           return project.procurementMethod === 'Negotiation';
         case 'Penunjukan Langsung':
           return project.procurementMethod === 'Penunjukan Langsung';
+        case 'Awarded':
+          // Show projects that have been awarded to vendors
+          return project.status === 'awarded' || project.selectedVendorId;
         default:
           return true;
       }
@@ -1070,6 +1251,17 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         <FiLoader className="animate-spin h-12 w-12" style={{ color: '#2373FF' }} />
         <span className="ml-3 text-gray-600">Loading projects...</span>
       </div>
+    );
+  }
+
+  // Show project detail view
+  if (showDetailsView && selectedProject) {
+    return (
+      <ProjectOwnerDetailPage
+        project={selectedProject}
+        onBack={handleBackToList}
+        onEditProject={handleEditProject}
+      />
     );
   }
 
@@ -1191,7 +1383,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-[600px] flex flex-col"
+                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-[450px] flex flex-col"
               >
                 <div className="p-6 flex-1 flex flex-col">
                   {/* Project Header */}
@@ -1201,7 +1393,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                         {project.title || project.projectTitle}
                       </h3>
                       <p className="text-sm text-gray-600 truncate">
-                        {project.client} • {project.location || project.city}
+                        {getCompanyName(project)} • {project.marketplace?.location?.city || project.city || 'Unknown Location'}
                       </p>
                     </div>
                     <div className="flex flex-col items-end space-y-2 flex-shrink-0 ml-3">
@@ -1219,7 +1411,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
                   {/* Description */}
                   <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-shrink-0">
-                    {project.description || project.projectType}
+                    {project.specialNotes || project.description || `${project.projectType} project for ${project.propertyType || 'property'} in ${project.marketplace?.location?.city || project.city || 'Unknown Location'}`}
                   </p>
 
                   {/* Progress */}
@@ -1243,49 +1435,52 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   <div className="mb-5 flex-1">
                     <h4 className="text-sm font-medium text-black mb-3">Milestones</h4>
                     <div className="space-y-2">
-                      {project.milestones && project.milestones.length > 0 ? (
-                        <>
-                          {project.milestones.slice(0, 3).map((milestone, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <div 
-                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                  milestone.completed ? 'bg-blue-500' : 'bg-gray-300'
-                                }`}
-                                style={milestone.completed ? { backgroundColor: '#2373FF' } : {}}
-                              ></div>
-                              <span 
-                                className={`text-xs truncate ${
-                                  milestone.completed ? 'text-black' : 'text-gray-500'
-                                }`}
-                              >
-                                {milestone.name} {milestone.completed && `(${milestone.date})`}
-                              </span>
-                            </div>
-                          ))}
-                          {project.milestones.length > 3 && (
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0"></div>
-                              <span className="text-xs text-gray-500">
-                                +{project.milestones.length - 3} more milestones
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0"></div>
-                          <span className="text-xs text-gray-500">No milestones set</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const milestones = getMilestones(project);
+                        return milestones.length > 0 ? (
+                          <>
+                            {milestones.slice(0, 3).map((milestone, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <div 
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                    milestone.completed ? 'bg-blue-500' : 'bg-gray-300'
+                                  }`}
+                                  style={milestone.completed ? { backgroundColor: '#2373FF' } : {}}
+                                ></div>
+                                <span 
+                                  className={`text-xs truncate ${
+                                    milestone.completed ? 'text-black' : 'text-gray-500'
+                                  }`}
+                                >
+                                  {milestone.name} {milestone.completed && milestone.date ? `(${milestone.date})` : ''}
+                                </span>
+                              </div>
+                            ))}
+                            {milestones.length > 3 && (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0"></div>
+                                <span className="text-xs text-gray-500">
+                                  +{milestones.length - 3} more milestones
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0"></div>
+                            <span className="text-xs text-gray-500">No milestones set</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
                   {/* Project Info */}
-                  <div className="grid grid-cols-2 gap-4 mb-5 flex-shrink-0">
+                  <div className="grid grid-cols-3 gap-4 mb-5 flex-shrink-0">
                     <div>
                       <p className="text-xs text-gray-500">Budget</p>
                       <p className="text-sm font-semibold text-black truncate">
-                        {project.budget || project.estimatedBudget}
+                        {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
                       </p>
                     </div>
                     <div>
@@ -1294,35 +1489,11 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                         {project.startDate || project.estimatedStartDate || 'TBD'}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Team */}
-                  <div className="mb-5 flex-shrink-0">
-                    <p className="text-xs text-gray-500 mb-3">Team</p>
-                    <div className="flex -space-x-2">
-                      {project.team && project.team.length > 0 ? (
-                        <>
-                          {project.team.slice(0, 3).map((member, index) => (
-                            <div
-                              key={index}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white flex-shrink-0"
-                              style={{ backgroundColor: '#2373FF' }}
-                              title={member}
-                            >
-                              {member.split(' ').map(n => n[0]).join('')}
-                            </div>
-                          ))}
-                          {project.team.length > 3 && (
-                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-700 text-xs font-medium border-2 border-white flex-shrink-0">
-                              +{project.team.length - 3}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-700 text-xs font-medium border-2 border-white flex-shrink-0">
-                          --
-                        </div>
-                      )}
+                    <div>
+                      <p className="text-xs text-gray-500">Proposals</p>
+                      <p className="text-sm font-semibold text-black truncate">
+                        {project.proposals?.length || 0} received
+                      </p>
                     </div>
                   </div>
 
@@ -1355,6 +1526,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           </div>
         )}
       </div>
+
+      {/* Removed Enhanced Project Detail Modal - now using in-page view */}
     </div>
   );
 }

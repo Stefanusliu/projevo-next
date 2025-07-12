@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import BOQDisplay from '../../../components/BOQDisplay';
 
 export default function ProjectDetailModal({ project, isOpen, onClose, onCreateProposal }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  
   if (!isOpen || !project) return null;
 
   // Enhanced project data with comprehensive details from project creation form
@@ -108,6 +111,7 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
         </div>
 
         <div className="p-6">
+          {/* Project Overview */}
           {/* Project Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2 space-y-6">
@@ -484,6 +488,144 @@ export default function ProjectDetailModal({ project, isOpen, onClose, onCreateP
               </div>
             </div>
           </div>
+          )}
+
+          {/* BOQ Tab */}
+          {activeTab === 'boq' && (
+            <div className="space-y-6">
+              <BOQDisplay project={project} isVendorView={true} />
+            </div>
+          )}
+
+          {/* Client & Timeline Tab */}
+          {activeTab === 'client' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Client Information */}
+              <div className="bg-slate-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Client Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {enhancedProject.clientName.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{enhancedProject.clientName}</p>
+                      <p className="text-sm text-slate-500">Verified Client</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>{enhancedProject.fullAddress}</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>{enhancedProject.clientEmail}</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span>{enhancedProject.clientPhone}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-slate-600 space-y-1">
+                    <p>• Average rating: 4.8/5</p>
+                    <p>• 12 completed projects</p>
+                    <p>• Member since 2021</p>
+                    <p>• Response time: Within 24 hours</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline & Project Summary */}
+              <div className="space-y-6">
+                {/* Project Summary */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Project Summary</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-slate-500">Budget</p>
+                      <p className="text-xl font-bold text-slate-900">{project.budget}</p>
+                      <p className="text-xs text-slate-500">Priority: {enhancedProject.budgetPriority}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Timeline</p>
+                      <p className="text-lg font-semibold text-slate-900">{enhancedProject.estimatedDuration}</p>
+                      <p className="text-xs text-slate-500">Start: {enhancedProject.estimatedStartDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Category</p>
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        {project.category}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Industry</p>
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        {project.industry}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Competition & Deadline */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Competition</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-slate-500">Proposals Submitted</p>
+                      <p className="text-2xl font-bold text-slate-900">{project.proposals}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Your Match Score</p>
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getMatchColor(project.match)}`}>
+                        {project.match}% Match
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Deadline</p>
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBidCountdownColor(project.bidCountdown)}`}>
+                        {project.bidCountdown}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline Information */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Timeline</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500">Estimated Start Date</p>
+                      <p className="text-slate-900 font-medium">{enhancedProject.estimatedStartDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Project Duration</p>
+                      <p className="text-slate-900 font-medium">{enhancedProject.estimatedDuration}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Urgency Level</p>
+                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                        {enhancedProject.projectUrgency}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">

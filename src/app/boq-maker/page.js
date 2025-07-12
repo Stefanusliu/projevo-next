@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEdit, MdVisibility, MdArrowBack } from 'react-icons/md';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -981,17 +982,17 @@ function BOQMakerContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
       
       <main className="relative">
         {/* Background gradient effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 via-slate-900/30 to-slate-800/20"></div>
+        <div className="absolute inset-0 bg-gray-50"></div>
         
         <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {currentView === 'list' ? (
-          <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-600 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-blue-600 px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-white mb-2">Saved BOQs</h1>
@@ -1000,13 +1001,13 @@ function BOQMakerContent() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => router.push('/')}
-                    className="bg-white hover:bg-slate-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
+                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
                   >
                     ← Home
                   </button>
                   <button
                     onClick={createNewBOQ}
-                    className="bg-white hover:bg-slate-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 font-medium border text-xs"
+                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 font-medium border text-xs"
                   >
                     <span>Create New BOQ</span>
                   </button>
@@ -1017,8 +1018,8 @@ function BOQMakerContent() {
             <div className="p-8">
               {savedBOQs.length === 0 ? (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-medium text-slate-200 mb-2">No BOQs Found</h3>
-                  <p className="text-slate-400 mb-4">Create your first BOQ to get started.</p>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">No BOQs Found</h3>
+                  <p className="text-gray-500 mb-4">Create your first BOQ to get started.</p>
                   <button
                     onClick={createNewBOQ}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg"
@@ -1029,11 +1030,11 @@ function BOQMakerContent() {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {savedBOQs.map((boq) => (
-                    <div key={boq.id} className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl border-2 border-slate-600 p-6 hover:shadow-lg transition-shadow">
+                    <div key={boq.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 p-6 hover:shadow-lg transition-shadow">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-100 mb-2">{boq.title}</h3>
-                          <div className="space-y-1 text-sm text-slate-300">
+                          <h3 className="text-lg font-bold text-black mb-2">{boq.title}</h3>
+                          <div className="space-y-1 text-sm text-gray-600">
                             <p>Created: {formatDate(boq.createdAt)}</p>
                             {boq.updatedAt !== boq.createdAt && (
                               <p>Updated: {formatDate(boq.updatedAt)}</p>
@@ -1071,8 +1072,8 @@ function BOQMakerContent() {
             </div>
           </div>
         ) : (
-          <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-600 overflow-hidden">
-            <div className="bg-slate-800 px-8 py-6">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
@@ -1081,13 +1082,13 @@ function BOQMakerContent() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={() => router.push('/')}
-                    className="bg-white hover:bg-slate-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
+                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
                   >
                     ← Home
                   </button>
                   <button
                     onClick={() => setCurrentView('list')}
-                    className="bg-slate-600 hover:bg-slate-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
+                    className="bg-gray-200 hover:bg-gray-100 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
                   >
                     Saved BOQs
                   </button>
@@ -1102,7 +1103,7 @@ function BOQMakerContent() {
                   {!editMode && (
                     <button
                       onClick={() => setEditMode(true)}
-                      className="bg-white hover:bg-slate-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border text-xs"
+                      className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border text-xs"
                     >
                       Edit Mode
                     </button>
@@ -1127,9 +1128,9 @@ function BOQMakerContent() {
               </div>
             </div>
 
-            <div className="px-8 py-6 border-b border-slate-600 bg-slate-800">
+            <div className="px-8 py-6 border-b border-gray-200 bg-white">
               <div className="max-w-2xl">
-                <label htmlFor="boqTitle" className="block text-sm font-medium text-slate-200 mb-2">
+                <label htmlFor="boqTitle" className="block text-sm font-medium text-gray-800 mb-2">
                   BOQ Title / Project Name
                 </label>
                 <input
@@ -1141,19 +1142,17 @@ function BOQMakerContent() {
                   disabled={!editMode}
                   className={
                     editMode 
-                      ? "w-full px-2 py-1 border-2 border-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-100 font-medium text-lg bg-slate-600 shadow-sm placeholder-slate-400" 
-                      : "w-full px-2 py-1 border-2 border-slate-600 rounded-lg transition-all text-slate-200 font-medium text-lg bg-slate-700 shadow-sm cursor-not-allowed"
+                      ? "w-full px-2 py-1 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-black font-medium text-lg bg-gray-200 shadow-sm placeholder-gray-500" 
+                      : "w-full px-2 py-1 border-2 border-gray-200 rounded-lg transition-all text-gray-800 font-medium text-lg bg-gray-100 shadow-sm cursor-not-allowed"
                   }
                 />
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-gray-500">
                   This title will be used when saving your BOQ.
                 </p>
                 {/* Autosave indicator */}
                 {lastAutoSave && (
                   <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <MdSave className="w-4 h-4" />
                     <span>
                       Auto-saved at {lastAutoSave.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
@@ -1170,33 +1169,33 @@ function BOQMakerContent() {
               {/* Main Table Area */}
               <div className="p-8 pb-8">
                 {/* Table View */}
-                <div className="bg-slate-700 border border-slate-600 shadow-sm rounded-xl overflow-hidden">
+                <div className="bg-gray-100 border border-gray-200 shadow-sm rounded-xl overflow-hidden">
                   <div className="w-full">
                     <table className="w-full table-fixed">
-                      <thead className="bg-gradient-to-r from-slate-600 to-slate-700 sticky top-0 z-10">
+                      <thead className="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
                             Tahapan Kerja
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
                             Jenis Pekerjaan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
                             Uraian
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '16%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '16%'}}>
                             Spesifikasi
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '8%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '8%'}}>
                             Volume
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '8%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '8%'}}>
                             Satuan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200 border-r border-slate-500" style={{width: '14%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '14%'}}>
                             Harga Satuan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-slate-200" style={{width: '16%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800" style={{width: '16%'}}>
                             Total
                           </th>
                         </tr>
@@ -1280,9 +1279,9 @@ function BOQMakerContent() {
                           <tr 
                             key={row.key} 
                             className={`
-                              border-b border-slate-600 transition-all duration-150
-                              bg-slate-800
-                              ${isFirstTahapanRow && draggedTahapan === row.tahapanId ? 'opacity-75 bg-blue-900' : ''}
+                              border-b border-gray-200 transition-all duration-150
+                              bg-white
+                              ${isFirstTahapanRow && draggedTahapan === row.tahapanId ? 'opacity-75 bg-blue-100' : ''}
                               group
                             `}
                             style={{
@@ -1300,7 +1299,7 @@ function BOQMakerContent() {
                             {/* Tahapan Kerja - Show only on first row of each tahapan, with rowspan */}
                             {isFirstTahapanRow && (
                               <td 
-                                className={`px-4 py-2 border-r border-slate-600 align-middle group cursor-pointer`}
+                                className={`px-4 py-2 border-r border-gray-200 align-middle group cursor-pointer`}
                                 rowSpan={tahapanRowSpan}
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
@@ -1313,7 +1312,7 @@ function BOQMakerContent() {
                                     {editMode && (
                                       <button
                                         onClick={(e) => handleContextMenu(e, row.tahapanId)}
-                                        className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                        className="text-gray-600 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
                                         title="Drag to reorder or click for options"
                                         onMouseDown={(e) => {
                                           // Allow drag to start but prevent event bubbling
@@ -1325,14 +1324,7 @@ function BOQMakerContent() {
                                           e.stopPropagation();
                                         }}
                                       >
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                          <circle cx="6" cy="8" r="2"/>
-                                          <circle cx="12" cy="8" r="2"/>
-                                          <circle cx="18" cy="8" r="2"/>
-                                          <circle cx="6" cy="16" r="2"/>
-                                          <circle cx="12" cy="16" r="2"/>
-                                          <circle cx="18" cy="16" r="2"/>
-                                        </svg>
+                                        <MdDragIndicator className="w-4 h-4" />
                                       </button>
                                     )}
                                     <div className="text-blue-400 font-bold text-lg min-w-[24px]">
@@ -1348,8 +1340,8 @@ function BOQMakerContent() {
                                       tabIndex={row.tahapanIndex * 100 + 1}
                                       className={
                                         editMode 
-                                          ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm font-medium placeholder-slate-400" 
-                                          : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm font-medium"
+                                          ? "flex-1 text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm font-medium placeholder-gray-500" 
+                                          : "flex-1 text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm font-medium"
                                       }
                                     />
                                   </div>
@@ -1360,8 +1352,8 @@ function BOQMakerContent() {
                             {/* Jenis Pekerjaan - Show only on first row of each jenis, with rowspan */}
                             {row.jenisId && isFirstJenisRow ? (
                               <td 
-                                className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer group
-                                  ${isFirstJenisRow && draggedJenis === row.jenisId ? 'opacity-75 bg-blue-900' : ''}
+                                className={`px-4 py-2 border-r border-gray-200 align-middle cursor-pointer group
+                                  ${isFirstJenisRow && draggedJenis === row.jenisId ? 'opacity-75 bg-blue-100' : ''}
                                 `}
                                 rowSpan={jenisRowSpan}
                                 onClick={(e) => {
@@ -1381,7 +1373,7 @@ function BOQMakerContent() {
                                           console.log('Jenis context menu clicked, row data:', { tahapanId: row.tahapanId, jenisId: row.jenisId, type: row.type });
                                           handleContextMenu(e, row.tahapanId, row.jenisId, null);
                                         }}
-                                        className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                        className="text-gray-600 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
                                         title="Drag to reorder or click for options"
                                         onMouseDown={(e) => {
                                           e.stopPropagation();
@@ -1412,20 +1404,20 @@ function BOQMakerContent() {
                                       tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + 2}
                                       className={
                                         editMode 
-                                          ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
-                                          : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
+                                          ? "flex-1 text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-gray-500" 
+                                          : "flex-1 text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
                                       }
                                     />
                                   </div>
                                 </div>
                               </td>
                             ) : !row.jenisId ? (
-                              <td className="px-4 py-2 border-r border-slate-600 group cursor-pointer">
+                              <td className="px-4 py-2 border-r border-gray-200 group cursor-pointer">
                               </td>
                             ) : null}
 
                             {/* Uraian */}
-                            <td className={`px-4 py-2 border-r border-slate-600 align-middle cursor-pointer
+                            <td className={`px-4 py-2 border-r border-gray-200 align-middle cursor-pointer
                               ${row.uraianId && isFirstUraianRow && draggedUraian === row.uraianId ? 'opacity-75 bg-blue-900' : ''}
                             `}
                                 onClick={(e) => {
@@ -1443,7 +1435,7 @@ function BOQMakerContent() {
                                     {editMode && (
                                       <button
                                         onClick={(e) => handleContextMenu(e, row.tahapanId, row.jenisId, row.uraianId)}
-                                        className="text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                        className="text-gray-600 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-grab active:cursor-grabbing flex-shrink-0"
                                         title="Drag to reorder or click for options"
                                         onMouseDown={(e) => {
                                           e.stopPropagation();
@@ -1474,21 +1466,21 @@ function BOQMakerContent() {
                                       tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 3}
                                       className={
                                         editMode 
-                                          ? "flex-1 text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
-                                          : "flex-1 text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
+                                          ? "flex-1 text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-gray-500" 
+                                          : "flex-1 text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
                                       }
                                     />
                                   </div>
                                 </div>
                               ) : row.uraianId ? (
-                                <div className="text-slate-500 text-sm text-center">↳</div>
+                                <div className="text-gray-600 text-sm text-center">↳</div>
                               ) : (
                                 <div></div>
                               )}
                             </td>
 
                             {/* Spesifikasi */}
-                            <td className="px-4 py-2 border-r border-slate-600 align-middle cursor-pointer"
+                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
@@ -1503,8 +1495,8 @@ function BOQMakerContent() {
                                   tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 4}
                                   className={
                                     editMode 
-                                      ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-slate-400" 
-                                      : "w-full h-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
+                                      ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm placeholder-gray-500" 
+                                      : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm"
                                   }
                                 />
                               ) : (
@@ -1513,7 +1505,7 @@ function BOQMakerContent() {
                             </td>
 
                             {/* Volume */}
-                            <td className="px-4 py-2 border-r border-slate-600 align-middle cursor-pointer"
+                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
@@ -1540,8 +1532,8 @@ function BOQMakerContent() {
                                   tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 5}
                                   className={
                                     editMode 
-                                      ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-slate-400" 
-                                      : "w-full h-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-center"
+                                      ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-gray-500" 
+                                      : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-center"
                                   }
                                 />
                               ) : (
@@ -1550,7 +1542,7 @@ function BOQMakerContent() {
                             </td>
 
                             {/* Satuan */}
-                            <td className="px-4 py-2 border-r border-slate-600 align-middle cursor-pointer"
+                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
@@ -1565,8 +1557,8 @@ function BOQMakerContent() {
                                   tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 6}
                                   className={
                                     editMode 
-                                      ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-slate-400" 
-                                      : "w-full h-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-center"
+                                      ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-gray-500" 
+                                      : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-center"
                                   }
                                 />
                               ) : (
@@ -1575,7 +1567,7 @@ function BOQMakerContent() {
                             </td>
 
                             {/* Harga per Pcs */}
-                            <td className="px-4 py-2 border-r border-slate-600 align-middle cursor-pointer"
+                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
                                   if (input && editMode) input.focus();
@@ -1601,8 +1593,8 @@ function BOQMakerContent() {
                                   tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
                                   className={
                                     editMode 
-                                      ? "w-full h-full text-slate-200 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-slate-400" 
-                                      : "w-full h-full text-slate-200 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-right"
+                                      ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500" 
+                                      : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-right"
                                   }
                                 />
                               ) : (
@@ -1613,7 +1605,7 @@ function BOQMakerContent() {
                             {/* Total */}
                             <td className="px-4 py-2 align-middle">
                               {row.spec ? (
-                                <div className="px-2 py-1 text-slate-200 font-medium text-sm text-center">
+                                <div className="px-2 py-1 text-gray-800 font-medium text-sm text-center">
                                   Rp {calculateSpecTotal(row.spec).toLocaleString('id-ID')}
                                 </div>
                               ) : (
@@ -1626,27 +1618,27 @@ function BOQMakerContent() {
                       })}
                       
                       {/* Summary rows inside table */}
-                      <tr className="border-t-2 border-slate-500 bg-slate-800">
-                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-slate-200">
+                      <tr className="border-t-2 border-gray-300 bg-white">
+                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-gray-800">
                           Subtotal:
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-100">
+                        <td className="px-4 py-3 font-medium text-black">
                           Rp {calculateGrandTotal().toLocaleString('id-ID')}
                         </td>
                       </tr>
-                      <tr className="bg-slate-800">
-                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-slate-200">
+                      <tr className="bg-white">
+                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-gray-800">
                           PPN (11%):
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-300">
+                        <td className="px-4 py-3 font-medium text-gray-600">
                           Rp {(calculateGrandTotal() * 0.11).toLocaleString('id-ID')}
                         </td>
                       </tr>
-                      <tr className="border-t border-slate-500 bg-slate-800">
-                        <td colSpan="7" className="px-4 py-4 text-right font-bold text-slate-100 text-lg">
+                      <tr className="border-t border-gray-300 bg-white">
+                        <td colSpan="7" className="px-4 py-4 text-right font-bold text-black text-lg">
                           Total:
                         </td>
-                        <td className="px-4 py-4 font-bold text-slate-50 text-lg">
+                        <td className="px-4 py-4 font-bold text-black text-lg">
                           Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}
                         </td>
                       </tr>
@@ -1661,14 +1653,14 @@ function BOQMakerContent() {
         {/* Custom Tooltip */}
         {tooltip.show && (
           <div 
-            className="fixed bg-slate-600 text-white text-xs px-2 py-1 rounded shadow-lg z-50 pointer-events-none whitespace-nowrap"
+            className="fixed bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg z-50 pointer-events-none whitespace-nowrap"
             style={{ 
               left: `${tooltip.x}px`, 
               top: `${tooltip.y}px`,
               transform: 'translate(-50%, 0)'
             }}
           >
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-600"></div>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
             {tooltip.text}
           </div>
         )}
@@ -1676,7 +1668,7 @@ function BOQMakerContent() {
         {/* Context Menu */}
         {contextMenu.show && (
           <div 
-            className="fixed bg-slate-700 border border-slate-500 rounded-lg shadow-lg z-50 py-2 min-w-[180px]"
+            className="fixed bg-gray-100 border border-gray-300 rounded-lg shadow-lg z-50 py-2 min-w-[180px]"
             style={{ 
               left: `${contextMenu.x}px`, 
               top: `${contextMenu.y}px`,
@@ -1690,7 +1682,7 @@ function BOQMakerContent() {
                     addTahapanKerja();
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1702,20 +1694,20 @@ function BOQMakerContent() {
                     setShowBulkAddModal(true);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   <span>Tambah Banyak Tahapan Kerja</span>
                 </button>
-                <div className="border-t border-slate-600 my-1"></div>
+                <div className="border-t border-gray-200 my-1"></div>
                 <button
                   onClick={() => {
                     clearTahapanKerjaContents(contextMenu.tahapanId);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-600 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-gray-800 hover:bg-gray-200 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1728,7 +1720,7 @@ function BOQMakerContent() {
                       deleteTahapanKerja(contextMenu.tahapanId);
                       closeContextMenu();
                     }}
-                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-100 flex items-center space-x-2 transition-colors duration-150"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1746,7 +1738,7 @@ function BOQMakerContent() {
                     addJenisKerja(contextMenu.tahapanId);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1759,14 +1751,14 @@ function BOQMakerContent() {
                     setShowBulkAddJenisModal(true);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   <span>Tambah Banyak Jenis Pekerjaan</span>
                 </button>
-                <div className="border-t border-slate-600 my-1"></div>
+                <div className="border-t border-gray-200 my-1"></div>
                 <button
                   onClick={() => {
                     if (contextMenu.jenisId) {
@@ -1774,7 +1766,7 @@ function BOQMakerContent() {
                     }
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1791,7 +1783,7 @@ function BOQMakerContent() {
                     addUraian(contextMenu.tahapanId, contextMenu.jenisId);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-green-400 hover:bg-green-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1805,14 +1797,14 @@ function BOQMakerContent() {
                     setShowBulkAddUraianModal(true);
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-blue-400 hover:bg-blue-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   <span>Tambah Banyak Uraian</span>
                 </button>
-                <div className="border-t border-slate-600 my-1"></div>
+                <div className="border-t border-gray-200 my-1"></div>
                 <button
                   onClick={() => {
                     if (contextMenu.uraianId) {
@@ -1820,7 +1812,7 @@ function BOQMakerContent() {
                     }
                     closeContextMenu();
                   }}
-                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-900 flex items-center space-x-2 transition-colors duration-150"
+                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-100 flex items-center space-x-2 transition-colors duration-150"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1853,7 +1845,7 @@ function BOQMakerContent() {
         {/* Success Modal */}
         {showSuccessModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-gray-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
@@ -1862,8 +1854,8 @@ function BOQMakerContent() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3">BOQ Saved Successfully!</h3>
-                <p className="text-slate-600 mb-8 leading-relaxed">Your Bill of Quantities has been saved. Ready to take the next step in your project journey?</p>
+                <h3 className="text-2xl font-bold text-black mb-3">BOQ Saved Successfully!</h3>
+                <p className="text-gray-700 mb-8 leading-relaxed">Your Bill of Quantities has been saved. Ready to take the next step in your project journey?</p>
                 
                 <div className="space-y-3">
                   <button
@@ -1880,13 +1872,13 @@ function BOQMakerContent() {
                       setShowSuccessModal(false);
                       router.push('/dashboard/vendor');
                     }}
-                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                    className="w-full border-2 border-gray-200 text-black px-6 py-4 rounded-xl hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
                   >
                     Browse as Vendor
                   </button>
                   <button
                     onClick={() => setShowSuccessModal(false)}
-                    className="w-full text-slate-500 hover:text-slate-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+                    className="w-full text-gray-600 hover:text-black px-6 py-3 rounded-xl transition-all duration-200 font-medium"
                   >
                     Continue Editing BOQ
                   </button>
@@ -1899,7 +1891,7 @@ function BOQMakerContent() {
         {/* Bulk Add Modal */}
         {showBulkAddModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-gray-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
@@ -1908,11 +1900,11 @@ function BOQMakerContent() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Tahapan Kerja</h3>
-                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak tahapan kerja yang ingin Anda tambahkan?</p>
+                <h3 className="text-2xl font-bold text-black mb-3">Tambah Banyak Tahapan Kerja</h3>
+                <p className="text-gray-700 mb-6 leading-relaxed">Berapa banyak tahapan kerja yang ingin Anda tambahkan?</p>
                 
                 <div className="mb-6">
-                  <label htmlFor="bulkCount" className="block text-sm font-medium text-slate-700 mb-3">
+                  <label htmlFor="bulkCount" className="block text-sm font-medium text-black mb-3">
                     Jumlah Tahapan Kerja (1-100)
                   </label>
                   <input
@@ -1936,11 +1928,11 @@ function BOQMakerContent() {
                         setShowBulkAddModal(false);
                       }
                     }}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-lg font-semibold text-black"
                     placeholder="Masukkan jumlah tahapan kerja"
                     autoFocus
                   />
-                  <p className="text-xs text-slate-500 mt-2 text-center">
+                  <p className="text-xs text-gray-600 mt-2 text-center">
                     Maksimal 100 tahapan kerja dalam satu kali penambahan
                   </p>
                   
@@ -1950,7 +1942,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddCount === 5 
                           ? 'bg-blue-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       5
@@ -1960,7 +1952,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddCount === 10 
                           ? 'bg-blue-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       10
@@ -1970,7 +1962,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddCount === 20 
                           ? 'bg-blue-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       20
@@ -1980,7 +1972,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddCount === 50 
                           ? 'bg-blue-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       50
@@ -2000,7 +1992,7 @@ function BOQMakerContent() {
                   </button>
                   <button
                     onClick={() => setShowBulkAddModal(false)}
-                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                    className="w-full border-2 border-gray-200 text-black px-6 py-4 rounded-xl hover:border-gray-300 hover:text-black transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
                   >
                     Batal
                   </button>
@@ -2013,7 +2005,7 @@ function BOQMakerContent() {
         {/* Bulk Add Jenis Pekerjaan Modal */}
         {showBulkAddJenisModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-gray-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
@@ -2022,11 +2014,11 @@ function BOQMakerContent() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Jenis Pekerjaan</h3>
-                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak jenis pekerjaan yang ingin Anda tambahkan?</p>
+                <h3 className="text-2xl font-bold text-black mb-3">Tambah Banyak Jenis Pekerjaan</h3>
+                <p className="text-gray-700 mb-6 leading-relaxed">Berapa banyak jenis pekerjaan yang ingin Anda tambahkan?</p>
                 
                 <div className="mb-6">
-                  <label htmlFor="bulkJenisCount" className="block text-sm font-medium text-slate-700 mb-3">
+                  <label htmlFor="bulkJenisCount" className="block text-sm font-medium text-black mb-3">
                     Jumlah Jenis Pekerjaan (1-50)
                   </label>
                   <input
@@ -2048,11 +2040,11 @@ function BOQMakerContent() {
                         setShowBulkAddJenisModal(false);
                       }
                     }}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-center text-lg font-semibold text-black"
                     placeholder="Masukkan jumlah jenis pekerjaan"
                     autoFocus
                   />
-                  <p className="text-xs text-slate-500 mt-2 text-center">
+                  <p className="text-xs text-gray-600 mt-2 text-center">
                     Maksimal 50 jenis pekerjaan dalam satu kali penambahan
                   </p>
                   
@@ -2062,7 +2054,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddJenisCount === 3 
                           ? 'bg-green-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       3
@@ -2072,7 +2064,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddJenisCount === 5 
                           ? 'bg-green-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       5
@@ -2082,7 +2074,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddJenisCount === 10 
                           ? 'bg-green-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       10
@@ -2092,7 +2084,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddJenisCount === 20 
                           ? 'bg-green-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       20
@@ -2117,7 +2109,7 @@ function BOQMakerContent() {
                       setShowBulkAddJenisModal(false);
                       setBulkAddJenisTahapanId(null);
                     }}
-                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                    className="w-full border-2 border-gray-200 text-black px-6 py-4 rounded-xl hover:border-gray-300 hover:text-black transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
                   >
                     Batal
                   </button>
@@ -2130,7 +2122,7 @@ function BOQMakerContent() {
         {/* Bulk Add Uraian Modal */}
         {showBulkAddUraianModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-gray-200">
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full flex items-center justify-center">
@@ -2139,11 +2131,11 @@ function BOQMakerContent() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3">Tambah Banyak Uraian</h3>
-                <p className="text-slate-600 mb-6 leading-relaxed">Berapa banyak uraian yang ingin Anda tambahkan?</p>
+                <h3 className="text-2xl font-bold text-black mb-3">Tambah Banyak Uraian</h3>
+                <p className="text-gray-700 mb-6 leading-relaxed">Berapa banyak uraian yang ingin Anda tambahkan?</p>
                 
                 <div className="mb-6">
-                  <label htmlFor="bulkUraianCount" className="block text-sm font-medium text-slate-700 mb-3">
+                  <label htmlFor="bulkUraianCount" className="block text-sm font-medium text-black mb-3">
                     Jumlah Uraian (1-50)
                   </label>
                   <input
@@ -2167,11 +2159,11 @@ function BOQMakerContent() {
                         setBulkAddUraianJenisId(null);
                       }
                     }}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-center text-lg font-semibold text-slate-700"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-center text-lg font-semibold text-black"
                     placeholder="Masukkan jumlah uraian"
                     autoFocus
                   />
-                  <p className="text-xs text-slate-500 mt-2 text-center">
+                  <p className="text-xs text-gray-600 mt-2 text-center">
                     Maksimal 50 uraian dalam satu kali penambahan
                   </p>
                   
@@ -2181,7 +2173,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddUraianCount === 3 
                           ? 'bg-purple-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       3
@@ -2191,7 +2183,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddUraianCount === 5 
                           ? 'bg-purple-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       5
@@ -2201,7 +2193,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddUraianCount === 10 
                           ? 'bg-purple-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       10
@@ -2211,7 +2203,7 @@ function BOQMakerContent() {
                       className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                         bulkAddUraianCount === 20 
                           ? 'bg-purple-500 text-white shadow-md' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                          : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-200'
                       }`}
                     >
                       20
@@ -2238,7 +2230,7 @@ function BOQMakerContent() {
                       setBulkAddUraianTahapanId(null);
                       setBulkAddUraianJenisId(null);
                     }}
-                    className="w-full border-2 border-slate-300 text-slate-700 px-6 py-4 rounded-xl hover:border-slate-400 hover:text-slate-800 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
+                    className="w-full border-2 border-gray-200 text-black px-6 py-4 rounded-xl hover:border-gray-300 hover:text-black transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
                   >
                     Batal
                   </button>
@@ -2257,17 +2249,17 @@ function BOQMakerContent() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 via-slate-900/30 to-slate-800/20"></div>
+        <div className="absolute inset-0 bg-gray-50"></div>
         <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-600 overflow-hidden">
-            <div className="bg-slate-800 px-8 py-6">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-white px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
-                  <p className="text-blue-100">Loading...</p>
+                  <p className="text-gray-600">Loading...</p>
                 </div>
               </div>
             </div>
