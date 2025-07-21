@@ -26,7 +26,7 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
   const [expandedProposals, setExpandedProposals] = useState({});
   const [negotiations, setNegotiations] = useState({});
   const [negotiationMode, setNegotiationMode] = useState({});
-  const [counterOffers, setCounterOffers] = useState({});
+  const [counterOffers, setCounterOffers] = useState({}); // Local state for form inputs only
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FiEye },
@@ -34,7 +34,7 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
     { id: 'proposals', label: `Proposals (${project.proposals?.length || 0})`, icon: FiUser },
   ];
 
-  // Load existing negotiations from Firebase collections
+  // Load existing negotiations from Firebase
   useEffect(() => {
     const loadNegotiations = async () => {
       if (!project.id) {
@@ -45,7 +45,7 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
       console.log('Loading negotiations for project:', project.id);
       
       try {
-        // Load negotiations from separate collection
+        // Load all negotiation data from negotiations collection
         console.log('Fetching negotiations...');
         const negotiationsData = await firestoreService.getCollection('negotiations', [
           where('projectId', '==', project.id)
@@ -86,38 +86,8 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
         console.log('Negotiations map:', negotiationsMap);
         setNegotiations(negotiationsMap);
 
-        // Load counter offers from separate collection
-        console.log('Fetching counter offers...');
-        const counterOffersData = await firestoreService.getCollection('counterOffers', [
-          where('projectId', '==', project.id)
-        ]);
-        
-        console.log('Counter offers data from Firebase:', counterOffersData);
-        
-        const counterOffersMap = {};
-        // Sort counter offers by creation time to get the most recent ones
-        const sortedCounterOffers = counterOffersData.sort((a, b) => {
-          const aTime = a.createdAt?.toDate ? a.createdAt.toDate() : new Date();
-          const bTime = b.createdAt?.toDate ? b.createdAt.toDate() : new Date();
-          return bTime - aTime; // Most recent first
-        });
-        
-        sortedCounterOffers.forEach(offer => {
-          console.log('Processing counter offer:', offer);
-          if (offer.counterOfferData) {
-            Object.keys(offer.counterOfferData).forEach(itemIndex => {
-              const key = `${offer.proposalIndex}_${itemIndex}`;
-              // Only set if not already set (since we're processing most recent first)
-              if (!counterOffersMap[key]) {
-                counterOffersMap[key] = offer.counterOfferData[itemIndex];
-                console.log(`Setting latest counter offer for ${key}:`, offer.counterOfferData[itemIndex]);
-              }
-            });
-          }
-        });
-        
-        console.log('Counter offers map:', counterOffersMap);
-        setCounterOffers(counterOffersMap);
+        // Note: counterOffers state is only used for local form inputs during negotiation
+        // All persistent counter offer data is stored in the negotiations collection
         
       } catch (error) {
         console.error('Error loading negotiations from Firebase:', error);
@@ -130,7 +100,7 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
           console.warn('⚠️ If you just updated Firestore rules, it may take a few minutes to propagate');
           console.warn('⚠️ For now, falling back to project-based negotiation data...');
           
-          // Fallback: Load negotiations from project proposals if separate collections fail
+          // Fallback: Load negotiations from project proposals if negotiations collection fails
           if (project.proposals && project.proposals.length > 0) {
             console.log('🔄 Falling back to loading negotiations from project proposals');
             const negotiationsMap = {};
@@ -457,13 +427,14 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
       [proposalIndex]: false
     }));
 
-    // Save to Firebase collections
+    // Save to Firebase - only to negotiations collection
     try {
       if (project.id) {
-        // Save to negotiations collection
+        // Save to negotiations collection (contains all negotiation data including counter offers)
         const negotiationDoc = {
           projectId: project.id,
           vendorId: proposal.vendorId,
+          vendorName: proposal.vendorName, // Add vendor name for easier querying
           proposalIndex: proposalIndex,
           status: 'negotiating',
           counterOffer: counterOfferData,
@@ -473,21 +444,8 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
 
         console.log('Saving to negotiations collection:', negotiationDoc);
         await firestoreService.addDocument('negotiations', negotiationDoc);
-
-        // Save to counterOffers collection
-        const counterOfferDoc = {
-          projectId: project.id,
-          vendorId: proposal.vendorId,
-          proposalIndex: proposalIndex,
-          counterOfferData: counterOfferData,
-          createdAt: serverTimestamp(),
-          createdBy: 'project_owner'
-        };
-
-        console.log('Saving to counterOffers collection:', counterOfferDoc);
-        await firestoreService.addDocument('counterOffers', counterOfferDoc);
         
-        console.log('✅ Counter offer saved to Firebase collections');
+        console.log('✅ Counter offer saved to negotiations collection');
       } else {
         console.error('❌ No project ID available for saving');
       }
@@ -565,6 +523,45 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
       console.log(`Item ${itemIndex}: ${latestPrice} × ${volume} = ${itemTotal}`);
       return total + itemTotal;
     }, 0);
+  };
+
+  // Helper function to determine the current negotiation state and who should act next
+  const getNegotiationState = (proposalIndex) => {
+    const negotiationData = negotiations[proposalIndex];
+    if (!negotiationData?.history || negotiationData.history.length === 0) {
+      return { waitingFor: null, lastAction: null };
+    }
+
+    // Get the most recent action
+    const lastEntry = negotiationData.history[negotiationData.history.length - 1];
+    
+    // Determine who should act next based on the last action
+    switch (lastEntry.action) {
+      case 'negotiation_started':
+        // Project owner started negotiation, waiting for project owner to send counter offer
+        return { waitingFor: 'project_owner', lastAction: lastEntry };
+      
+      case 'counter_offer_sent':
+        if (lastEntry.by === 'project_owner') {
+          // Project owner sent counter offer, waiting for vendor response
+          return { waitingFor: 'vendor', lastAction: lastEntry };
+        } else {
+          // Vendor sent counter offer, waiting for project owner response
+          return { waitingFor: 'project_owner', lastAction: lastEntry };
+        }
+      
+      case 'counter_offer_responded':
+        if (lastEntry.by === 'vendor') {
+          // Vendor responded, waiting for project owner action
+          return { waitingFor: 'project_owner', lastAction: lastEntry };
+        } else {
+          // Project owner responded, waiting for vendor action
+          return { waitingFor: 'vendor', lastAction: lastEntry };
+        }
+      
+      default:
+        return { waitingFor: null, lastAction: lastEntry };
+    }
   };
 
   const renderOverviewTab = () => (
@@ -997,15 +994,46 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
                         
                         {/* Action Buttons */}
                         <div className="flex gap-2">
-                          {/* Check if counter offer has been sent */}
-                          {negotiationData?.history?.some(entry => entry.action === 'counter_offer_sent') && !isNegotiating ? (
-                            <div className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium flex items-center gap-2">
-                              <FiClock size={16} />
-                              Wait Vendor to Review Your Counter
-                            </div>
-                          ) : (
-                            <>
-                              {(proposalStatus === 'pending' || proposalStatus === 'submitted') && (
+                          {(() => {
+                            const negotiationState = getNegotiationState(index);
+                            const isWaitingForVendor = negotiationState.waitingFor === 'vendor';
+                            const isWaitingForProjectOwner = negotiationState.waitingFor === 'project_owner';
+                            
+                            console.log(`Proposal ${index} - Status: ${proposalStatus}, WaitingFor: ${negotiationState.waitingFor}, LastAction: ${negotiationState.lastAction?.action} by ${negotiationState.lastAction?.by}`);
+                            
+                            // Show waiting message if project owner sent counter offer and waiting for vendor
+                            if (isWaitingForVendor && !isNegotiating) {
+                              return (
+                                <div className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium flex items-center gap-2">
+                                  <FiClock size={16} />
+                                  Waiting for Vendor Response
+                                </div>
+                              );
+                            }
+
+                            // If currently negotiating, show negotiation buttons
+                            if (isNegotiating) {
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => handleSubmitCounterOffer(index, proposal)}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                  >
+                                    Submit Counter Offer
+                                  </button>
+                                  <button
+                                    onClick={() => setNegotiationMode(prev => ({ ...prev, [index]: false }))}
+                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              );
+                            }
+
+                            // For pending/submitted proposals, show initial action buttons
+                            if (proposalStatus === 'pending' || proposalStatus === 'submitted') {
+                              return (
                                 <>
                                   <button
                                     onClick={() => handleAcceptProposal(index, proposal)}
@@ -1029,23 +1057,62 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
                                     Reject
                                   </button>
                                 </>
-                              )}
+                              );
+                            }
+                            
+                            // For negotiating proposals, show negotiation action buttons
+                            if (proposalStatus === 'negotiating') {
+                              // Special case: If vendor responded and waiting for project owner
+                              if (isWaitingForProjectOwner && negotiationState.lastAction?.by === 'vendor') {
+                                return (
+                                  <div className="flex flex-col gap-2">
+                                    <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium flex items-center gap-2 text-sm">
+                                      <FiClock size={16} />
+                                      Vendor Responded - Your Turn to Act
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => handleAcceptProposal(index, proposal)}
+                                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+                                      >
+                                        <FiCheck size={16} />
+                                        Accept
+                                      </button>
+                                      <button
+                                        onClick={() => setNegotiationMode(prev => ({ ...prev, [index]: true }))}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                                      >
+                                        <FiEdit3 size={16} />
+                                        Counter
+                                      </button>
+                                      <button
+                                        onClick={() => handleRejectProposal(index, proposal)}
+                                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
+                                      >
+                                        <FiX size={16} />
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              }
                               
-                              {proposalStatus === 'negotiating' && !isNegotiating && (
+                              // Regular negotiating state
+                              return (
                                 <>
                                   <button
                                     onClick={() => handleAcceptProposal(index, proposal)}
                                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
                                   >
                                     <FiCheck size={16} />
-                                    Accept
+                                    Accept Current Terms
                                   </button>
                                   <button
                                     onClick={() => setNegotiationMode(prev => ({ ...prev, [index]: true }))}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
                                   >
                                     <FiEdit3 size={16} />
-                                    Counter Offer
+                                    {isWaitingForProjectOwner ? 'Respond with Counter' : 'Send Counter Offer'}
                                   </button>
                                   <button
                                     onClick={() => handleRejectProposal(index, proposal)}
@@ -1055,26 +1122,11 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
                                     Reject
                                   </button>
                                 </>
-                              )}
+                              );
+                            }
 
-                              {isNegotiating && (
-                                <>
-                                  <button
-                                    onClick={() => handleSubmitCounterOffer(index, proposal)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                  >
-                                    Submit Counter Offer
-                                  </button>
-                                  <button
-                                    onClick={() => setNegotiationMode(prev => ({ ...prev, [index]: false }))}
-                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              )}
-                            </>
-                          )}
+                            return null;
+                          })()}
                         </div>
                       </div>
 
@@ -1121,6 +1173,8 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
                           </h5>
                           {(() => {
                             const latestEntry = negotiationData.history[negotiationData.history.length - 1];
+                            const negotiationState = getNegotiationState(index);
+                            
                             return (
                               <div className="flex items-start gap-3">
                                 <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
@@ -1134,9 +1188,21 @@ const ProjectOwnerDetailPage = ({ project, onBack }) => {
                                     </span>
                                   </div>
                                   <p className="text-blue-800 text-sm">{latestEntry.message}</p>
+                                  
+                                  {/* Show appropriate waiting message based on negotiation state */}
                                   {latestEntry.action === 'counter_offer_sent' && (
                                     <p className="text-blue-600 text-xs mt-1 italic">
-                                      Waiting for vendor response...
+                                      {negotiationState.waitingFor === 'vendor' 
+                                        ? 'Waiting for vendor response...'
+                                        : negotiationState.waitingFor === 'project_owner'
+                                        ? 'Vendor responded - waiting for your action...'
+                                        : 'Waiting for response...'}
+                                    </p>
+                                  )}
+                                  
+                                  {latestEntry.action === 'negotiation_started' && (
+                                    <p className="text-blue-600 text-xs mt-1 italic">
+                                      Ready to send counter offer...
                                     </p>
                                   )}
                                 </div>
