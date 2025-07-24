@@ -19,7 +19,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { firestoreService } from '../../../../hooks/useFirestore';
-import { query, where } from 'firebase/firestore';
+import { normalizeProposals } from '../../../../utils/proposalsUtils';
 import BOQDisplay from '../../../components/BOQDisplay';
 
 export default function ProjectDetailPage({ project, onBack, onCreateProposal }) {
@@ -31,6 +31,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
   const [isNegotiating, setIsNegotiating] = useState(false);
   const [tempCounterOffers, setTempCounterOffers] = useState({});
   const [pendingCounterOffer, setPendingCounterOffer] = useState(false); // Track if vendor has submitted an offer awaiting response
+  const [showFullPageBOQ, setShowFullPageBOQ] = useState(false);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FiEye },
@@ -38,10 +39,31 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     { id: 'proposal', label: 'My Proposal', icon: FiUser },
   ];
 
+  // Helper function to get negotiation status for vendor
+  const getVendorNegotiationStatus = () => {
+    const proposalIndex = getVendorProposalIndex();
+    if (proposalIndex === -1) return null;
+    
+    const vendorProposal = project.proposals[proposalIndex];
+    const negotiationData = vendorProposal?.negotiation;
+    
+    return {
+      proposalIndex,
+      negotiationData,
+      status: negotiationData?.status || vendorProposal?.status || 'pending',
+      canVendorAct: negotiationData?.status === 'pending_vendor_response' || negotiationData?.status === 'negotiating',
+      isWaitingForOwner: negotiationData?.status === 'pending_owner_response'
+    };
+  };
+
   // Find this vendor's proposal index
   const getVendorProposalIndex = () => {
-    if (!project?.proposals || !user?.uid) return -1;
-    return project.proposals.findIndex(proposal => 
+    // Normalize proposals to handle both array and object formats
+    const normalizedProposals = normalizeProposals(project?.proposals);
+    
+    if (!normalizedProposals || !user?.uid) return -1;
+    
+    return normalizedProposals.findIndex(proposal => 
       proposal.vendorId === user.uid || 
       proposal.userId === user.uid || 
       proposal.submittedBy === user.uid
@@ -51,85 +73,71 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
   // Load negotiations and counter offers for this vendor
   useEffect(() => {
     const loadNegotiationData = async () => {
-      if (!project?.id || !user?.uid) {
+      // Normalize proposals to handle both array and object formats
+      const normalizedProposals = normalizeProposals(project?.proposals);
+      
+      if (!normalizedProposals || !user?.uid) {
         setLoading(false);
         return;
       }
 
-      console.log('Loading negotiation data for vendor:', user.uid, 'project:', project.id);
-      
       try {
-        // Load negotiations from Firebase collections
-        const negotiationsData = await firestoreService.getCollection('negotiations', [
-          where('projectId', '==', project.id),
-          where('vendorId', '==', user.uid)
-        ]);
-        
-        console.log('Vendor negotiations data:', negotiationsData);
-        
         const negotiationsMap = {};
         const counterOffersMap = {};
         
-        negotiationsData.forEach(nego => {
-          // Get the latest counter offer from history (most recent first)
-          let latestCounterOffer = nego.counterOffer;
-          if (nego.history && nego.history.length > 0) {
-            const counterOfferEntries = nego.history
-              .filter(entry => entry.action === 'counter_offer_sent' && entry.data)
-              .sort((a, b) => {
-                const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                return bTime - aTime;
-              });
-            
-            if (counterOfferEntries.length > 0) {
-              latestCounterOffer = counterOfferEntries[0].data;
-              console.log('Found latest counter offer from history:', latestCounterOffer);
-            }
-          }
-          
-          // Store negotiation data
-          negotiationsMap[nego.proposalIndex] = {
-            id: nego.id,
-            status: nego.status,
-            history: nego.history || [],
-            counterOffer: latestCounterOffer
-          };
-
-          // Extract counter offer data for easy access
-          if (latestCounterOffer) {
-            Object.keys(latestCounterOffer).forEach(itemIndex => {
-              const key = `${nego.proposalIndex}_${itemIndex}`;
-              counterOffersMap[key] = latestCounterOffer[itemIndex];
-              console.log(`Setting counter offer for ${key}:`, latestCounterOffer[itemIndex]);
-            });
-          }
-        });
-        
-        setNegotiations(negotiationsMap);
-        setCounterOffers(counterOffersMap);
-        console.log('Final negotiations map for vendor:', negotiationsMap);
-        console.log('Final counter offers map for vendor:', counterOffersMap);
-        
-        // Check if there's a pending counter offer from this vendor
+        // Find this vendor's proposal
         const proposalIndex = getVendorProposalIndex();
-        const vendorNegotiation = negotiationsMap[proposalIndex];
-        if (vendorNegotiation?.history) {
-          const lastEntry = vendorNegotiation.history[vendorNegotiation.history.length - 1];
-          if (lastEntry?.action === 'counter_offer_sent' && lastEntry?.by === 'vendor') {
-            setPendingCounterOffer(true);
+        
+        if (proposalIndex >= 0) {
+          const vendorProposal = normalizedProposals[proposalIndex];
+          
+          // Check if this proposal has negotiation data
+          if (vendorProposal.negotiation) {
+            const negotiationData = vendorProposal.negotiation;
+            
+            // Store negotiation data
+            negotiationsMap[proposalIndex] = {
+              status: negotiationData.status,
+              history: negotiationData.history || [],
+              counterOffer: negotiationData.counterOffer || null
+            };
+            
+            // Extract counter offer data if available
+            if (negotiationData.counterOffer) {
+              Object.keys(negotiationData.counterOffer).forEach(itemIndex => {
+                const key = `${proposalIndex}_${itemIndex}`;
+                counterOffersMap[key] = negotiationData.counterOffer[itemIndex];
+              });
+            }
           }
         }
         
+        setNegotiations(negotiationsMap);
+        setCounterOffers(counterOffersMap);
+        
+        // Check negotiation status for this vendor
+        const vendorNegotiation = negotiationsMap[proposalIndex];
+        
+        if (vendorNegotiation?.status === 'pending_owner_response') {
+          // Vendor sent offer, waiting for project owner response
+          setPendingCounterOffer(true);
+        } else if (vendorNegotiation?.status === 'pending_vendor_response') {
+          // Project owner responded, vendor can take action
+          setPendingCounterOffer(false);
+        } else {
+          // No negotiation in progress or other status
+          setPendingCounterOffer(false);
+        }
+        
       } catch (error) {
-        console.error('Error loading negotiation data for vendor:', error);
+        console.error('❌ Error loading negotiation data for vendor:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadNegotiationData();
-  }, [project?.id, user?.uid]);
+  }, [project?.proposals, user?.uid, activeTab]);
 
   // Handle counter offer functions
   const startNegotiation = () => {
@@ -141,7 +149,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     setIsNegotiating(true);
     // Initialize temp counter offers with current prices
     const proposalIndex = getVendorProposalIndex();
-    const vendorProposal = proposalIndex >= 0 ? project.proposals[proposalIndex] : null;
+    const normalizedProposals = normalizeProposals(project?.proposals);
+    const vendorProposal = proposalIndex >= 0 ? normalizedProposals[proposalIndex] : null;
     
     if (vendorProposal?.boqPricing) {
       const initialOffers = {};
@@ -194,77 +203,62 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         };
       });
 
-      console.log('Submitting counter offer to Firebase:', {
-        projectId: project.id,
-        vendorId: user.uid,
-        proposalIndex,
-        counterOfferData
-      });
-
-      // Check if negotiation already exists
-      const existingNegotiations = await firestoreService.getCollection('negotiations', [
-        where('projectId', '==', project.id),
-        where('vendorId', '==', user.uid),
-        where('proposalIndex', '==', proposalIndex)
-      ]);
-
       // Prepare the new history entry
       const newHistoryEntry = {
         action: 'counter_offer_sent',
         by: 'vendor',
+        vendorId: user.uid,
+        vendorName: user.displayName || user.email?.split('@')[0] || 'Unknown Vendor',
         timestamp: new Date(),
+        message: 'Vendor sent counter offer',
         data: counterOfferData
       };
 
-      if (existingNegotiations.length > 0) {
-        // Update existing negotiation document
-        const existingNegotiation = existingNegotiations[0];
-        const updatedNegotiation = {
-          status: 'pending_vendor_response',
-          counterOffer: counterOfferData,
-          history: [
-            ...(existingNegotiation.history || []),
-            newHistoryEntry
-          ],
-          updatedAt: new Date()
-        };
+      // Get current proposal negotiation data
+      const normalizedProposals = normalizeProposals(project?.proposals);
+      const currentProposal = normalizedProposals[proposalIndex];
+      const existingNegotiation = currentProposal.negotiation || { history: [] };
 
-        await firestoreService.update('negotiations', existingNegotiation.id, updatedNegotiation);
-        console.log('✅ Updated existing negotiation document:', existingNegotiation.id);
-
-        // Update local negotiations state
-        setNegotiations(prev => ({
-          ...prev,
-          [proposalIndex]: {
-            ...existingNegotiation,
-            ...updatedNegotiation
-          }
-        }));
-      } else {
-        // Create new negotiation document (only if one doesn't exist)
-        const newNegotiation = {
-          projectId: project.id,
+      // Update negotiation data
+      const updatedNegotiation = {
+        status: 'pending_owner_response',
+        negotiationStatus: 'vendor_counter_offer', // Clear status indicator
+        lastActionBy: 'vendor',
+        lastActionAt: new Date(),
+        vendorInfo: {
           vendorId: user.uid,
-          proposalIndex: proposalIndex,
-          status: 'pending_vendor_response',
-          counterOffer: counterOfferData,
-          history: [newHistoryEntry],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+          vendorName: user.displayName || user.email?.split('@')[0] || 'Unknown Vendor',
+          vendorEmail: user.email
+        },
+        counterOffer: counterOfferData,
+        history: [
+          ...(existingNegotiation.history || []),
+          newHistoryEntry
+        ],
+        updatedAt: new Date()
+      };
 
-        const newDocId = await firestoreService.add('negotiations', newNegotiation);
-        console.log('✅ Created new negotiation document:', newDocId);
+      // Update the project document with new negotiation data
+      // Instead of using dot notation which can convert arrays to objects,
+      // we'll update the entire proposals array
+      const currentProposals = normalizeProposals(project?.proposals);
+      const updatedProposals = [...currentProposals];
+      updatedProposals[proposalIndex] = {
+        ...updatedProposals[proposalIndex],
+        negotiation: updatedNegotiation
+      };
 
-        // Update local negotiations state
-        setNegotiations(prev => ({
-          ...prev,
-          [proposalIndex]: {
-            ...newNegotiation,
-            id: newDocId
-          }
-        }));
-      }
+      await firestoreService.update('projects', project.id, {
+        proposals: updatedProposals,
+        updatedAt: new Date()
+      });
+      
+      
+      // Update local negotiations state
+      setNegotiations(prev => ({
+        ...prev,
+        [proposalIndex]: updatedNegotiation
+      }));
 
       // Update local counter offers state (for immediate UI feedback)
       const newCounterOffers = { ...counterOffers };
@@ -281,8 +275,180 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
       
       alert('Counter offer submitted successfully! Please wait for the project owner to respond.');
     } catch (error) {
-      console.error('Error submitting counter offer:', error);
+      console.error('❌ Error submitting counter offer:', error);
       alert('Error submitting counter offer. Please try again.');
+    }
+  };
+
+  // Handle vendor accepting the negotiation terms
+  const handleAcceptNegotiation = async () => {
+    try {
+      console.log('🔄 Vendor accepting negotiation terms...');
+      
+      const proposalIndex = getVendorProposalIndex();
+      if (proposalIndex === -1) {
+        throw new Error('Vendor proposal not found');
+      }
+
+      const now = new Date();
+      const currentProposal = project.proposals[proposalIndex];
+      const existingNegotiation = currentProposal?.negotiation || { history: [] };
+
+      // Create negotiation data for acceptance
+      const updatedNegotiation = {
+        status: 'accepted',
+        acceptedAt: now,
+        acceptedBy: 'vendor',
+        lastActionBy: 'vendor',
+        lastActionAt: now,
+        vendorInfo: {
+          vendorId: user.uid,
+          vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
+          vendorEmail: user.email
+        },
+        ownerInfo: existingNegotiation.ownerInfo || {
+          ownerId: project.ownerId,
+          ownerName: project.ownerName || project.client || 'Project Owner'
+        },
+        counterOffer: existingNegotiation.counterOffer,
+        history: [
+          ...(existingNegotiation.history || []),
+          {
+            action: 'accepted',
+            by: 'vendor',
+            vendorId: user.uid,
+            vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
+            timestamp: now,
+            message: 'Negotiation terms accepted by vendor'
+          }
+        ],
+        updatedAt: now
+      };
+
+      // Update the project proposals
+      const normalizedProposals = normalizeProposals(project.proposals);
+      const updatedProposals = [...normalizedProposals];
+      updatedProposals[proposalIndex] = {
+        ...updatedProposals[proposalIndex],
+        negotiation: updatedNegotiation,
+        status: 'accepted',
+        acceptedAt: now,
+        acceptedBy: user.uid,
+        updatedAt: now
+      };
+
+      console.log('📤 Updating project with vendor acceptance:', {
+        projectId: project.id,
+        proposalIndex,
+        vendorId: user.uid
+      });
+
+      await firestoreService.update('projects', project.id, {
+        proposals: updatedProposals,
+        updatedAt: now
+      });
+
+      // Update local state
+      setNegotiations(prev => ({
+        ...prev,
+        [proposalIndex]: updatedNegotiation
+      }));
+
+      setPendingCounterOffer(false);
+      setIsNegotiating(false);
+
+      console.log('✅ Vendor acceptance saved successfully');
+      alert('Successfully accepted the negotiation terms!');
+
+    } catch (error) {
+      console.error('❌ Error accepting negotiation terms:', error);
+      alert(`Failed to accept terms: ${error.message}`);
+    }
+  };
+
+  // Handle vendor declining/rejecting the negotiation terms
+  const handleDeclineNegotiation = async () => {
+    try {
+      console.log('🔄 Vendor declining negotiation terms...');
+      
+      const proposalIndex = getVendorProposalIndex();
+      if (proposalIndex === -1) {
+        throw new Error('Vendor proposal not found');
+      }
+
+      const now = new Date();
+      const currentProposal = project.proposals[proposalIndex];
+      const existingNegotiation = currentProposal?.negotiation || { history: [] };
+
+      // Create negotiation data for rejection
+      const updatedNegotiation = {
+        status: 'rejected',
+        rejectedAt: now,
+        rejectedBy: 'vendor',
+        lastActionBy: 'vendor',
+        lastActionAt: now,
+        vendorInfo: {
+          vendorId: user.uid,
+          vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
+          vendorEmail: user.email
+        },
+        ownerInfo: existingNegotiation.ownerInfo || {
+          ownerId: project.ownerId,
+          ownerName: project.ownerName || project.client || 'Project Owner'
+        },
+        counterOffer: existingNegotiation.counterOffer,
+        history: [
+          ...(existingNegotiation.history || []),
+          {
+            action: 'rejected',
+            by: 'vendor',
+            vendorId: user.uid,
+            vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
+            timestamp: now,
+            message: 'Negotiation terms declined by vendor'
+          }
+        ],
+        updatedAt: now
+      };
+
+      // Update the project proposals
+      const normalizedProposals = normalizeProposals(project.proposals);
+      const updatedProposals = [...normalizedProposals];
+      updatedProposals[proposalIndex] = {
+        ...updatedProposals[proposalIndex],
+        negotiation: updatedNegotiation,
+        status: 'rejected',
+        rejectedAt: now,
+        rejectedBy: user.uid,
+        updatedAt: now
+      };
+
+      console.log('📤 Updating project with vendor rejection:', {
+        projectId: project.id,
+        proposalIndex,
+        vendorId: user.uid
+      });
+
+      await firestoreService.update('projects', project.id, {
+        proposals: updatedProposals,
+        updatedAt: now
+      });
+
+      // Update local state
+      setNegotiations(prev => ({
+        ...prev,
+        [proposalIndex]: updatedNegotiation
+      }));
+
+      setPendingCounterOffer(false);
+      setIsNegotiating(false);
+
+      console.log('✅ Vendor rejection saved successfully');
+      alert('Successfully declined the negotiation terms.');
+
+    } catch (error) {
+      console.error('❌ Error declining negotiation terms:', error);
+      alert(`Failed to decline terms: ${error.message}`);
     }
   };
 
@@ -342,8 +508,6 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     const proposalIndex = getVendorProposalIndex();
     if (proposalIndex === -1) return boqData; // No proposal found
     
-    console.log('Calculating negotiated prices for proposal index:', proposalIndex);
-    
     // Create a deep copy of BOQ data
     const updatedBOQ = JSON.parse(JSON.stringify(boqData));
     
@@ -368,19 +532,16 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                   // Check for counter offer price
                   if (counterOffer?.vendorPrice !== undefined) {
                     negotiatedPrice = parseFloat(counterOffer.vendorPrice);
-                    console.log(`Item ${flatItemIndex}: Using counter offer price ${negotiatedPrice} (was ${item.unitPrice})`);
                   }
                   // Check for negotiated price in negotiation data
                   else if (negotiationData?.counterOffer && negotiationData.counterOffer[flatItemIndex]) {
                     negotiatedPrice = parseFloat(negotiationData.counterOffer[flatItemIndex].vendorPrice || item.unitPrice);
-                    console.log(`Item ${flatItemIndex}: Using negotiation price ${negotiatedPrice} (was ${item.unitPrice})`);
                   }
                   
                   // Update the item with negotiated price
                   if (negotiatedPrice !== item.unitPrice) {
                     item.negotiatedPrice = negotiatedPrice;
                     item.totalPrice = negotiatedPrice * (item.volume || 0);
-                    console.log(`Item ${flatItemIndex}: Updated with negotiated price ${negotiatedPrice}, total: ${item.totalPrice}`);
                   }
                 });
               }
@@ -634,24 +795,39 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
             </div>
           </div>
         )}
-        
-        {/* BOQ Display with negotiated prices */}
-        <BOQDisplay 
-          project={{
-            ...project,
-            ...(project.attachedBOQ && {
-              attachedBOQ: calculateLatestNegotiatedPrices(project.attachedBOQ)
-            }),
-            ...(project.boq && {
-              boq: calculateLatestNegotiatedPrices(project.boq)
-            }),
-            ...(project.tahapanKerja && {
-              tahapanKerja: calculateLatestNegotiatedPrices({ tahapanKerja: project.tahapanKerja }).tahapanKerja
-            })
-          }} 
-          isVendorView={true} 
-          showNegotiatedPrices={Object.keys(negotiations).length > 0}
-        />
+
+        {/* BOQ Actions */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Bill of Quantities (BOQ)</h3>
+            <button
+              onClick={() => setShowFullPageBOQ(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              View Full Screen BOQ
+            </button>
+          </div>
+          
+          {/* Preview BOQ with limited height */}
+          <div className="max-h-96 overflow-y-auto">
+            <BOQDisplay 
+              project={{
+                ...project,
+                ...(project.attachedBOQ && {
+                  attachedBOQ: calculateLatestNegotiatedPrices(project.attachedBOQ)
+                }),
+                ...(project.boq && {
+                  boq: calculateLatestNegotiatedPrices(project.boq)
+                }),
+                ...(project.tahapanKerja && {
+                  tahapanKerja: calculateLatestNegotiatedPrices({ tahapanKerja: project.tahapanKerja }).tahapanKerja
+                })
+              }} 
+              isVendorView={true} 
+              showNegotiatedPrices={Object.keys(negotiations).length > 0}
+            />
+          </div>
+        </div>
       </div>
     );
   };
@@ -667,7 +843,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     }
 
     const proposalIndex = getVendorProposalIndex();
-    const vendorProposal = proposalIndex >= 0 ? project.proposals[proposalIndex] : null;
+    const normalizedProposals = normalizeProposals(project?.proposals);
+    const vendorProposal = proposalIndex >= 0 ? normalizedProposals[proposalIndex] : null;
     const negotiationData = negotiations[proposalIndex];
 
     if (!vendorProposal) {
@@ -1030,7 +1207,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         )}
 
         {/* Action Buttons */}
-        {currentStatus === 'negotiating' && (
+        {(currentStatus === 'negotiating' || currentStatus === 'pending_vendor_response') && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Negotiation Actions</h3>
             
@@ -1051,8 +1228,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
               <div className="flex space-x-3">
                 <button
                   onClick={() => {
-                    // TODO: Implement accept negotiation
-                    console.log('Accept negotiation terms');
+                    console.log('🔘 Accept Terms button clicked (vendor)');
+                    handleAcceptNegotiation();
                   }}
                   disabled={pendingCounterOffer}
                   className={`px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${pendingCounterOffer ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1093,6 +1270,80 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     );
   };
 
+  const renderFullPageBOQ = () => {
+    return (
+      <div className="fixed inset-0 z-50 bg-gray-50 overflow-hidden">
+        {/* Full Page BOQ Header */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="w-full px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <button
+                onClick={() => setShowFullPageBOQ(false)}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <FiArrowLeft size={20} />
+                <span className="font-medium">Back to Project</span>
+              </button>
+              
+              <div className="text-center flex-1">
+                <h1 className="text-xl font-bold text-gray-900">
+                  {enhancedProject.projectTitle} - Bill of Quantities
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Detailed BOQ View • Full Screen {Object.keys(negotiations).length > 0 ? '• Latest Negotiated Prices' : ''}
+                </p>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                Vendor Dashboard
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Full Page BOQ Content */}
+        <div className="h-[calc(100vh-4rem)] overflow-auto">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+            {/* Negotiation Status Info */}
+            {Object.keys(negotiations).length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
+                <div className="flex items-start space-x-3">
+                  <FiMessageSquare className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h5 className="font-medium text-blue-800 mb-1">Negotiated Pricing Available</h5>
+                    <p className="text-sm text-blue-700">
+                      This BOQ shows the latest negotiated prices from your discussions with the project owner. 
+                      Items with negotiated prices are highlighted with the latest agreed amounts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <BOQDisplay 
+                project={{
+                  ...project,
+                  ...(project.attachedBOQ && {
+                    attachedBOQ: calculateLatestNegotiatedPrices(project.attachedBOQ)
+                  }),
+                  ...(project.boq && {
+                    boq: calculateLatestNegotiatedPrices(project.boq)
+                  }),
+                  ...(project.tahapanKerja && {
+                    tahapanKerja: calculateLatestNegotiatedPrices({ tahapanKerja: project.tahapanKerja }).tahapanKerja
+                  })
+                }} 
+                isVendorView={true} 
+                showNegotiatedPrices={Object.keys(negotiations).length > 0}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -1105,6 +1356,11 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         return renderOverviewTab();
     }
   };
+
+  // Show full page BOQ if enabled
+  if (showFullPageBOQ) {
+    return renderFullPageBOQ();
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1130,14 +1386,25 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                 const negotiationData = negotiations[proposalIndex];
                 const currentStatus = negotiationData?.status || vendorProposal?.status || 'pending';
                 
-                // If negotiating, show Accept/Reject/Negotiate buttons
-                if (currentStatus === 'negotiating') {
+                // Debug logging for vendor status
+                console.log(`📋 Vendor Status Check:`, {
+                  proposalIndex,
+                  hasVendorProposal: !!vendorProposal,
+                  currentStatus,
+                  hasNegotiationData: !!negotiationData,
+                  isNegotiating,
+                  pendingCounterOffer,
+                  originalProposalStatus: vendorProposal?.status
+                });
+                
+                // If negotiating or waiting for vendor response, show Accept/Reject/Negotiate buttons
+                if (currentStatus === 'negotiating' || currentStatus === 'pending_vendor_response') {
                   return (
                     <div className="flex space-x-2">
                       <button
                         onClick={() => {
-                          // TODO: Implement accept negotiation
-                          console.log('Accept negotiation terms');
+                          console.log('🔘 Accept Terms button clicked (vendor - small)');
+                          handleAcceptNegotiation();
                         }}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm"
                       >
@@ -1158,8 +1425,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                       </button>
                       <button
                         onClick={() => {
-                          // TODO: Implement reject negotiation
-                          console.log('Reject negotiation terms');
+                          console.log('🔘 Decline button clicked (vendor)');
+                          handleDeclineNegotiation();
                         }}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                       >
@@ -1227,3 +1494,4 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     </div>
   );
 }
+               

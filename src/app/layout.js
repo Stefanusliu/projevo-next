@@ -161,9 +161,18 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
         />
+        {/* Midtrans Snap Script */}
+        <script 
+          src={process.env.NODE_ENV === 'production' 
+            ? "https://app.midtrans.com/snap/snap.js" 
+            : "https://app.sandbox.midtrans.com/snap/snap.js"
+          }
+          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        ></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true}
       >
         <AuthContextProvider>
           {children}

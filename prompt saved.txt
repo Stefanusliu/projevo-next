@@ -1,0 +1,24 @@
+i want you to update the button view details & update in project 
+add status and logic button
+
+Draft mode :
+status : In Progress (Owner still creates the
+project draft)
+Button : Edit Project (It can continue editing the project)
+
+status : Review (Owner clicks “Submit Draft”)
+button : Disable with title "Wait Admin To Approve"
+
+status : Revise (Admin require project owner to edit revise the project details)
+Button : Edit Project (give tooltip admin notes what to revise, makesure admin add revision note)
+
+status : Approve (Admin approve the project and it live in Project Market Place)
+Button : View Details (just view details without update button)
+
+Tender Mode:
+status : Open (From Draft accepted by admin this status will show to project-owner and vendor)
+button : View Details (for project owner)
+
+status : Locked (if the bid countdown from deadline is less than 24 hours it locked cannot enter new proposal and vendor cannot edit)
+
+status : 

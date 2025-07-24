@@ -8,6 +8,7 @@ import ProjectDetailPage from '../components/ProjectDetailPage';
 import VendorProposalModal from '../components/VendorProposalModal';
 import CreateProposalPage from '../components/CreateProposalPage';
 import Toast from '../components/Toast';
+import { normalizeProposals, getProposalsLength } from '../../../../utils/proposalsUtils';
 
 const ProjectMarketplace = () => {
   const { user } = useAuth();
@@ -607,13 +608,15 @@ const ProjectMarketplace = () => {
   // Helper function to check if current vendor has already submitted a proposal
   const hasVendorSubmittedProposal = (project) => {
     if (!user || !project.proposals) return false;
-    return project.proposals.some(proposal => proposal.vendorId === user.uid);
+    const normalizedProposals = normalizeProposals(project.proposals);
+    return normalizedProposals.some(proposal => proposal.vendorId === user.uid);
   };
 
   // Helper function to get vendor's proposal
   const getVendorProposal = (project) => {
     if (!user || !project.proposals) return null;
-    return project.proposals.find(proposal => proposal.vendorId === user.uid);
+    const normalizedProposals = normalizeProposals(project.proposals);
+    return normalizedProposals.find(proposal => proposal.vendorId === user.uid);
   };
 
   // Helper function to check if proposal can be edited (deadline must be more than 24 hours away)
@@ -1099,7 +1102,7 @@ const ProjectMarketplace = () => {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Proposals</p>
-                      <p className="text-sm font-semibold text-gray-900">{project.proposals?.length || 0} submitted</p>
+                      <p className="text-sm font-semibold text-gray-900">{getProposalsLength(project.proposals)} submitted</p>
                     </div>
                   </div>
 

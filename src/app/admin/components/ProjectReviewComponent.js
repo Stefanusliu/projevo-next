@@ -22,6 +22,8 @@ export default function ProjectReviewComponent() {
   const [processingAction, setProcessingAction] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionNotes, setRevisionNotes] = useState('');
 
   useEffect(() => {
     fetchPendingProjects();
@@ -109,6 +111,38 @@ export default function ProjectReviewComponent() {
     }
   };
 
+  const handleRequestRevision = async (projectId, notes = '') => {
+    if (!notes || notes.trim() === '') {
+      alert('Please provide revision notes');
+      return;
+    }
+
+    try {
+      setProcessingAction(projectId);
+      const projectRef = doc(db, 'projects', projectId);
+      await updateDoc(projectRef, {
+        moderationStatus: 'revision_required',
+        status: 'Revise',
+        isPublished: false,
+        revisionRequestedAt: serverTimestamp(),
+        adminNotes: notes,
+        updatedAt: serverTimestamp()
+      });
+
+      // Update local state
+      setProjects(projects.filter(p => p.id !== projectId));
+      setShowProjectDetails(false);
+      setShowRevisionModal(false);
+      setRevisionNotes('');
+      alert('Revision request sent successfully!');
+    } catch (error) {
+      console.error('Error requesting revision:', error);
+      alert('Failed to request revision. Please try again.');
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
   const openRejectModal = (project) => {
     setSelectedProject(project);
     setShowRejectModal(true);
@@ -118,6 +152,17 @@ export default function ProjectReviewComponent() {
   const closeRejectModal = () => {
     setShowRejectModal(false);
     setRejectionReason('');
+  };
+
+  const openRevisionModal = (project) => {
+    setSelectedProject(project);
+    setShowRevisionModal(true);
+    setRevisionNotes('');
+  };
+
+  const closeRevisionModal = () => {
+    setShowRevisionModal(false);
+    setRevisionNotes('');
   };
 
   const formatDate = (dateField) => {
@@ -284,6 +329,13 @@ export default function ProjectReviewComponent() {
                         {processingAction === project.id ? 'Processing...' : 'Approve'}
                       </button>
                       <button
+                        onClick={() => openRevisionModal(project)}
+                        disabled={processingAction === project.id}
+                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                      >
+                        {processingAction === project.id ? 'Processing...' : 'Request Revision'}
+                      </button>
+                      <button
                         onClick={() => openRejectModal(project)}
                         disabled={processingAction === project.id}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -320,6 +372,13 @@ export default function ProjectReviewComponent() {
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {processingAction === selectedProject.id ? 'Processing...' : 'Reject Project'}
+              </button>
+              <button
+                onClick={() => openRevisionModal(selectedProject)}
+                disabled={processingAction === selectedProject.id}
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {processingAction === selectedProject.id ? 'Processing...' : 'Request Revision'}
               </button>
               <button
                 onClick={() => handleApproveProject(selectedProject.id)}
@@ -642,6 +701,55 @@ export default function ProjectReviewComponent() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {processingAction === selectedProject.id ? 'Processing...' : 'Reject Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revision Request Modal */}
+      {showRevisionModal && selectedProject && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Request Revision
+              </h3>
+              <button
+                onClick={closeRevisionModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <MdClose className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Please provide specific notes about what needs to be revised. These notes will be shown to the project owner.
+              </p>
+              <textarea
+                value={revisionNotes}
+                onChange={(e) => setRevisionNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                rows={4}
+                placeholder="Enter revision notes (e.g., Please provide more details about the project scope, update budget information, etc.)..."
+                required
+              />
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={closeRevisionModal}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleRequestRevision(selectedProject.id, revisionNotes)}
+                disabled={!revisionNotes.trim() || processingAction === selectedProject.id}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {processingAction === selectedProject.id ? 'Processing...' : 'Request Revision'}
               </button>
             </div>
           </div>

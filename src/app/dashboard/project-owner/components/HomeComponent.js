@@ -12,7 +12,12 @@ import {
   FiFileText,
   FiExternalLink,
   FiLoader,
-  FiPlus
+  FiPlus,
+  FiEdit,
+  FiClock,
+  FiLock,
+  FiMessageSquare,
+  FiCreditCard
 } from 'react-icons/fi';
 import { 
   MdSort,
@@ -1120,6 +1125,31 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     setShowDetailsView(false);
   };
 
+  const handleViewOffers = (project) => {
+    // Navigate to proposal tab directly
+    setSelectedProject(project);
+    setShowDetailsView(true);
+    // TODO: Add logic to auto-navigate to proposals tab in detail view
+    console.log('View offers for project:', project);
+  };
+
+  const handlePayment = (project) => {
+    // Navigate to payment flow for vendor selection
+    console.log('Initiate payment for project:', project);
+    // TODO: Implement payment flow integration
+    // This could open a payment modal or navigate to payment page
+    setSelectedProject(project);
+    setShowDetailsView(true);
+  };
+
+  const handleResubmitProject = (project) => {
+    // Reopen the project for tender
+    console.log('Resubmit project for tender:', project);
+    // TODO: Implement project resubmission logic
+    // This should reset project status and open it for new tender
+    alert('Project resubmission feature will be implemented. This will reset the tender deadline and open the project for new bids.');
+  };
+
   const handleCreateProject = () => {
     if (onCreateProject) {
       onCreateProject();
@@ -1145,29 +1175,9 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   };
 
   // Helper function to normalize status display
-  const getDisplayStatus = (status) => {
-    switch (status) {
-      case 'Draft':
-        return 'Draft';
-      case 'In Progress':
-        return 'On Going';
-      case 'Open for Tender':
-        return 'Open';
-      case 'Completed':
-        return 'Completed';
-      case 'Pending Signature':
-        return 'Pending Signature';
-      case 'Under Review':
-        return 'Under Review';
-      case 'Menunggu Persetujuan':
-        return 'Pending Approval';
-      case 'Active':
-        return 'Active';
-      case 'Rejected':
-        return 'Rejected';
-      default:
-        return status || 'On Going'; // Fallback
-    }
+  const getDisplayStatus = (project) => {
+    // Use the new project status logic
+    return getProjectStatus(project);
   };
 
   // Helper function to format budget with thousand separators
@@ -1252,13 +1262,99 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     ];
   };
 
+  // Helper function to calculate tender deadline from createdAt + tenderDuration
+  const calculateTenderDeadline = (createdAt, tenderDuration) => {
+    if (!createdAt || !tenderDuration) {
+      console.log('Missing createdAt or tenderDuration:', { createdAt, tenderDuration });
+      return null;
+    }
+
+    try {
+      let startDate;
+      
+      // Parse createdAt to Date object
+      if (createdAt?.toDate) {
+        startDate = createdAt.toDate();
+      } else if (typeof createdAt === 'string') {
+        startDate = new Date(createdAt);
+      } else if (createdAt instanceof Date) {
+        startDate = createdAt;
+      } else if (typeof createdAt === 'object' && createdAt.seconds) {
+        // Firestore timestamp object format
+        startDate = new Date(createdAt.seconds * 1000);
+      } else {
+        console.log('Invalid createdAt format:', createdAt);
+        return null;
+      }
+
+      // Validate start date
+      if (!startDate || isNaN(startDate.getTime())) {
+        console.log('Invalid start date:', startDate);
+        return null;
+      }
+
+      // Parse tender duration (e.g., "1 bulan", "2 minggu", "30 hari")
+      const duration = tenderDuration.toLowerCase().trim();
+      const deadline = new Date(startDate);
+
+      console.log('Calculating deadline for:', { startDate: startDate.toISOString(), duration });
+
+      if (duration.includes('bulan')) {
+        const months = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        deadline.setMonth(deadline.getMonth() + months);
+        console.log(`Added ${months} months, deadline:`, deadline.toISOString());
+      } else if (duration.includes('minggu')) {
+        const weeks = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        deadline.setDate(deadline.getDate() + (weeks * 7));
+        console.log(`Added ${weeks} weeks, deadline:`, deadline.toISOString());
+      } else if (duration.includes('hari')) {
+        const days = parseInt(duration.match(/(\d+)/)?.[1] || 1);
+        deadline.setDate(deadline.getDate() + days);
+        console.log(`Added ${days} days, deadline:`, deadline.toISOString());
+      } else {
+        // Try to parse as pure number (assume days)
+        const numericValue = parseInt(duration.match(/(\d+)/)?.[1]);
+        if (!isNaN(numericValue)) {
+          deadline.setDate(deadline.getDate() + numericValue);
+          console.log(`Added ${numericValue} numeric days, deadline:`, deadline.toISOString());
+        } else {
+          console.log('Could not parse tender duration, using 30 days default:', tenderDuration);
+          // Default to 30 days (1 month)
+          deadline.setDate(deadline.getDate() + 30);
+        }
+      }
+      
+      // Validate the calculated deadline
+      if (isNaN(deadline.getTime())) {
+        console.error('Invalid deadline calculated:', { createdAt, tenderDuration, startDate, deadline });
+        return null;
+      }
+      
+      return deadline;
+    } catch (error) {
+      console.error('Error calculating tender deadline:', error);
+      return null;
+    }
+  };
+
   // Helper function to calculate tender time left
   const getTenderTimeLeft = (project) => {
-    if (!project.tenderDeadline && !project.deadline) {
+    // First try to calculate deadline from createdAt + tenderDuration if it's a tender project
+    let deadline = null;
+    
+    if (project.procurementMethod === 'Tender' && project.createdAt && project.tenderDuration) {
+      deadline = calculateTenderDeadline(project.createdAt, project.tenderDuration);
+    }
+    
+    // Fallback to pre-existing deadline fields
+    if (!deadline) {
+      deadline = project.tenderDeadline || project.deadline;
+    }
+    
+    if (!deadline) {
       return 'No deadline set';
     }
     
-    const deadline = project.tenderDeadline || project.deadline;
     let deadlineDate;
     
     try {
@@ -1266,6 +1362,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         deadlineDate = deadline.toDate();
       } else if (typeof deadline === 'string') {
         deadlineDate = new Date(deadline);
+      } else if (deadline instanceof Date) {
+        deadlineDate = deadline;
+      } else if (typeof deadline === 'object' && deadline.seconds) {
+        deadlineDate = new Date(deadline.seconds * 1000);
       } else {
         deadlineDate = new Date(deadline);
       }
@@ -1292,23 +1392,240 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     }
   };
 
+  // Helper function to get the project status for display and logic
+  const getProjectStatus = (project) => {
+    console.log('Getting status for project:', project.id, {
+      status: project.status,
+      moderationStatus: project.moderationStatus,
+      procurementMethod: project.procurementMethod,
+      createdAt: project.createdAt,
+      tenderDuration: project.tenderDuration,
+      deadline: project.deadline
+    });
+
+    // Draft Mode Statuses
+    if (project.status === 'Draft' || project.moderationStatus === 'draft') {
+      return 'In Progress'; // Owner still creates the project draft
+    }
+    
+    if (project.moderationStatus === 'pending' || project.status === 'Under Review' || project.status === 'Review') {
+      return 'Review'; // Owner clicks "Submit Draft"
+    }
+    
+    if (project.moderationStatus === 'rejected' || project.status === 'Revise' || project.moderationStatus === 'revision_required') {
+      return 'Revise'; // Admin require project owner to edit/revise the project details
+    }
+    
+    if (project.moderationStatus === 'approved' && project.procurementMethod !== 'Tender') {
+      return 'Approve'; // Admin approve the project and it's live in Project Market Place
+    }
+    
+    // Tender Mode Statuses
+    if (project.moderationStatus === 'approved' && project.procurementMethod === 'Tender') {
+      // Check if tender is locked (less than 24 hours to deadline)
+      const timeLeft = getTimeToDeadlineInHours(project);
+      
+      console.log('Tender time analysis:', {
+        timeLeft,
+        hasNegotiationOffer: project.hasNegotiationOffer,
+        selectedVendorId: project.selectedVendorId
+      });
+      
+      if (timeLeft !== null) {
+        if (timeLeft <= 24 && timeLeft > 0) {
+          return 'Locked'; // Locked if less than 24 hours to deadline
+        }
+        if (timeLeft <= 0) {
+          return 'Failed'; // No winner chosen until deadline
+        }
+      }
+      
+      // Check for negotiation status
+      if (project.hasNegotiationOffer || project.status === 'Negotiate') {
+        return 'Negotiate';
+      }
+      
+      // Check if vendor was awarded/selected
+      if (project.selectedVendorId || project.status === 'Awarded') {
+        return 'Awarded';
+      }
+      
+      return 'Open'; // Default for approved tender projects
+    }
+    
+    // Default fallback
+    console.log('Using fallback status for project:', project.id, project.status);
+    return project.status || 'Draft';
+  };
+
+  // Helper function to calculate hours to deadline
+  const getTimeToDeadlineInHours = (project) => {
+    // First try to calculate deadline from createdAt + tenderDuration if it's a tender project
+    let deadline = null;
+    
+    if (project.procurementMethod === 'Tender' && project.createdAt && project.tenderDuration) {
+      deadline = calculateTenderDeadline(project.createdAt, project.tenderDuration);
+    }
+    
+    // Fallback to pre-existing deadline fields
+    if (!deadline) {
+      deadline = project.tenderDeadline || project.deadline;
+    }
+    
+    if (!deadline) return null;
+    
+    try {
+      let deadlineDate;
+      
+      if (deadline instanceof Date) {
+        deadlineDate = deadline;
+      } else if (deadline?.toDate) {
+        deadlineDate = deadline.toDate();
+      } else if (typeof deadline === 'string') {
+        deadlineDate = new Date(deadline);
+      } else if (typeof deadline === 'object' && deadline.seconds) {
+        deadlineDate = new Date(deadline.seconds * 1000);
+      } else {
+        return null;
+      }
+
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+        return null;
+      }
+
+      const now = new Date();
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      return diffTime / (1000 * 60 * 60); // Convert to hours
+    } catch (error) {
+      console.error('Error calculating time to deadline:', error);
+      return null;
+    }
+  };
+
   // Helper function to determine action button based on status
   const getActionButton = (project) => {
-    const displayStatus = getDisplayStatus(project.status);
+    const projectStatus = getProjectStatus(project);
     
-    switch (displayStatus) {
+    switch (projectStatus) {
+      case 'In Progress':
+        return (
+          <button
+            onClick={() => handleEditProject(project)}
+            className="flex items-center font-medium hover:underline text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            <FiEdit className="w-4 h-4 mr-1" />
+            Edit Project
+          </button>
+        );
+        
+      case 'Review':
+        return (
+          <button
+            disabled
+            className="flex items-center font-medium text-gray-400 cursor-not-allowed"
+            title="Wait Admin To Approve"
+          >
+            <FiClock className="w-4 h-4 mr-1" />
+            Wait Admin To Approve
+          </button>
+        );
+        
+      case 'Revise':
+        return (
+          <button
+            onClick={() => handleEditProject(project)}
+            className="flex items-center font-medium hover:underline text-orange-600 hover:text-orange-800 transition-colors"
+            title={project.adminNotes || "Admin requires revision. Please check admin notes for details."}
+          >
+            <FiEdit className="w-4 h-4 mr-1" />
+            Edit Project
+          </button>
+        );
+        
+      case 'Approve':
+        return (
+          <button
+            onClick={() => handleViewProject(project)}
+            className="flex items-center font-medium hover:underline text-black hover:text-gray-600 transition-colors"
+          >
+            <FiExternalLink className="w-4 h-4 mr-1" />
+            View Details
+          </button>
+        );
+        
       case 'Open':
         const timeLeft = getTenderTimeLeft(project);
         return (
           <div className="text-right">
-            <div className="text-sm text-gray-600 mb-1">
-              Project currently live on tender list
+            <button
+              onClick={() => handleViewProject(project)}
+              className="flex items-center font-medium hover:underline text-green-600 hover:text-green-800 transition-colors mb-1"
+            >
+              <FiExternalLink className="w-4 h-4 mr-1" />
+              View Details
+            </button>
+            <div className="text-sm text-gray-600">
+              Tender Status: Open
             </div>
-            <div className="text-sm font-medium text-blue-600">
+            <div className="text-sm font-medium text-green-600">
               {timeLeft}
             </div>
           </div>
         );
+        
+      case 'Locked':
+        const lockedTimeLeft = getTenderTimeLeft(project);
+        return (
+          <div className="text-right">
+            <button
+              onClick={() => handleViewProject(project)}
+              className="flex items-center font-medium hover:underline text-orange-600 hover:text-orange-800 transition-colors mb-1"
+            >
+              <FiLock className="w-4 h-4 mr-1" />
+              View Details
+            </button>
+            <div className="text-sm text-orange-600">
+              Tender Locked (&lt; 24h)
+            </div>
+            <div className="text-sm font-medium text-orange-600">
+              {lockedTimeLeft}
+            </div>
+          </div>
+        );
+        
+      case 'Negotiate':
+        return (
+          <button
+            onClick={() => handleViewOffers(project)}
+            className="flex items-center font-medium hover:underline text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <FiMessageSquare className="w-4 h-4 mr-1" />
+            View Offer
+          </button>
+        );
+        
+      case 'Awarded':
+        return (
+          <button
+            onClick={() => handlePayment(project)}
+            className="flex items-center font-medium hover:underline text-red-600 hover:text-red-800 transition-colors"
+          >
+            <FiCreditCard className="w-4 h-4 mr-1" />
+            Need Payment
+          </button>
+        );
+        
+      case 'Failed':
+        return (
+          <button
+            onClick={() => handleResubmitProject(project)}
+            className="flex items-center font-medium hover:underline text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <FiRefreshCw className="w-4 h-4 mr-1" />
+            Resubmit
+          </button>
+        );
+        
       case 'On Going':
       case 'Completed':
       default:
@@ -1325,8 +1642,28 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   };
 
   // Helper function to get status color
-  const getStatusColor = (status) => {
-    switch (status) {
+  const getStatusColor = (project) => {
+    const projectStatus = getProjectStatus(project);
+    
+    switch (projectStatus) {
+      case 'In Progress':
+        return '#6B7280'; // Gray color for drafts in progress
+      case 'Review':
+        return '#F59E0B'; // Orange for pending/review
+      case 'Revise':
+        return '#EF4444'; // Red for revision required
+      case 'Approve':
+        return '#8B5CF6'; // Purple for approved
+      case 'Open':
+        return '#10B981'; // Green for open tender
+      case 'Locked':
+        return '#F59E0B'; // Orange for locked tender
+      case 'Negotiate':
+        return '#8B5CF6'; // Purple for negotiation
+      case 'Awarded':
+        return '#EF4444'; // Red for payment needed
+      case 'Failed':
+        return '#6B7280'; // Gray for failed
       case 'Draft':
         return '#6B7280'; // Gray color for drafts
       case 'Menunggu Persetujuan':
@@ -1334,14 +1671,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       case 'Under Review':
         return '#F59E0B'; // Orange for pending/review
       case 'Active':
-      case 'Open':
       case 'Open for Tender':
         return '#10B981'; // Green for active/open
       case 'Completed':
         return '#8B5CF6'; // Purple for completed
       case 'Rejected':
         return '#EF4444'; // Red for rejected
-      case 'In Progress':
       case 'On Going':
         return '#2373FF'; // Blue for in progress
       default:
@@ -1558,9 +1893,9 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                     <div className="flex flex-col items-end space-y-2 flex-shrink-0 ml-3">
                       <span 
                         className="px-2 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap"
-                        style={{ backgroundColor: '#2373FF' }}
+                        style={{ backgroundColor: getStatusColor(project) }}
                       >
-                        {getDisplayStatus(project.status)}
+                        {getDisplayStatus(project)}
                       </span>
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
                         {getProjectType(project.procurementMethod)}
@@ -1572,6 +1907,23 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-shrink-0">
                     {project.specialNotes || project.description || `${project.projectType} project for ${project.propertyType || 'property'} in ${project.marketplace?.location?.city || project.city || 'Unknown Location'}`}
                   </p>
+
+                  {/* Admin Notes - Show for projects that need revision */}
+                  {getProjectStatus(project) === 'Revise' && project.adminNotes && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex-shrink-0">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="w-4 h-4 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-2">
+                          <h4 className="text-sm font-medium text-red-800">Revision Required</h4>
+                          <p className="text-sm text-red-700">{project.adminNotes}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Progress */}
                   <div className="mb-4 flex-shrink-0">
@@ -1652,26 +2004,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
                   {/* Actions */}
                   <div className="flex space-x-3 flex-shrink-0">
-                    {getDisplayStatus(project.status) === 'Open' ? (
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-600 mb-1">
-                          Project currently live on tender list
-                        </div>
-                        <div className="text-sm font-medium" style={{ color: '#2373FF' }}>
-                          {getTenderTimeLeft(project)}
-                        </div>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => handleViewProject(project)}
-                        className="flex-1 px-3 py-2 bg-gray-100 text-black text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                      >
-                        View Details
-                      </button>
-                    )}
-                    <button className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                      Update
-                    </button>
+                    {getActionButton(project)}
                   </div>
                 </div>
               </div>
