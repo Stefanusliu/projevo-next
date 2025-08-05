@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import { 
   FiChevronDown, 
@@ -17,7 +17,10 @@ import {
   FiClock,
   FiLock,
   FiMessageSquare,
-  FiCreditCard
+  FiCreditCard,
+  FiXCircle,
+  FiTrash2,
+  FiX
 } from 'react-icons/fi';
 import { 
   MdSort,
@@ -314,7 +317,7 @@ function CreateProjectModal({ onClose }) {
         ownerId: user.uid,
         ownerEmail: user.email,
         ownerName: user.displayName || user.email,
-        status: 'Draft', // Set status as Draft
+        status: 'Draft', // Set status as Draft (backend still uses 'Draft', getProjectStatus converts to 'In Progress')
         moderationStatus: 'draft',
         progress: 0,
         isPublished: false,
@@ -1035,6 +1038,7 @@ function CreateProjectModal({ onClose }) {
 
 export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const { user, userProfile } = useAuth();
+  const router = useRouter();
   const [selectedProject, setSelectedProject] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1048,7 +1052,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const filterDropdownRef = useRef(null);
   
   // Project filter tabs
-  const projectFilterTabs = ['All', 'Draft', 'Tender', 'Contract', 'Negotiation', 'Penunjukan Langsung'];
+  const projectFilterTabs = ['All', 'In Progress', 'Tender', 'Contract', 'Negotiation', 'Penunjukan Langsung'];
   
   // Load projects from Firestore
   useEffect(() => {
@@ -1120,9 +1124,31 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   };
 
   const handleEditProject = (project) => {
-    // TODO: Implement edit project functionality
+    // Navigate to project creation page with edit mode
     console.log('Edit project:', project);
-    setShowDetailsView(false);
+    
+    // Store the project data in localStorage for editing
+    localStorage.setItem('editProject', JSON.stringify(project));
+    
+    // Call the onCreateProject function to show the create project component
+    // This will trigger the parent component to show the CreateProjectComponent
+    if (onCreateProject) {
+      onCreateProject();
+    }
+  };
+
+  const handleProjectUpdate = (updatedProject) => {
+    // Update the selected project with the latest data
+    setSelectedProject(updatedProject);
+    
+    // Also update the project in the projects list
+    setProjects(prevProjects => 
+      prevProjects.map(project => 
+        project.id === updatedProject.id ? updatedProject : project
+      )
+    );
+    
+    console.log('✅ Project updated locally:', updatedProject.id);
   };
 
   const handleViewOffers = (project) => {
@@ -1148,6 +1174,28 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     // TODO: Implement project resubmission logic
     // This should reset project status and open it for new tender
     alert('Project resubmission feature will be implemented. This will reset the tender deadline and open the project for new bids.');
+  };
+
+  const handleDeleteProject = async (project) => {
+    // Show confirmation dialog
+    if (window.confirm(`Are you sure you want to delete "${project.title || project.projectTitle}"? This action cannot be undone.`)) {
+      try {
+        console.log('Deleting project:', project.id);
+        
+        // Delete project from Firestore
+        await deleteDoc(doc(db, 'projects', project.id));
+        
+        console.log('Project deleted successfully:', project.id);
+        
+        // Show success message
+        alert('Project deleted successfully!');
+        
+        // The projects list will automatically update due to the real-time listener
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        alert('Failed to delete project. Please try again.');
+      }
+    }
   };
 
   const handleCreateProject = () => {
@@ -1260,6 +1308,43 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       { name: 'Review', completed: false, date: '' },
       { name: 'Completion', completed: false, date: '' }
     ];
+  };
+
+  // Helper function to determine if project has started (entered execution phase)
+  const isProjectStarted = (project) => {
+    const status = project.status;
+    const moderationStatus = project.moderationStatus;
+    
+    // Project is considered started ONLY when:
+    // 1. Initial payment has been made, OR
+    // 2. Project is in "On Going" status, OR  
+    // 3. A vendor has been formally selected AND negotiation is completed (not just started)
+    
+    if (project.initialPaymentCompleted || project.paymentCompleted) {
+      return true;
+    }
+    
+    if (status === 'On Going' || status === 'Active') {
+      return true;
+    }
+    
+    // Check if any proposal has been FULLY accepted (vendor completed negotiation)
+    if (project.proposals && Array.isArray(project.proposals)) {
+      const hasAcceptedProposal = project.proposals.some(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+      if (hasAcceptedProposal) {
+        return true;
+      }
+    }
+    
+    // Check if vendor has been awarded AND payment is required
+    if (project.selectedVendorId && project.status === 'Awarded' && project.negotiationAccepted) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Helper function to calculate tender deadline from createdAt + tenderDuration
@@ -1425,11 +1510,64 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       // Check if tender is locked (less than 24 hours to deadline)
       const timeLeft = getTimeToDeadlineInHours(project);
       
+      // Check if any proposal has been accepted (vendor accepted negotiation)
+      const hasAcceptedProposal = project.proposals && project.proposals.some(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+      
+      // Get the selected vendor from accepted proposal
+      const selectedVendor = project.proposals?.find(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+      
       console.log('Tender time analysis:', {
         timeLeft,
         hasNegotiationOffer: project.hasNegotiationOffer,
-        selectedVendorId: project.selectedVendorId
+        selectedVendorId: project.selectedVendorId,
+        negotiationAccepted: project.negotiationAccepted,
+        paymentCompleted: project.paymentCompleted,
+        initialPaymentCompleted: project.initialPaymentCompleted,
+        hasAcceptedProposal,
+        selectedVendor: selectedVendor ? {
+          id: selectedVendor.vendorId,
+          status: selectedVendor.status,
+          negotiationStatus: selectedVendor.negotiation?.status
+        } : null
       });
+      
+      // Check if vendor was awarded/selected (negotiation was accepted)
+      if (project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted || hasAcceptedProposal) {
+        // Set the selected vendor ID if not already set
+        if (!project.selectedVendorId && selectedVendor) {
+          project.selectedVendorId = selectedVendor.vendorId;
+        }
+        
+        // If initial payment is completed, project is ongoing
+        if (project.initialPaymentCompleted) {
+          return 'On Going'; // Project started, work in progress
+        }
+        // If vendor is selected but payment not completed, show payment needed
+        return 'Awarded'; // Show awarded status with payment needed
+      }
+      
+      // Check for active negotiation status (vendor hasn't accepted yet)
+      if (project.hasNegotiationOffer || 
+          project.status === 'Negotiate' || 
+          project.status === 'negotiation' ||
+          project.negotiationStatus === 'active' ||
+          (project.proposals && project.proposals.some(proposal => 
+            proposal.status === 'negotiating' || 
+            proposal.status === 'counter_offer' ||
+            (proposal.negotiation && proposal.negotiation.status === 'pending')
+          ))) {
+        // Only show negotiate if negotiation hasn't been accepted yet
+        if (!project.negotiationAccepted && !hasAcceptedProposal) {
+          return 'Negotiate';
+        }
+        // If negotiation was accepted, fall through to check other conditions
+      }
       
       if (timeLeft !== null) {
         if (timeLeft <= 24 && timeLeft > 0) {
@@ -1440,22 +1578,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         }
       }
       
-      // Check for negotiation status
-      if (project.hasNegotiationOffer || project.status === 'Negotiate') {
-        return 'Negotiate';
-      }
-      
-      // Check if vendor was awarded/selected
-      if (project.selectedVendorId || project.status === 'Awarded') {
-        return 'Awarded';
-      }
-      
       return 'Open'; // Default for approved tender projects
     }
     
     // Default fallback
     console.log('Using fallback status for project:', project.id, project.status);
-    return project.status || 'Draft';
+    return project.status || 'In Progress';
   };
 
   // Helper function to calculate hours to deadline
@@ -1502,6 +1630,29 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     }
   };
 
+  // Helper function to determine project phase
+  const getProjectPhase = (project) => {
+    const status = getProjectStatus(project);
+    
+    // Draft Phase: In Progress, Review, Revise, Approved
+    if (['In Progress', 'Review', 'Revise', 'Approve'].includes(status)) {
+      return 'Draft';
+    }
+    
+    // Tender Phase: Open, Locked, Negotiate, Awarded, Failed
+    if (['Open', 'Locked', 'Negotiate', 'Awarded', 'Failed'].includes(status)) {
+      return 'Tender';
+    }
+    
+    // Bid Phase: Submitted, Won, Lost, Revised, Withdrawn
+    if (['Submitted', 'Won', 'Lost', 'Revised', 'Withdrawn', 'On Going'].includes(status)) {
+      return 'Bid';
+    }
+    
+    // Default fallback
+    return 'Draft';
+  };
+
   // Helper function to determine action button based on status
   const getActionButton = (project) => {
     const projectStatus = getProjectStatus(project);
@@ -1509,134 +1660,432 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     switch (projectStatus) {
       case 'In Progress':
         return (
-          <button
-            onClick={() => handleEditProject(project)}
-            className="flex items-center font-medium hover:underline text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            <FiEdit className="w-4 h-4 mr-1" />
-            Edit Project
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced In Progress Status Card */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiEdit className="w-3 h-3 text-blue-600 mr-2" />
+                  <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+                    In Progress
+                  </span>
+                </div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              </div>
+              
+              <div className="text-sm font-semibold text-blue-800">
+                In Progress
+              </div>
+              
+              <div className="text-xs text-blue-600 mt-1">
+                Continue editing
+              </div>
+            </div>
+            
+            {/* Stacked Action Buttons */}
+            <div className="flex flex-col gap-2 flex-1">
+              {/* Edit Project Button */}
+              <button
+                onClick={() => handleEditProject(project)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
+              >
+                <FiEdit className="w-4 h-4" />
+                Edit Project
+              </button>
+              
+              {/* Delete Project Button */}
+              <button
+                onClick={() => handleDeleteProject(project)}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
+              >
+                <FiTrash2 className="w-4 h-4" />
+                Delete Project
+              </button>
+            </div>
+          </div>
         );
         
       case 'Review':
         return (
-          <button
-            disabled
-            className="flex items-center font-medium text-gray-400 cursor-not-allowed"
-            title="Wait Admin To Approve"
-          >
-            <FiClock className="w-4 h-4 mr-1" />
-            Wait Admin To Approve
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Review Status Card */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiClock className="w-3 h-3 text-yellow-600 mr-2" />
+                  <span className="text-xs font-medium text-yellow-700 uppercase tracking-wide">
+                    Review
+                  </span>
+                </div>
+                <div className="flex space-x-1">
+                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse"></div>
+                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
+              </div>
+              
+              <div className="text-sm font-semibold text-yellow-800">
+                Under Review
+              </div>
+              
+              <div className="text-xs text-yellow-600 mt-1">
+                Admin approval pending
+              </div>
+            </div>
+            
+            {/* Modern Disabled Button */}
+            <button
+              disabled
+              className="bg-gray-300 text-gray-500 px-4 py-2 rounded-lg font-medium text-sm cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              title="Wait Admin To Approve"
+            >
+              <FiClock className="w-4 h-4" />
+              Waiting Review
+            </button>
+          </div>
         );
         
       case 'Revise':
         return (
-          <button
-            onClick={() => handleEditProject(project)}
-            className="flex items-center font-medium hover:underline text-orange-600 hover:text-orange-800 transition-colors"
-            title={project.adminNotes || "Admin requires revision. Please check admin notes for details."}
-          >
-            <FiEdit className="w-4 h-4 mr-1" />
-            Edit Project
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Revision Status Card */}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiEdit className="w-3 h-3 text-orange-600 mr-2" />
+                  <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">
+                    Revision
+                  </span>
+                </div>
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+              </div>
+              
+              <div className="text-sm font-semibold text-orange-800">
+                Action Required
+              </div>
+              
+              <div className="text-xs text-orange-600 mt-1">
+                Admin feedback received
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handleEditProject(project)}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              title={project.adminNotes || "Admin requires revision. Please check admin notes for details."}
+            >
+              <FiEdit className="w-4 h-4" />
+              Fix & Resubmit
+            </button>
+          </div>
         );
         
       case 'Approve':
         return (
-          <button
-            onClick={() => handleViewProject(project)}
-            className="flex items-center font-medium hover:underline text-black hover:text-gray-600 transition-colors"
-          >
-            <FiExternalLink className="w-4 h-4 mr-1" />
-            View Details
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Approved Status Card */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
+                    Approved
+                  </span>
+                </div>
+                <FiExternalLink className="w-3 h-3 text-green-600" />
+              </div>
+              
+              <div className="text-sm font-semibold text-green-800">
+                Live on Market
+              </div>
+              
+              <div className="text-xs text-green-600 mt-1">
+                Receiving proposals
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handleViewProject(project)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiExternalLink className="w-4 h-4" />
+              View Details
+            </button>
+          </div>
         );
         
       case 'Open':
         const timeLeft = getTenderTimeLeft(project);
         return (
-          <div className="text-right">
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Tender Status Card */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
+                    {getProjectStatus(project)}
+                  </span>
+                </div>
+                <FiClock className="w-3 h-3 text-green-600" />
+              </div>
+              
+              <div className="text-sm font-semibold text-green-800">
+                {timeLeft}
+              </div>
+              
+              <div className="text-xs text-green-600 mt-1">
+                Accepting bids
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="flex items-center font-medium hover:underline text-green-600 hover:text-green-800 transition-colors mb-1"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
-              <FiExternalLink className="w-4 h-4 mr-1" />
+              <FiExternalLink className="w-4 h-4" />
               View Details
             </button>
-            <div className="text-sm text-gray-600">
-              Tender Status: Open
-            </div>
-            <div className="text-sm font-medium text-green-600">
-              {timeLeft}
-            </div>
           </div>
         );
         
       case 'Locked':
         const lockedTimeLeft = getTenderTimeLeft(project);
         return (
-          <div className="text-right">
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Locked Status Card */}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiLock className="w-3 h-3 text-orange-600 mr-2" />
+                  <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">
+                    {getProjectStatus(project)}
+                  </span>
+                </div>
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+              </div>
+              
+              <div className="text-sm font-semibold text-orange-800">
+                {lockedTimeLeft}
+              </div>
+              
+              <div className="text-xs text-orange-600 mt-1">
+                Bidding closed
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="flex items-center font-medium hover:underline text-orange-600 hover:text-orange-800 transition-colors mb-1"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
-              <FiLock className="w-4 h-4 mr-1" />
+              <FiLock className="w-4 h-4" />
               View Details
             </button>
-            <div className="text-sm text-orange-600">
-              Tender Locked (&lt; 24h)
-            </div>
-            <div className="text-sm font-medium text-orange-600">
-              {lockedTimeLeft}
-            </div>
           </div>
         );
         
       case 'Negotiate':
         return (
-          <button
-            onClick={() => handleViewOffers(project)}
-            className="flex items-center font-medium hover:underline text-purple-600 hover:text-purple-800 transition-colors"
-          >
-            <FiMessageSquare className="w-4 h-4 mr-1" />
-            View Offer
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Negotiation Status Card */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiMessageSquare className="w-3 h-3 text-purple-600 mr-2" />
+                  <span className="text-xs font-medium text-purple-700 uppercase tracking-wide">
+                    Negotiation
+                  </span>
+                </div>
+                <div className="flex space-x-1">
+                  <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce"></div>
+                  <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+              
+              <div className="text-sm font-semibold text-purple-800">
+                Active Discussion
+              </div>
+              
+              <div className="text-xs text-purple-600 mt-1">
+                Vendor selected
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handleViewOffers(project)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiMessageSquare className="w-4 h-4" />
+              View Offer
+            </button>
+          </div>
         );
         
       case 'Awarded':
         return (
-          <button
-            onClick={() => handlePayment(project)}
-            className="flex items-center font-medium hover:underline text-red-600 hover:text-red-800 transition-colors"
-          >
-            <FiCreditCard className="w-4 h-4 mr-1" />
-            Need Payment
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Payment Status Card */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiCreditCard className="w-3 h-3 text-red-600 mr-2" />
+                  <span className="text-xs font-medium text-red-700 uppercase tracking-wide">
+                    Payment Due
+                  </span>
+                </div>
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+              </div>
+              
+              <div className="text-sm font-semibold text-red-800">
+                Vendor Awarded
+              </div>
+              
+              <div className="text-xs text-red-600 mt-1">
+                Pay 50% to start project
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handlePayment(project)}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiCreditCard className="w-4 h-4" />
+              Pay 50% Initial
+            </button>
+          </div>
         );
         
       case 'Failed':
         return (
-          <button
-            onClick={() => handleResubmitProject(project)}
-            className="flex items-center font-medium hover:underline text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <FiRefreshCw className="w-4 h-4 mr-1" />
-            Resubmit
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Failed Status Card */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <FiXCircle className="w-3 h-3 text-gray-600 mr-2" />
+                  <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                    Expired
+                  </span>
+                </div>
+                <FiRefreshCw className="w-3 h-3 text-gray-500" />
+              </div>
+              
+              <div className="text-sm font-semibold text-gray-800">
+                No Winner
+              </div>
+              
+              <div className="text-xs text-gray-600 mt-1">
+                Tender ended
+              </div>
+            </div>
+            
+            {/* Resubmit Button Only */}
+            <button
+              onClick={() => handleResubmitProject(project)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiRefreshCw className="w-4 h-4" />
+              Resubmit
+            </button>
+          </div>
         );
         
       case 'On Going':
+        return (
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Ongoing Status Card */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+                    In Progress
+                  </span>
+                </div>
+                <FiExternalLink className="w-3 h-3 text-blue-600" />
+              </div>
+              
+              <div className="text-sm font-semibold text-blue-800">
+                Project Active
+              </div>
+              
+              <div className="text-xs text-blue-600 mt-1">
+                Work in progress
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handleViewProject(project)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiExternalLink className="w-4 h-4" />
+              Monitor Progress
+            </button>
+          </div>
+        );
+        
       case 'Completed':
+        return (
+          <div className="flex items-stretch gap-3 w-full">
+            {/* Enhanced Completed Status Card */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
+                    Completed
+                  </span>
+                </div>
+                <FiExternalLink className="w-3 h-3 text-green-600" />
+              </div>
+              
+              <div className="text-sm font-semibold text-green-800">
+                Project Finished
+              </div>
+              
+              <div className="text-xs text-green-600 mt-1">
+                Successfully delivered
+              </div>
+            </div>
+            
+            {/* Modern Action Button */}
+            <button
+              onClick={() => handleViewProject(project)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiExternalLink className="w-4 h-4" />
+              View Results
+            </button>
+          </div>
+        );
+        
       default:
         return (
-          <button
-            onClick={() => handleViewProject(project)}
-            className="flex items-center font-medium hover:underline text-black hover:text-gray-600 transition-colors"
-          >
-            <FiExternalLink className="w-4 h-4 mr-1" />
-            View Details
-          </button>
+          <div className="flex items-stretch gap-3 w-full">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+              <div className="text-sm font-semibold text-gray-800">
+                Project Details
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                View project information
+              </div>
+            </div>
+            <button
+              onClick={() => handleViewProject(project)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+            >
+              <FiExternalLink className="w-4 h-4" />
+              View Details
+            </button>
+          </div>
         );
     }
   };
@@ -1646,8 +2095,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     const projectStatus = getProjectStatus(project);
     
     switch (projectStatus) {
-      case 'In Progress':
-        return '#6B7280'; // Gray color for drafts in progress
+      case 'Draft':
+        return '#6B7280'; // Gray color for drafts
       case 'Review':
         return '#F59E0B'; // Orange for pending/review
       case 'Revise':
@@ -1662,10 +2111,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         return '#8B5CF6'; // Purple for negotiation
       case 'Awarded':
         return '#EF4444'; // Red for payment needed
+      case 'On Going':
+        return '#2373FF'; // Blue for in progress/ongoing
       case 'Failed':
         return '#6B7280'; // Gray for failed
-      case 'Draft':
-        return '#6B7280'; // Gray color for drafts
       case 'Menunggu Persetujuan':
       case 'Pending Approval':
       case 'Under Review':
@@ -1674,52 +2123,90 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       case 'Open for Tender':
         return '#10B981'; // Green for active/open
       case 'Completed':
-        return '#8B5CF6'; // Purple for completed
+        return '#10B981'; // Green for completed
       case 'Rejected':
         return '#EF4444'; // Red for rejected
-      case 'On Going':
-        return '#2373FF'; // Blue for in progress
       default:
         return '#2373FF'; // Default blue
     }
   };
 
   const sortOptions = ['Recent', 'Oldest', 'A-Z', 'Z-A'];
-  const filterOptions = ['All', 'In Progress', 'Completed', 'Pending'];
+  const filterOptions = ['All', 'Draft', 'Review', 'Revise', 'Open', 'Locked', 'Negotiate', 'Awarded', 'On Going', 'Completed', 'Failed'];
 
-  // Filter projects based on internal project filter
+  // Filter projects based on internal project filter and dropdown filter
   const getFilteredProjects = () => {
-    // Use internal filter if set, otherwise use the prop from parent (for backward compatibility)
-    const currentFilter = activeProjectFilter || activeProjectTab;
+    let filtered = projects;
     
-    if (!currentFilter || currentFilter === 'All') {
-      return projects; // Show all projects when no specific filter is selected
+    // First apply the tab filter (Draft, Tender, Contract, etc.)
+    const currentTabFilter = activeProjectFilter || activeProjectTab;
+    
+    if (currentTabFilter && currentTabFilter !== 'All') {
+      filtered = filtered.filter(project => {
+        switch (currentTabFilter) {
+          case 'In Progress':
+            return project.status === 'Draft' || project.isDraft === true || project.moderationStatus === 'draft';
+          case 'Tender':
+            // Only show projects that are available for bidding (not awarded)
+            return project.procurementMethod === 'Tender' && 
+                   project.status !== 'awarded' && 
+                   project.status !== 'Draft' && // Exclude drafts
+                   project.isAvailableForBidding !== false &&
+                   !project.selectedVendorId;
+          case 'Contract':
+            return project.procurementMethod === 'Contract' && project.status !== 'Draft';
+          case 'Negotiation':
+            return project.procurementMethod === 'Negotiation' && project.status !== 'Draft';
+          case 'Penunjukan Langsung':
+            return project.procurementMethod === 'Penunjukan Langsung' && project.status !== 'Draft';
+          case 'Awarded':
+            // Show projects that have been awarded to vendors
+            return (project.status === 'awarded' || project.selectedVendorId) && project.status !== 'Draft';
+          default:
+            return true;
+        }
+      });
     }
     
-    return projects.filter(project => {
-      switch (currentFilter) {
-        case 'Draft':
-          return project.status === 'Draft' || project.isDraft === true || project.moderationStatus === 'draft';
-        case 'Tender':
-          // Only show projects that are available for bidding (not awarded)
-          return project.procurementMethod === 'Tender' && 
-                 project.status !== 'awarded' && 
-                 project.status !== 'Draft' && // Exclude drafts
-                 project.isAvailableForBidding !== false &&
-                 !project.selectedVendorId;
-        case 'Contract':
-          return project.procurementMethod === 'Contract' && project.status !== 'Draft';
-        case 'Negotiation':
-          return project.procurementMethod === 'Negotiation' && project.status !== 'Draft';
-        case 'Penunjukan Langsung':
-          return project.procurementMethod === 'Penunjukan Langsung' && project.status !== 'Draft';
-        case 'Awarded':
-          // Show projects that have been awarded to vendors
-          return (project.status === 'awarded' || project.selectedVendorId) && project.status !== 'Draft';
-        default:
-          return true;
-      }
-    });
+    // Then apply the dropdown filter (by status)
+    if (filterBy && filterBy !== 'All') {
+      filtered = filtered.filter(project => {
+        const projectStatus = getProjectStatus(project);
+        return projectStatus === filterBy;
+      });
+    }
+    
+    // Apply sorting
+    if (sortBy) {
+      filtered = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case 'Recent':
+            // Sort by creation date, most recent first
+            const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return bDate.getTime() - aDate.getTime();
+          case 'Oldest':
+            // Sort by creation date, oldest first
+            const aDateOld = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const bDateOld = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return aDateOld.getTime() - bDateOld.getTime();
+          case 'A-Z':
+            // Sort by title alphabetically
+            const aTitle = (a.title || a.projectTitle || '').toLowerCase();
+            const bTitle = (b.title || b.projectTitle || '').toLowerCase();
+            return aTitle.localeCompare(bTitle);
+          case 'Z-A':
+            // Sort by title reverse alphabetically
+            const aTitleRev = (a.title || a.projectTitle || '').toLowerCase();
+            const bTitleRev = (b.title || b.projectTitle || '').toLowerCase();
+            return bTitleRev.localeCompare(aTitleRev);
+          default:
+            return 0;
+        }
+      });
+    }
+    
+    return filtered;
   };
 
   const filteredProjects = getFilteredProjects();
@@ -1727,10 +2214,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   // Get the current tab display name
   const getTabDisplayName = () => {
     const currentFilter = activeProjectFilter || activeProjectTab;
+    const statusFilter = filterBy && filterBy !== 'All' ? ` - ${filterBy}` : '';
+    
     if (!currentFilter || currentFilter === 'All') {
-      return 'All Projects';
+      return `All Projects${statusFilter}`;
     }
-    return `${currentFilter} Projects`;
+    return `${currentFilter} Projects${statusFilter}`;
   };
 
   // Show loading state
@@ -1750,6 +2239,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         project={selectedProject}
         onBack={handleBackToList}
         onEditProject={handleEditProject}
+        onProjectUpdate={handleProjectUpdate}
       />
     );
   }
@@ -1758,9 +2248,28 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     <div className="p-6 space-y-6">
       {/* Header with All Project text and buttons */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{getTabDisplayName()}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{getTabDisplayName()}</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Showing {filteredProjects.length} of {projects.length} projects
+          </p>
+        </div>
         
         <div className="flex items-center space-x-3">
+          {/* Clear Filters Button - show when filters are applied */}
+          {(filterBy !== 'All' || sortBy !== 'Recent') && (
+            <button
+              onClick={() => {
+                setFilterBy('All');
+                setSortBy('Recent');
+              }}
+              className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+            >
+              <FiX className="w-4 h-4 mr-1" />
+              Clear
+            </button>
+          )}
+
           {/* Sort Button */}
           <div className="relative" ref={sortDropdownRef}>
             <button
@@ -1768,7 +2277,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <MdSort className="w-4 h-4 mr-2" />
-              Sort
+              Sort: {sortBy}
               <FiChevronDown className="w-4 h-4 ml-1" />
             </button>
             
@@ -1800,7 +2309,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <FiFilter className="w-4 h-4 mr-2" />
-              Filter
+              Filter: {filterBy}
               <FiChevronDown className="w-4 h-4 ml-1" />
             </button>
             
@@ -1869,8 +2378,19 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 min-h-[500px] flex flex-col"
+                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 min-h-[500px] flex flex-col relative"
               >
+                {/* Delete Icon for Failed Projects - Absolute Top Right Corner */}
+                {getProjectStatus(project) === 'Failed' && (
+                  <button
+                    onClick={() => handleDeleteProject(project)}
+                    className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-red-100 transition-colors duration-200 group z-20"
+                    title="Delete Failed Project"
+                  >
+                    <FiTrash2 className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600" />
+                  </button>
+                )}
+                
                 <div className="p-6 flex-1 flex flex-col">
                   {/* Project ID */}
                   <div className="mb-3">
@@ -1882,7 +2402,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
                   {/* Project Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-8">
                       <h3 className="text-lg font-semibold text-black mb-1 truncate">
                         {project.title || project.projectTitle}
                       </h3>
@@ -1900,6 +2420,47 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
                         {getProjectType(project.procurementMethod)}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Phase Section */}
+                  <div className="mb-4 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-gray-500">Project Phase</p>
+                      <div className="flex items-center space-x-1">
+                        {/* Phase indicators */}
+                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Draft' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Tender' ? 'bg-orange-500' : 'bg-gray-300'}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Bid' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 rounded-full mr-2 ${
+                            getProjectPhase(project) === 'Draft' ? 'bg-blue-500' : 
+                            getProjectPhase(project) === 'Tender' ? 'bg-orange-500' : 
+                            'bg-green-500'
+                          }`}></div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {getProjectPhase(project)} Phase
+                          </span>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          getProjectPhase(project) === 'Draft' ? 'bg-blue-100 text-blue-700' : 
+                          getProjectPhase(project) === 'Tender' ? 'bg-orange-100 text-orange-700' : 
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {getProjectStatus(project)}
+                        </span>
+                      </div>
+                      
+                      {/* Phase description */}
+                      <div className="mt-2 text-xs text-gray-600">
+                        {getProjectPhase(project) === 'Draft' && 'Project creation and approval process'}
+                        {getProjectPhase(project) === 'Tender' && 'Vendor bidding and selection process'}
+                        {getProjectPhase(project) === 'Bid' && 'Project execution and completion'}
+                      </div>
                     </div>
                   </div>
 
@@ -1925,26 +2486,27 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                     </div>
                   )}
 
-                  {/* Progress */}
-                  <div className="mb-4 flex-shrink-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-black">Progress</span>
-                      <span className="text-sm text-gray-600">{project.progress || 0}%</span>
+                  {/* Progress - Only show if there's actual progress and project has started */}
+                  {isProjectStarted(project) && project.progress && project.progress > 0 ? (
+                    <div className="mb-4 flex-shrink-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-black">Progress</span>
+                        <span className="text-sm text-gray-600">{project.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${project.progress}%`,
+                            backgroundColor: '#2373FF'
+                          }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full transition-all duration-300"
-                        style={{ 
-                          width: `${project.progress || 0}%`,
-                          backgroundColor: '#2373FF'
-                        }}
-                      ></div>
-                    </div>
-                  </div>
+                  ) : null}
 
                   {/* Project Details */}
                   <div className="mb-5 flex-1">
-                    <h4 className="text-sm font-medium text-black mb-3">Project Details</h4>
                     <div className="space-y-3">
                       {/* Scope */}
                       <div>
@@ -2003,7 +2565,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex space-x-3 flex-shrink-0">
+                  <div className="flex-shrink-0">
                     {getActionButton(project)}
                   </div>
                 </div>

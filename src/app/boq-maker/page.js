@@ -5,6 +5,116 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEdit, MdVisibility, MdArrowBack } from 'react-icons/md';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { firestoreService } from '../../hooks/useFirestore';
+
+// Helper function to convert boqPricing array to tahapanKerja structure
+const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => {
+  if (!boqPricing || !Array.isArray(boqPricing) || boqPricing.length === 0) {
+    return [{
+      id: 1,
+      name: '',
+      jenisKerja: [{
+        id: 2,
+        name: '',
+        uraian: [{
+          id: 3,
+          name: '',
+          spec: [{
+            id: 4,
+            description: '',
+            satuan: '',
+            volume: null,
+            pricePerPcs: null
+          }]
+        }]
+      }]
+    }];
+  }
+
+  // Group boqPricing items by tahapan and jenis
+  const groupedData = {};
+  
+  boqPricing.forEach((item, index) => {
+    const tahapanName = item.tahapanName || item.tahapanKerja || 'Main Work Phase';
+    const jenisName = item.jenisName || item.jenisKerja || 'General Work';
+    const uraianName = item.uraianName || item.uraianPekerjaan || item.name || `Item ${index + 1}`;
+    
+    if (!groupedData[tahapanName]) {
+      groupedData[tahapanName] = {};
+    }
+    
+    if (!groupedData[tahapanName][jenisName]) {
+      groupedData[tahapanName][jenisName] = [];
+    }
+    
+    // Use negotiated price if available, otherwise fall back to vendor price or subtotal
+    let finalPrice = 0;
+    if (negotiationData && negotiationData.counterOffer && negotiationData.counterOffer[index]) {
+      finalPrice = negotiationData.counterOffer[index].vendorPrice || 0;
+    } else {
+      finalPrice = parseFloat(item.vendorPrice || item.subtotal || item.unitPrice || item.pricePerPcs) || 0;
+    }
+    
+    const volume = parseFloat(item.volume || item.quantity) || 1;
+    const pricePerUnit = volume > 0 ? finalPrice / volume : finalPrice;
+    
+    groupedData[tahapanName][jenisName].push({
+      name: uraianName,
+      specs: [{
+        description: item.item || item.description || item.name || uraianName,
+        satuan: item.unit || item.satuan || 'unit',
+        volume: volume,
+        pricePerPcs: pricePerUnit,
+        originalPrice: parseFloat(item.originalPrice || 0),
+        vendorPrice: finalPrice,
+        subtotal: finalPrice
+      }]
+    });
+  });
+
+  // Convert grouped data to tahapanKerja structure
+  let tahapanId = 1;
+  let jenisId = 1;
+  let uraianId = 1;
+  let specId = 1;
+
+  const tahapanKerja = Object.keys(groupedData).map(tahapanName => {
+    const jenisKerja = Object.keys(groupedData[tahapanName]).map(jenisName => {
+      const uraian = groupedData[tahapanName][jenisName].map(uraianItem => {
+        const spec = uraianItem.specs.map(specItem => ({
+          id: specId++,
+          description: specItem.description,
+          satuan: specItem.satuan,
+          volume: specItem.volume,
+          pricePerPcs: specItem.pricePerPcs,
+          originalPrice: specItem.originalPrice || 0,
+          vendorPrice: specItem.vendorPrice || 0,
+          subtotal: specItem.subtotal || 0
+        }));
+
+        return {
+          id: uraianId++,
+          name: uraianItem.name,
+          spec: spec
+        };
+      });
+
+      return {
+        id: jenisId++,
+        name: jenisName,
+        uraian: uraian
+      };
+    });
+
+    return {
+      id: tahapanId++,
+      name: tahapanName,
+      jenisKerja: jenisKerja
+    };
+  });
+
+  return tahapanKerja;
+};
 
 function BOQMakerContent() {
   const router = useRouter();
@@ -75,13 +185,46 @@ function BOQMakerContent() {
           setCurrentBOQId(boqToLoad.id);
           setEditMode(true);
           setCurrentView('editor');
-          return; // Skip autosave loading if loading from URL
+          return; // Skip other loading if loading from URL
         }
       }
     }
 
-    // Load autosaved draft on component mount (only if not loading from URL)
-    if (!searchParams.get('load')) {
+    // Check if there's a temporary BOQ data to load
+    const tempId = searchParams.get('tempId');
+    const localKey = searchParams.get('localKey');
+    const sessionKey = searchParams.get('sessionKey');
+    const mode = searchParams.get('mode');
+    const isReadOnly = searchParams.get('readOnly') === 'true';
+    
+    if ((tempId || localKey || sessionKey) && mode === 'view') {
+      console.log('🔍 Loading BOQ data in view mode:', {
+        tempId,
+        localKey,
+        sessionKey,
+        mode,
+        isReadOnly,
+        hasFirestoreService: !!firestoreService
+      });
+      
+      if (sessionKey) {
+        // Load from localStorage using session key (preferred method)
+        console.log('📱 Loading from session key:', sessionKey);
+        loadSessionBOQData(sessionKey, isReadOnly);
+      } else if (tempId) {
+        // Load from Firestore (legacy method)
+        console.log('📱 Attempting to load from Firestore with tempId:', tempId);
+        loadTempBOQData(tempId, isReadOnly);
+      } else if (localKey) {
+        // Load from localStorage (legacy method)
+        console.log('💾 Attempting to load from localStorage with localKey:', localKey);
+        loadLocalBOQData(localKey, isReadOnly);
+      }
+      return; // Skip autosave loading if loading temp data
+    }
+
+    // Load autosaved draft on component mount (only if not loading from URL or temp data)
+    if (!searchParams.get('load') && !searchParams.get('tempId') && !searchParams.get('localKey')) {
       const autosaveData = localStorage.getItem('projevo_boq_autosave');
       if (autosaveData) {
         try {
@@ -104,6 +247,240 @@ function BOQMakerContent() {
       }
     }
   }, [searchParams]);
+
+  // Function to load session BOQ data from localStorage (preferred method)
+  const loadSessionBOQData = (sessionKey, isReadOnly) => {
+    try {
+      console.log('📥 Loading session BOQ data from localStorage...', sessionKey);
+      
+      const sessionDataString = localStorage.getItem(sessionKey);
+      
+      if (!sessionDataString) {
+        console.warn('⚠️ Session BOQ data not found in localStorage with key:', sessionKey);
+        throw new Error('Session BOQ data not found. The data may have expired or been removed.');
+      }
+      
+      const sessionData = JSON.parse(sessionDataString);
+      console.log('✅ Session BOQ data loaded from localStorage:', sessionData);
+      
+      if (sessionData.boqPricing && Array.isArray(sessionData.boqPricing)) {
+        // Convert boqPricing array to tahapanKerja structure with negotiation data
+        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(
+          sessionData.boqPricing, 
+          sessionData.negotiation
+        );
+        
+        // Use negotiated prices if available
+        const displayAmount = sessionData.finalAmount || sessionData.totalAmount;
+        const displayTitle = `${sessionData.vendorName} - ${sessionData.projectTitle} BOQ`;
+        
+        setBoqTitle(displayTitle);
+        setTahapanKerja(convertedTahapanKerja);
+        setEditMode(!isReadOnly); // Set read-only mode based on parameter
+        setCurrentView('editor');
+        console.log('✅ Session BOQ data loaded successfully for viewing');
+        console.log('💰 Display amount:', displayAmount);
+        
+        // Clean up session data after successful load
+        setTimeout(() => {
+          try {
+            localStorage.removeItem(sessionKey);
+            console.log('🗑️ Session BOQ data cleaned up from localStorage');
+          } catch (cleanupError) {
+            console.warn('⚠️ Failed to cleanup session data from localStorage:', cleanupError);
+          }
+        }, 30000); // Clean up after 30 seconds
+        
+      } else {
+        console.warn('⚠️ Session BOQ data structure is invalid:', sessionData);
+        throw new Error('Session BOQ data structure is invalid or missing pricing information');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading session BOQ data from localStorage:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
+        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+      
+      alert(errorMessage);
+      
+      // Redirect back to dashboard or show empty editor
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  };
+
+  // Function to load temporary BOQ data from Firestore
+  const loadTempBOQData = async (tempId, isReadOnly) => {
+    try {
+      console.log('📥 Loading temporary BOQ data from Firestore...', tempId);
+      
+      const tempBOQData = await firestoreService.get('temp_boq_views', tempId);
+      
+      if (!tempBOQData) {
+        console.warn('⚠️ Temporary BOQ data not found in Firestore, checking localStorage fallback...');
+        
+        // Try to find a fallback in localStorage using a pattern
+        const localStorageKeys = Object.keys(localStorage);
+        const boqKey = localStorageKeys.find(key => 
+          key.startsWith('temp_boq_') && 
+          localStorage.getItem(key) !== null
+        );
+        
+        if (boqKey) {
+          console.log('🔄 Found localStorage fallback, switching to local data...');
+          loadLocalBOQData(boqKey, isReadOnly);
+          return;
+        }
+        
+        throw new Error('Temporary BOQ data not found in Firestore or localStorage. The data may have expired or been removed.');
+      }
+      
+      console.log('✅ Temporary BOQ data loaded:', tempBOQData);
+      
+      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
+        // Convert boqPricing array to tahapanKerja structure
+        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
+        
+        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
+        setTahapanKerja(convertedTahapanKerja);
+        setEditMode(!isReadOnly); // Set read-only mode based on parameter
+        setCurrentView('editor');
+        console.log('✅ BOQ data loaded successfully for viewing');
+        
+        // Clean up temporary data after loading (give more time for navigation)
+        setTimeout(async () => {
+          try {
+            await firestoreService.delete('temp_boq_views', tempId);
+            console.log('🗑️ Temporary BOQ data cleaned up');
+          } catch (cleanupError) {
+            console.warn('⚠️ Failed to cleanup temporary data:', cleanupError);
+          }
+        }, 30000); // Clean up after 30 seconds instead of 5
+      } else {
+        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
+        throw new Error('BOQ data structure is invalid or missing pricing information');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading temporary BOQ data:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
+        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+      
+      alert(errorMessage);
+      
+      // Redirect back to dashboard or show empty editor
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  };
+
+  // Function to load temporary BOQ data from localStorage
+  const loadLocalBOQData = (localKey, isReadOnly) => {
+    try {
+      console.log('📥 Loading temporary BOQ data from localStorage...', localKey);
+      
+      const tempBOQDataString = localStorage.getItem(localKey);
+      
+      if (!tempBOQDataString) {
+        console.warn('⚠️ Temporary BOQ data not found in localStorage with key:', localKey);
+        
+        // Try to find any temporary BOQ data as fallback
+        const localStorageKeys = Object.keys(localStorage);
+        const allBoqKeys = localStorageKeys.filter(key => key.startsWith('temp_boq_'));
+        
+        if (allBoqKeys.length > 0) {
+          console.log('🔄 Found alternative BOQ data, using most recent...', allBoqKeys);
+          const fallbackKey = allBoqKeys[allBoqKeys.length - 1]; // Use the most recent
+          const fallbackDataString = localStorage.getItem(fallbackKey);
+          
+          if (fallbackDataString) {
+            const fallbackData = JSON.parse(fallbackDataString);
+            console.log('✅ Using fallback temporary BOQ data:', fallbackData);
+            
+            if (fallbackData.boqPricing && Array.isArray(fallbackData.boqPricing)) {
+              const convertedTahapanKerja = convertBoqPricingToTahapanKerja(fallbackData.boqPricing);
+              
+              setBoqTitle(`${fallbackData.vendorName} - ${fallbackData.projectTitle} BOQ`);
+              setTahapanKerja(convertedTahapanKerja);
+              setEditMode(!isReadOnly);
+              setCurrentView('editor');
+              console.log('✅ Fallback BOQ data loaded successfully');
+              
+              // Clean up the fallback data after use
+              setTimeout(() => {
+                try {
+                  localStorage.removeItem(fallbackKey);
+                  console.log('🗑️ Fallback temporary data cleaned up');
+                } catch (cleanupError) {
+                  console.warn('⚠️ Failed to cleanup fallback data:', cleanupError);
+                }
+              }, 5000);
+              
+              return;
+            }
+          }
+        }
+        
+        throw new Error('Temporary BOQ data not found in localStorage. The data may have expired or been removed.');
+      }
+      
+      const tempBOQData = JSON.parse(tempBOQDataString);
+      console.log('✅ Temporary BOQ data loaded from localStorage:', tempBOQData);
+      
+      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
+        // Convert boqPricing array to tahapanKerja structure
+        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
+        
+        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
+        setTahapanKerja(convertedTahapanKerja);
+        setEditMode(!isReadOnly); // Set read-only mode based on parameter
+        setCurrentView('editor');
+        console.log('✅ BOQ data loaded successfully for viewing');
+        
+        // Clean up temporary data after loading
+        setTimeout(() => {
+          try {
+            localStorage.removeItem(localKey);
+            console.log('🗑️ Temporary BOQ data cleaned up from localStorage');
+          } catch (cleanupError) {
+            console.warn('⚠️ Failed to cleanup localStorage data:', cleanupError);
+          }
+        }, 5000); // Clean up after 5 seconds
+      } else {
+        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
+        throw new Error('BOQ data structure is invalid or missing pricing information');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading temporary BOQ data from localStorage:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
+        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+      
+      alert(errorMessage);
+      
+      // Redirect back to dashboard or show empty editor
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  };
 
   // Autosave effect - saves draft every few seconds when changes are made
   useEffect(() => {
@@ -1201,7 +1578,7 @@ function BOQMakerContent() {
                         </tr>
                       </thead>
                       <tbody>
-                      {tahapanKerja.map((tahapan, tahapanIndex) => {
+                        {tahapanKerja.map((tahapan, tahapanIndex) => {
                         // Create rows for each specification or empty rows for each level
                         const rows = [];
                         const isLastTahapan = tahapanIndex === tahapanKerja.length - 1;
@@ -1642,7 +2019,8 @@ function BOQMakerContent() {
                           Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}
                         </td>
                       </tr>
-                    </tbody>                    </table>
+                    </tbody>
+                  </table>
                   </div>
                 </div>
               </div>

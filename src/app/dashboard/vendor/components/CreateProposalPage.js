@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { serverTimestamp, doc, updateDoc, arrayRemove, arrayUnion, runTransaction } from 'firebase/firestore';
+import { doc, updateDoc, arrayRemove, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 
-export default function CreateProposalPage({ project, existingProposal, isEditing, onBack }) {
+export default function CreateProposalPage({ project, existingProposal, isEditing, onBack, onNavigateToProfile }) {
   const { user, userProfile } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Form data state
   const [proposalData, setProposalData] = useState({
@@ -183,7 +184,28 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
     setLoading(true);
     
     try {
+      // Validate required location information
+      if (!userProfile?.city || !userProfile?.province) {
+        setShowLocationModal(true);
+        setLoading(false);
+        return;
+      }
+      
       const now = new Date().toISOString();
+      
+      // Debug logging
+      console.log('=== PROPOSAL SUBMISSION DEBUG ===');
+      console.log('User:', user);
+      console.log('User UID:', user?.uid);
+      console.log('User Email:', user?.email);
+      console.log('User City:', userProfile?.city);
+      console.log('User Province:', userProfile?.province);
+      console.log('Project:', project);
+      console.log('Project ID:', project?.id);
+      console.log('Project Owner ID:', project?.ownerId);
+      console.log('Is Editing:', isEditing);
+      console.log('Existing Proposal:', existingProposal);
+      console.log('================================');
       
       if (isEditing && existingProposal) {
         // Update existing proposal in project's proposals array using transaction
@@ -210,6 +232,17 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
               console.log('Found vendor proposal to update:', proposal);
               return {
                 ...proposal,
+                vendorEmail: user.email,
+                vendorPhone: userProfile?.phoneNumber || '',
+                vendorFirstName: userProfile?.firstName || '',
+                vendorLastName: userProfile?.lastName || '',
+                vendorCompany: userProfile?.company || '',
+                vendorAccountType: userProfile?.accountType || 'individu',
+                vendorName: userProfile?.accountType === 'perusahaan' 
+                  ? (userProfile?.company || user.displayName || user.email?.split('@')[0] || 'Unknown Vendor')
+                  : (user.displayName || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || user.email?.split('@')[0] || 'Unknown Vendor'),
+                vendorCity: userProfile?.city || '',
+                vendorProvince: userProfile?.province || '',
                 boqPricing: proposalData.boqPricing,
                 totalAmount: proposalData.totalAmount,
                 negotiable: proposalData.negotiable,
@@ -227,7 +260,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
           // Update the document
           transaction.update(projectRef, {
             proposals: updatedProposals,
-            updatedAt: serverTimestamp()
+            updatedAt: now
           });
         });
         
@@ -241,14 +274,24 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
         }, 1000);
       } else {
         // Create new proposal
+        console.log('Creating new proposal...');
         const proposalData_new = {
           id: Date.now().toString(),
           projectId: project.id,
           vendorId: user.uid,
           vendorEmail: user.email,
-          vendorName: user.displayName || user.email?.split('@')[0] || 'Unknown Vendor',
+          vendorPhone: userProfile?.phoneNumber || '',
+          vendorFirstName: userProfile?.firstName || '',
+          vendorLastName: userProfile?.lastName || '',
+          vendorCompany: userProfile?.company || '',
+          vendorAccountType: userProfile?.accountType || 'individu',
+          vendorName: userProfile?.accountType === 'perusahaan' 
+            ? (userProfile?.company || user.displayName || user.email?.split('@')[0] || 'Unknown Vendor')
+            : (user.displayName || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || user.email?.split('@')[0] || 'Unknown Vendor'),
           vendorDomisili: userProfile?.location || 'Location not specified',
           vendorLocation: userProfile?.location || 'Location not specified',
+          vendorCity: userProfile?.city || '',
+          vendorProvince: userProfile?.province || '',
           boqPricing: proposalData.boqPricing,
           totalAmount: proposalData.totalAmount,
           negotiable: proposalData.negotiable,
@@ -259,12 +302,23 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
           createdAt: now
         };
 
+        console.log('New proposal data:', proposalData_new);
+
         // Add to project's proposals array
         const projectRef = doc(db, 'projects', project.id);
+        
+        console.log('Attempting to update project with ID:', project.id);
+        console.log('Update data:', {
+          proposals: 'arrayUnion(proposalData_new)',
+          updatedAt: now
+        });
+        
         await updateDoc(projectRef, {
           proposals: arrayUnion(proposalData_new),
-          updatedAt: serverTimestamp() // This is fine for top-level field
+          updatedAt: now
         });
+        
+        console.log('Proposal submitted successfully!');
         
         // Show success message and go back
         alert('Proposal submitted successfully!');
@@ -312,6 +366,22 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
       default:
         return false;
     }
+  };
+
+  // Location modal handlers
+  const handleSetLocationNow = () => {
+    setShowLocationModal(false);
+    // Use the callback to close create proposal view and navigate to profile
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    } else {
+      // Fallback to direct navigation
+      router.push('/dashboard/vendor?tab=profile');
+    }
+  };
+
+  const handleSetLocationLater = () => {
+    setShowLocationModal(false);
   };
 
   // Step navigation
@@ -1068,6 +1138,47 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
           </div>
         </div>
       </div>
+
+      {/* Location Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Your Location is Not Set Yet
+                </h3>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              To submit a proposal, you need to complete your location information (city and province). This helps project owners know where you're located.
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Do you want to set your location now or later?
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleSetLocationLater}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Later
+              </button>
+              <button
+                onClick={handleSetLocationNow}
+                className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Set Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -202,6 +202,38 @@ const ProjectMarketplace = () => {
     return duration.toString();
   };
 
+  // Helper function to calculate hours to deadline (same logic as HomeComponent)
+  const getTimeToDeadlineInHours = (deadline) => {
+    if (!deadline) return null;
+    
+    try {
+      let deadlineDate;
+      
+      if (deadline instanceof Date) {
+        deadlineDate = deadline;
+      } else if (deadline?.toDate) {
+        deadlineDate = deadline.toDate();
+      } else if (typeof deadline === 'string') {
+        deadlineDate = new Date(deadline);
+      } else if (typeof deadline === 'object' && deadline.seconds) {
+        deadlineDate = new Date(deadline.seconds * 1000);
+      } else {
+        return null;
+      }
+
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+        return null;
+      }
+
+      const now = new Date();
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      return diffTime / (1000 * 60 * 60); // Convert to hours
+    } catch (error) {
+      console.error('Error calculating time to deadline:', error);
+      return null;
+    }
+  };
+
   // Get company name from user profile
   const getCompanyName = async (ownerId) => {
     if (!ownerId) return 'Unknown Company';
@@ -272,10 +304,33 @@ const ProjectMarketplace = () => {
         // Filter for tender projects that are available for bidding AND approved for public display
         if (data.procurementMethod === 'Tender' && 
             data.status !== 'awarded' && 
+            data.status !== 'Awarded' &&
+            data.status !== 'Negotiate' &&
+            data.status !== 'On Going' &&
+            data.status !== 'Completed' &&
             data.isAvailableForBidding !== false &&
             !data.selectedVendorId &&
             data.isPublished === true &&
-            data.moderationStatus === 'approved') {
+            data.moderationStatus === 'approved' &&
+            !data.negotiationAccepted &&
+            !data.initialPaymentCompleted &&
+            !data.hasNegotiationOffer) {
+          
+          // Check if any proposal has been accepted (which means project is awarded)
+          let hasAcceptedProposal = false;
+          if (data.proposals && Array.isArray(data.proposals)) {
+            hasAcceptedProposal = data.proposals.some(proposal => 
+              proposal.status === 'accepted' || 
+              (proposal.negotiation && proposal.negotiation.status === 'accepted')
+            );
+          }
+          
+          // Skip projects with accepted proposals
+          if (hasAcceptedProposal) {
+            console.log(`Skipping project ${doc.id} - has accepted proposal`);
+            return;
+          }
+          
           console.log('Found tender project:', doc.id, data.status);
           
           // Calculate tender deadline from createdAt + tenderDuration
@@ -289,6 +344,45 @@ const ProjectMarketplace = () => {
           
           // Use calculated deadline or fallback to stored deadlines
           const finalDeadline = calculatedDeadline || data.tenderDeadline || data.deadline;
+          
+          // Check if deadline has passed - if so, skip this project
+          if (finalDeadline) {
+            let deadlineDate;
+            
+            try {
+              if (finalDeadline instanceof Date) {
+                deadlineDate = finalDeadline;
+              } else if (finalDeadline?.toDate) {
+                deadlineDate = finalDeadline.toDate();
+              } else if (typeof finalDeadline === 'string') {
+                deadlineDate = new Date(finalDeadline);
+              } else if (typeof finalDeadline === 'object' && finalDeadline.seconds) {
+                deadlineDate = new Date(finalDeadline.seconds * 1000);
+              }
+              
+              if (deadlineDate && !isNaN(deadlineDate.getTime())) {
+                const now = new Date();
+                const diffTime = deadlineDate.getTime() - now.getTime();
+                
+                // Skip if deadline has passed
+                if (diffTime <= 0) {
+                  console.log(`Skipping project ${doc.id} - deadline has passed:`, deadlineDate);
+                  return;
+                }
+                
+                // Skip if project is locked (less than 24 hours to deadline)
+                const hoursToDeadline = diffTime / (1000 * 60 * 60);
+                if (hoursToDeadline <= 24) {
+                  console.log(`Skipping project ${doc.id} - project is locked (${hoursToDeadline.toFixed(1)} hours to deadline):`, deadlineDate);
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error(`Error checking deadline for project ${doc.id}:`, error);
+              // If we can't determine the deadline, better to include it than exclude it
+            }
+          }
+          
           const bidCountdownText = calculateBidCountdown(finalDeadline);
           
           console.log(`Final deadline for ${doc.id}:`, {
@@ -394,7 +488,33 @@ const ProjectMarketplace = () => {
     });
     const propertyMatch = selectedPropertyTypes.length === 0 || selectedPropertyTypes.includes(item.propertyType);
     
-    return projectTypeMatch && scopeMatch && propertyMatch;
+    // Additional filter to exclude expired projects, locked projects, and awarded projects
+    const notExpired = item.bidCountdown !== 'Deadline passed';
+    
+    // Check if project is locked (less than 24 hours to deadline)
+    const timeToDeadline = getTimeToDeadlineInHours(item.deadline || item.tenderDeadline);
+    const notLocked = timeToDeadline === null || timeToDeadline > 24;
+    
+    const notAwarded = !item.selectedVendorId && 
+                      item.status !== 'awarded' && 
+                      item.status !== 'Awarded' &&
+                      item.status !== 'Negotiate' &&
+                      item.status !== 'On Going' &&
+                      item.status !== 'Completed' &&
+                      !item.negotiationAccepted &&
+                      !item.initialPaymentCompleted &&
+                      !item.hasNegotiationOffer;
+    
+    // Check if any proposal has been accepted
+    let hasAcceptedProposal = false;
+    if (item.proposals && Array.isArray(item.proposals)) {
+      hasAcceptedProposal = item.proposals.some(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+    }
+    
+    return projectTypeMatch && scopeMatch && propertyMatch && notExpired && notLocked && notAwarded && !hasAcceptedProposal;
   });
 
   // Sort filtered data
@@ -598,7 +718,15 @@ const ProjectMarketplace = () => {
 
   const handleCreateProposal = (project) => {
     setSelectedProject(project);
-    setIsProposalModalOpen(true);
+    
+    // Check if this is a resubmission (vendor wants to edit existing proposal)
+    if (project.isResubmission) {
+      console.log('🔄 Opening proposal editor for resubmission:', project.existingProposal);
+      setShowCreateProposal(true);
+    } else {
+      // Regular proposal creation - show modal
+      setIsProposalModalOpen(true);
+    }
   };
 
   const closeToast = () => {
@@ -706,9 +834,15 @@ const ProjectMarketplace = () => {
         ) : showCreateProposal && selectedProject ? (
           <CreateProposalPage
             project={selectedProject}
-            existingProposal={getVendorProposal(selectedProject)}
-            isEditing={hasVendorSubmittedProposal(selectedProject)}
+            existingProposal={selectedProject.isResubmission ? selectedProject.existingProposal : getVendorProposal(selectedProject)}
+            isEditing={selectedProject.isResubmission || hasVendorSubmittedProposal(selectedProject)}
             onBack={handleBackToList}
+            onNavigateToProfile={() => {
+              // Close the create proposal view and navigate to profile
+              setShowCreateProposal(false);
+              setSelectedProject(null);
+              router.push('/dashboard/vendor?tab=profile');
+            }}
           />
         ) : showDetailsView && selectedProject ? (
           <ProjectDetailPage

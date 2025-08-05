@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import SavedBOQSelector from './SavedBOQSelector';
 
@@ -49,6 +49,62 @@ export default function CreateProjectComponent({ onBack }) {
   const [showBOQSelector, setShowBOQSelector] = useState(false);
   const [selectedBOQ, setSelectedBOQ] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingProjectData, setEditingProjectData] = useState(null);
+
+  // Check for edit mode when component mounts
+  useEffect(() => {
+    const editProjectData = localStorage.getItem('editProject');
+    if (editProjectData) {
+      try {
+        const projectData = JSON.parse(editProjectData);
+        console.log('Loading project for editing:', projectData);
+        
+        setIsEditMode(true);
+        setEditingProjectId(projectData.id);
+        setEditingProjectData(projectData); // Store the original project data including revision feedback
+        
+        // Populate form with existing project data
+        setFormData({
+          projectTitle: projectData.title || projectData.projectTitle || '',
+          province: projectData.province || '',
+          city: projectData.city || projectData.marketplace?.location?.city || '',
+          fullAddress: projectData.fullAddress || projectData.marketplace?.location?.fullAddress || '',
+          projectType: projectData.projectType || '',
+          procurementMethod: projectData.procurementMethod || '',
+          projectScope: projectData.projectScope || projectData.scope || [],
+          propertyType: projectData.propertyType || '',
+          otherProperty: projectData.otherProperty || '',
+          estimatedBudget: projectData.estimatedBudget || projectData.marketplace?.budget || projectData.budget || '',
+          estimatedDuration: projectData.estimatedDuration || projectData.duration || '',
+          tenderDuration: projectData.tenderDuration || '',
+          estimatedStartDate: projectData.estimatedStartDate || projectData.startDate || '',
+          supportingDocuments: projectData.supportingDocuments || [],
+          boqDocuments: projectData.boqDocuments || [],
+          drawingDocuments: projectData.drawingDocuments || [],
+          documentTitles: projectData.documentTitles || {},
+          selectedBOQ: projectData.selectedBOQ || null,
+          boqData: projectData.attachedBOQ || projectData.boqData || null,
+          specialNotes: projectData.specialNotes || projectData.description || '',
+          agreementTerms: true, // Always true for existing projects
+          agreementData: true,
+          agreementValidation: true
+        });
+        
+        // Set BOQ data if available
+        if (projectData.attachedBOQ || projectData.boqData) {
+          setSelectedBOQ(projectData.attachedBOQ || projectData.boqData);
+        }
+        
+        // Clear localStorage after loading
+        localStorage.removeItem('editProject');
+      } catch (error) {
+        console.error('Error loading edit project data:', error);
+        localStorage.removeItem('editProject');
+      }
+    }
+  }, []);
 
   const projectTypes = [
     'Desain', 'Bangun', 'Renovasi'
@@ -192,6 +248,29 @@ export default function CreateProjectComponent({ onBack }) {
     return formData.province && cities[formData.province] ? cities[formData.province] : [];
   };
 
+  // Helper function to render field revision comment
+  const renderFieldRevisionComment = (fieldKey) => {
+    if (!isEditMode || !editingProjectData?.fieldRevisions || !editingProjectData.fieldRevisions[fieldKey]) {
+      return null;
+    }
+
+    return (
+      <div className="mt-2 bg-red-50 border border-red-200 rounded-lg p-3">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="w-4 h-4 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-2 flex-1">
+            <p className="text-sm font-medium text-red-800">Admin Comment:</p>
+            <p className="text-sm text-red-700 mt-1">{editingProjectData.fieldRevisions[fieldKey]}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleStepChange = (step) => {
     setCurrentStep(step);
   };
@@ -307,13 +386,16 @@ export default function CreateProjectComponent({ onBack }) {
 
     setLoading(true);
     try {
-      // Generate custom project ID
-      console.log('About to generate custom project ID for project type:', formData.projectType);
-      const customProjectId = await generateProjectId(formData.projectType);
-      console.log('Generated custom project ID:', customProjectId);
+      let customProjectId;
+      
+      // Only generate new ID for new projects
+      if (!isEditMode) {
+        console.log('About to generate custom project ID for project type:', formData.projectType);
+        customProjectId = await generateProjectId(formData.projectType);
+        console.log('Generated custom project ID:', customProjectId);
+      }
 
       const projectData = {
-        customId: customProjectId, // Add custom ID field
         ...formData,
         title: formData.projectTitle,
         ownerId: user.uid,
@@ -324,9 +406,7 @@ export default function CreateProjectComponent({ onBack }) {
         progress: 0,
         isPublished: false, // Will be set to true after approval
         publishedAt: null, // Will be set when approved
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        submittedAt: serverTimestamp(),
         team: [],
         milestones: [
           { name: 'Planning', completed: false, date: '' },
@@ -349,6 +429,13 @@ export default function CreateProjectComponent({ onBack }) {
         }
       };
 
+      // Add custom ID only for new projects
+      if (!isEditMode) {
+        projectData.customId = customProjectId;
+        projectData.createdAt = serverTimestamp();
+        projectData.submittedAt = serverTimestamp();
+      }
+
       // Include the complete BOQ data if selected
       if (selectedBOQ) {
         console.log('Attaching BOQ to project:', selectedBOQ);
@@ -365,15 +452,26 @@ export default function CreateProjectComponent({ onBack }) {
         console.log('No BOQ selected for this project');
       }
 
-      const docRef = await addDoc(collection(db, 'projects'), projectData);
-      console.log('Project created with Firestore ID:', docRef.id, 'Custom ID:', customProjectId);
-      console.log('Full project data saved:', projectData);
+      if (isEditMode && editingProjectId) {
+        // Update existing project
+        await updateDoc(doc(db, 'projects', editingProjectId), projectData);
+        console.log('Project updated with ID:', editingProjectId);
+        console.log('Updated project data:', projectData);
+        
+        alert('Project updated successfully! Your changes have been saved and the project is pending approval.');
+      } else {
+        // Create new project
+        const docRef = await addDoc(collection(db, 'projects'), projectData);
+        console.log('Project created with Firestore ID:', docRef.id, 'Custom ID:', customProjectId);
+        console.log('Full project data saved:', projectData);
+        
+        alert(`Project submitted successfully! Your project ID is: ${customProjectId}. Your project is now pending approval and will be available in the marketplace once approved.`);
+      }
       
-      alert(`Project submitted successfully! Your project ID is: ${customProjectId}. Your project is now pending approval and will be available in the marketplace once approved.`);
       onBack();
     } catch (error) {
-      console.error('Error creating project:', error);
-      alert('Failed to create project. Please try again.');
+      console.error(isEditMode ? 'Error updating project:' : 'Error creating project:', error);
+      alert(isEditMode ? 'Failed to update project. Please try again.' : 'Failed to create project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -394,7 +492,9 @@ export default function CreateProjectComponent({ onBack }) {
             Back to Projects
           </button>
           <div className="h-6 w-px bg-gray-300"></div>
-          <h1 className="text-2xl font-bold text-gray-900">Buat Proyek Baru</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? 'Edit Project' : 'Buat Proyek Baru'}
+          </h1>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -405,6 +505,54 @@ export default function CreateProjectComponent({ onBack }) {
           </button>
         </div>
       </div>
+
+      {/* Revision Feedback Display */}
+      {isEditMode && (
+        <div>
+          {/* Overall Revision Feedback */}
+          {editingProjectData?.overallRevision && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Admin meminta revisi pada dokumentasi proyek ini
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p className="font-medium">Catatan Keseluruhan:</p>
+                    <p className="mt-1 bg-white/50 p-2 rounded border border-red-200">{editingProjectData.overallRevision}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Legacy Admin Notes */}
+          {editingProjectData?.adminNotes && !editingProjectData?.overallRevision && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Admin meminta revisi pada proyek ini
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p className="bg-white/50 p-2 rounded border border-red-200">{editingProjectData.adminNotes}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Form Content */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -434,6 +582,7 @@ export default function CreateProjectComponent({ onBack }) {
                 placeholder="Masukkan judul proyek sesuai format"
                 required
               />
+              {renderFieldRevisionComment('judulProyek')}
             </div>
 
             {/* 2. Lokasi Proyek */}
@@ -494,6 +643,7 @@ export default function CreateProjectComponent({ onBack }) {
                   placeholder="Masukkan alamat lengkap proyek"
                   required
                 />
+                {renderFieldRevisionComment('lokasiProyek')}
               </div>
             </div>
           </div>
@@ -527,6 +677,7 @@ export default function CreateProjectComponent({ onBack }) {
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
+              {renderFieldRevisionComment('jenisProyek')}
             </div>
 
             {/* 2. Ruang Lingkup */}
@@ -547,6 +698,7 @@ export default function CreateProjectComponent({ onBack }) {
                   </label>
                 ))}
               </div>
+              {renderFieldRevisionComment('ruangLingkup')}
             </div>
 
             {/* 3. Properti */}
@@ -581,6 +733,7 @@ export default function CreateProjectComponent({ onBack }) {
                   />
                 </div>
               )}
+              {renderFieldRevisionComment('properti')}
             </div>
 
             {/* 4. Estimasi Anggaran */}
@@ -607,6 +760,7 @@ export default function CreateProjectComponent({ onBack }) {
               <p className="text-xs text-gray-400 mt-1">
                 Contoh: 50,000,000 (untuk Rp 50.000.000)
               </p>
+              {renderFieldRevisionComment('estimasiAnggaran')}
             </div>
 
             {/* 5. Estimasi Durasi Proyek */}
@@ -629,6 +783,7 @@ export default function CreateProjectComponent({ onBack }) {
                 <option value="< 1 Tahun">&lt; 1 Tahun</option>
                 <option value="> 1 Tahun">&gt; 1 Tahun</option>
               </select>
+              {renderFieldRevisionComment('estimasiDurasi')}
             </div>
 
             {/* 6. Durasi Tender */}
@@ -653,6 +808,7 @@ export default function CreateProjectComponent({ onBack }) {
                 <option value="4 Bulan">4 Bulan</option>
                 <option value="5 Bulan">5 Bulan</option>
               </select>
+              {renderFieldRevisionComment('durasiTender')}
             </div>
 
             {/* 7. Estimasi Mulai Proyek */}
@@ -716,6 +872,7 @@ export default function CreateProjectComponent({ onBack }) {
                   </select>
                 </div>
               </div>
+              {renderFieldRevisionComment('estimasiMulai')}
             </div>
 
             {/* 8. Metode Pengadaan */}
@@ -737,6 +894,7 @@ export default function CreateProjectComponent({ onBack }) {
                   <option key={method} value={method}>{method}</option>
                 ))}
               </select>
+              {renderFieldRevisionComment('metodePengadaan')}
             </div>
           </div>
 
@@ -827,6 +985,7 @@ export default function CreateProjectComponent({ onBack }) {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter any special requirements, notes, or additional information for vendors"
               />
+              {renderFieldRevisionComment('specialNotes')}
             </div>
           </div>
 

@@ -100,7 +100,7 @@ export const firestoreService = {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-      return docRef.id;
+      return { id: docRef.id, ref: docRef }; // Return both ID and reference
     } catch (error) {
       throw new Error(`Error adding document: ${error.message}`);
     }

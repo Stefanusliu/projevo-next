@@ -22,8 +22,9 @@ export default function ProjectReviewComponent() {
   const [processingAction, setProcessingAction] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
-  const [revisionNotes, setRevisionNotes] = useState('');
+  const [fieldRevisions, setFieldRevisions] = useState({});
+  const [overallRevision, setOverallRevision] = useState('');
+  const [showFieldRevisions, setShowFieldRevisions] = useState({});
 
   useEffect(() => {
     fetchPendingProjects();
@@ -111,29 +112,35 @@ export default function ProjectReviewComponent() {
     }
   };
 
-  const handleRequestRevision = async (projectId, notes = '') => {
-    if (!notes || notes.trim() === '') {
-      alert('Please provide revision notes');
+  const handleRequestRevision = async (projectId, notes = '', fieldComments = {}, overallComment = '') => {
+    if ((!notes || notes.trim() === '') && (!overallComment || overallComment.trim() === '') && Object.keys(fieldComments).length === 0) {
+      alert('Please provide revision notes or field-specific comments');
       return;
     }
 
     try {
       setProcessingAction(projectId);
       const projectRef = doc(db, 'projects', projectId);
-      await updateDoc(projectRef, {
+      
+      // Combine all revision data
+      const revisionData = {
         moderationStatus: 'revision_required',
         status: 'Revise',
         isPublished: false,
         revisionRequestedAt: serverTimestamp(),
-        adminNotes: notes,
+        adminNotes: notes || overallComment, // Backward compatibility
+        overallRevision: overallComment,
+        fieldRevisions: fieldComments,
         updatedAt: serverTimestamp()
-      });
+      };
+
+      await updateDoc(projectRef, revisionData);
 
       // Update local state
       setProjects(projects.filter(p => p.id !== projectId));
       setShowProjectDetails(false);
-      setShowRevisionModal(false);
-      setRevisionNotes('');
+      setFieldRevisions({});
+      setOverallRevision('');
       alert('Revision request sent successfully!');
     } catch (error) {
       console.error('Error requesting revision:', error);
@@ -154,15 +161,22 @@ export default function ProjectReviewComponent() {
     setRejectionReason('');
   };
 
-  const openRevisionModal = (project) => {
+  const openProjectDetails = (project) => {
     setSelectedProject(project);
-    setShowRevisionModal(true);
-    setRevisionNotes('');
+    setShowProjectDetails(true);
+    // Reset revision form when opening a new project
+    setFieldRevisions({});
+    setOverallRevision('');
+    setShowFieldRevisions({});
   };
 
-  const closeRevisionModal = () => {
-    setShowRevisionModal(false);
-    setRevisionNotes('');
+  const closeProjectDetails = () => {
+    setShowProjectDetails(false);
+    setSelectedProject(null);
+    // Reset revision form when closing details
+    setFieldRevisions({});
+    setOverallRevision('');
+    setShowFieldRevisions({});
   };
 
   const formatDate = (dateField) => {
@@ -203,16 +217,6 @@ export default function ProjectReviewComponent() {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
-
-  const openProjectDetails = (project) => {
-    setSelectedProject(project);
-    setShowProjectDetails(true);
-  };
-
-  const closeProjectDetails = () => {
-    setSelectedProject(null);
-    setShowProjectDetails(false);
   };
 
   // Helper function to format budget with thousand separators
@@ -329,13 +333,6 @@ export default function ProjectReviewComponent() {
                         {processingAction === project.id ? 'Processing...' : 'Approve'}
                       </button>
                       <button
-                        onClick={() => openRevisionModal(project)}
-                        disabled={processingAction === project.id}
-                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                      >
-                        {processingAction === project.id ? 'Processing...' : 'Request Revision'}
-                      </button>
-                      <button
                         onClick={() => openRejectModal(project)}
                         disabled={processingAction === project.id}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -374,13 +371,6 @@ export default function ProjectReviewComponent() {
                 {processingAction === selectedProject.id ? 'Processing...' : 'Reject Project'}
               </button>
               <button
-                onClick={() => openRevisionModal(selectedProject)}
-                disabled={processingAction === selectedProject.id}
-                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                {processingAction === selectedProject.id ? 'Processing...' : 'Request Revision'}
-              </button>
-              <button
                 onClick={() => handleApproveProject(selectedProject.id)}
                 disabled={processingAction === selectedProject.id}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
@@ -392,51 +382,418 @@ export default function ProjectReviewComponent() {
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Project Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium text-gray-700">Title:</span> <span className="text-gray-900">{selectedProject.title || selectedProject.projectTitle}</span></div>
-                    <div><span className="font-medium text-gray-700">Type:</span> <span className="text-gray-900">{selectedProject.projectType}</span></div>
-                    <div><span className="font-medium text-gray-700">Budget:</span> <span className="text-gray-900">{formatBudget(selectedProject.marketplace?.budget || selectedProject.estimatedBudget)}</span></div>
-                    <div><span className="font-medium text-gray-700">Duration:</span> <span className="text-gray-900">{selectedProject.estimatedDuration}</span></div>
-                    <div><span className="font-medium text-gray-700">Location:</span> <span className="text-gray-900">{selectedProject.fullAddress}</span></div>
-                    <div><span className="font-medium text-gray-700">Procurement:</span> <span className="text-gray-900">{selectedProject.procurementMethod}</span></div>
-                    <div><span className="font-medium text-gray-700">Property Type:</span> <span className="text-gray-900">{selectedProject.propertyType}</span></div>
+              {/* Project Review Details in Indonesian Format */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 mb-4 text-lg">Detail Review Proyek</h4>
+                
+                {/* Judul Proyek */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Judul Proyek :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, judulProyek: !prev.judulProyek }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.title || selectedProject.projectTitle || '-'}</div>
+                    {showFieldRevisions.judulProyek && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.judulProyek || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, judulProyek: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Judul Proyek..."
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Owner Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium text-gray-700">Name:</span> <span className="text-gray-900">{selectedProject.ownerName || 'Not provided'}</span></div>
-                    <div><span className="font-medium text-gray-700">Email:</span> <span className="text-gray-900">{selectedProject.ownerEmail}</span></div>
-                    <div><span className="font-medium text-gray-700">Submitted:</span> <span className="text-gray-900">{formatDate(selectedProject.submittedAt || selectedProject.createdAt)}</span></div>
+                {/* Lokasi Proyek */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Lokasi Proyek :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, lokasiProyek: !prev.lokasiProyek }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>
+                      {selectedProject.fullAddress || 
+                       `${selectedProject.marketplace?.location?.city || selectedProject.city || ''}, ${selectedProject.marketplace?.location?.province || selectedProject.province || ''}` || 
+                       '-'}
+                    </div>
+                    {showFieldRevisions.lokasiProyek && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.lokasiProyek || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, lokasiProyek: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Lokasi Proyek..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Jenis Proyek */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Jenis Proyek :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, jenisProyek: !prev.jenisProyek }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.projectType || '-'}</div>
+                    {showFieldRevisions.jenisProyek && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.jenisProyek || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, jenisProyek: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Jenis Proyek..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ruang Lingkup */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Ruang Lingkup :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, ruangLingkup: !prev.ruangLingkup }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="col-span-2">
+                    <div>
+                      {selectedProject.projectScope && selectedProject.projectScope.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProject.projectScope.map((scope, index) => (
+                            <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                              {scope}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-900">-</span>
+                      )}
+                    </div>
+                    {showFieldRevisions.ruangLingkup && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.ruangLingkup || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, ruangLingkup: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Ruang Lingkup..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Properti */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Properti :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, properti: !prev.properti }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.propertyType || '-'}</div>
+                    {showFieldRevisions.properti && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.properti || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, properti: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Properti..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estimasi Anggaran */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Estimasi Anggaran :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, estimasiAnggaran: !prev.estimasiAnggaran }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{formatBudget(selectedProject.marketplace?.budget || selectedProject.estimatedBudget) || '-'}</div>
+                    {showFieldRevisions.estimasiAnggaran && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.estimasiAnggaran || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, estimasiAnggaran: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Estimasi Anggaran..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estimasi Durasi Proyek */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Estimasi Durasi Proyek :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, estimasiDurasi: !prev.estimasiDurasi }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.estimatedDuration || '-'}</div>
+                    {showFieldRevisions.estimasiDurasi && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.estimasiDurasi || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, estimasiDurasi: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Estimasi Durasi Proyek..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Durasi Tender */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Durasi Tender :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, durasiTender: !prev.durasiTender }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.tenderDuration || '-'}</div>
+                    {showFieldRevisions.durasiTender && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.durasiTender || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, durasiTender: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Durasi Tender..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estimasi Mulai Proyek */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Estimasi Mulai Proyek :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, estimasiMulai: !prev.estimasiMulai }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.startDate || selectedProject.estimatedStartDate || '-'}</div>
+                    {showFieldRevisions.estimasiMulai && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.estimasiMulai || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, estimasiMulai: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Estimasi Mulai Proyek..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metode Pengadaan */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Metode Pengadaan :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, metodePengadaan: !prev.metodePengadaan }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>{selectedProject.procurementMethod || '-'}</div>
+                    {showFieldRevisions.metodePengadaan && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.metodePengadaan || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, metodePengadaan: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Metode Pengadaan..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Special Notes */}
+                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                  <div className="font-medium text-gray-700 flex items-center justify-between">
+                    Special Notes :
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, specialNotes: !prev.specialNotes }))}
+                      className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded hover:bg-orange-200"
+                    >
+                      Comment
+                    </button>
+                  </div>
+                  <div className="text-gray-900 col-span-2">
+                    <div>
+                      {selectedProject.specialNotes ? (
+                        <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                          {selectedProject.specialNotes}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
+                    </div>
+                    {showFieldRevisions.specialNotes && (
+                      <div className="mt-2">
+                        <textarea
+                          value={fieldRevisions.specialNotes || ''}
+                          onChange={(e) => setFieldRevisions(prev => ({ ...prev, specialNotes: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                          rows={2}
+                          placeholder="Add comment for Special Notes..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Overall Revision Section */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="font-semibold text-gray-900">Overall Documentation Comment</h5>
+                    <button
+                      onClick={() => setShowFieldRevisions(prev => ({ ...prev, overallComment: !prev.overallComment }))}
+                      className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200"
+                    >
+                      Add Overall Comment
+                    </button>
+                  </div>
+                  {showFieldRevisions.overallComment && (
+                    <div className="mt-2">
+                      <textarea
+                        value={overallRevision}
+                        onChange={(e) => setOverallRevision(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                        rows={3}
+                        placeholder="Add overall comment about the entire project documentation..."
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons for Revision */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => handleRequestRevision(selectedProject.id, '', fieldRevisions, overallRevision)}
+                      disabled={(!overallRevision.trim() && Object.keys(fieldRevisions).filter(key => fieldRevisions[key]?.trim()).length === 0) || processingAction === selectedProject.id}
+                      className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processingAction === selectedProject.id ? 'Processing...' : 'Save Revision Comments & Request Revision'}
+                    </button>
+                  </div>
+                  
+                  {/* Show summary of active comments */}
+                  {(Object.keys(fieldRevisions).filter(key => fieldRevisions[key]?.trim()).length > 0 || overallRevision?.trim()) && (
+                    <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <h6 className="text-sm font-medium text-orange-800 mb-2">Active Revision Comments:</h6>
+                      <div className="space-y-1 text-xs text-orange-700">
+                        {Object.entries(fieldRevisions).map(([field, comment]) => 
+                          comment?.trim() ? (
+                            <div key={field}>
+                              • <strong>
+                                {field === 'judulProyek' ? 'Judul Proyek' :
+                                 field === 'lokasiProyek' ? 'Lokasi Proyek' :
+                                 field === 'jenisProyek' ? 'Jenis Proyek' :
+                                 field === 'ruangLingkup' ? 'Ruang Lingkup' :
+                                 field === 'properti' ? 'Properti' :
+                                 field === 'estimasiAnggaran' ? 'Estimasi Anggaran' :
+                                 field === 'estimasiDurasi' ? 'Estimasi Durasi Proyek' :
+                                 field === 'durasiTender' ? 'Durasi Tender' :
+                                 field === 'estimasiMulai' ? 'Estimasi Mulai Proyek' :
+                                 field === 'metodePengadaan' ? 'Metode Pengadaan' :
+                                 field === 'specialNotes' ? 'Special Notes' : field}:
+                              </strong> {comment}
+                            </div>
+                          ) : null
+                        )}
+                        {overallRevision?.trim() && (
+                          <div>• <strong>Overall Documentation:</strong> {overallRevision}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Owner Information Section */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-4">Informasi Pemilik Proyek</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-4 py-2">
+                      <div className="font-medium text-gray-700">Nama :</div>
+                      <div className="text-gray-900 col-span-2">{selectedProject.ownerName || 'Tidak tersedia'}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 py-2">
+                      <div className="font-medium text-gray-700">Email :</div>
+                      <div className="text-gray-900 col-span-2">{selectedProject.ownerEmail || '-'}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 py-2">
+                      <div className="font-medium text-gray-700">Tanggal Submit :</div>
+                      <div className="text-gray-900 col-span-2">{formatDate(selectedProject.submittedAt || selectedProject.createdAt)}</div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {selectedProject.projectScope && selectedProject.projectScope.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Project Scope</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.projectScope.map((scope, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                        {scope}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedProject.specialNotes && (
-                <div className="mt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Special Notes</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    {selectedProject.specialNotes}
-                  </p>
-                </div>
-              )}
 
               {selectedProject.attachedBOQ && (
                 <div className="mt-6">
@@ -701,55 +1058,6 @@ export default function ProjectReviewComponent() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {processingAction === selectedProject.id ? 'Processing...' : 'Reject Project'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Revision Request Modal */}
-      {showRevisionModal && selectedProject && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Request Revision
-              </h3>
-              <button
-                onClick={closeRevisionModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <MdClose className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-gray-600 mb-4">
-                Please provide specific notes about what needs to be revised. These notes will be shown to the project owner.
-              </p>
-              <textarea
-                value={revisionNotes}
-                onChange={(e) => setRevisionNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-                rows={4}
-                placeholder="Enter revision notes (e.g., Please provide more details about the project scope, update budget information, etc.)..."
-                required
-              />
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={closeRevisionModal}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleRequestRevision(selectedProject.id, revisionNotes)}
-                disabled={!revisionNotes.trim() || processingAction === selectedProject.id}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
-                {processingAction === selectedProject.id ? 'Processing...' : 'Request Revision'}
               </button>
             </div>
           </div>

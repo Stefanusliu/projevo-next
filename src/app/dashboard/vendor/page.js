@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '../../../contexts/AuthContext';
@@ -21,9 +22,23 @@ import Head from 'next/head';
 
 function VendorDashboardContent() {
   const { user, userProfile } = useAuth();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
-  const [activeView, setActiveView] = useState("projects"); // Add state for active view
+  
+  // Initialize activeView from URL parameter or default to "projects"
+  const [activeView, setActiveView] = useState(() => {
+    const tab = searchParams.get('tab');
+    return tab === 'profile' ? 'profile' : 'projects';
+  });
+
+  // Update activeView when URL parameters change
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'profile') {
+      setActiveView('profile');
+    }
+  }, [searchParams]);
 
   // Get display name from userProfile or user
   const displayName = userProfile?.displayName || user?.displayName || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'User';

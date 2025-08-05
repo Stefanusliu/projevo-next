@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 
 const BOQDisplay = ({ project, isVendorView = false, showNegotiatedPrices = false }) => {
-  const [expandedSections, setExpandedSections] = useState({});
-  const [expandedItems, setExpandedItems] = useState({});
-
   // Function to get BOQ data from different project structures
   const getBOQData = () => {
     // Check for attached BOQ structure (from project creation)
@@ -186,20 +183,6 @@ const BOQDisplay = ({ project, isVendorView = false, showNegotiatedPrices = fals
     return tahapanKerjaList.reduce((total, tahapan) => total + calculateTahapanKerjaTotal(tahapan), 0);
   };
 
-  const toggleSection = (sectionId) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
-  };
-
-  const toggleItem = (itemId) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
-  };
-
   const boqData = getBOQData();
   
   // Show "No BOQ Available" if no data found
@@ -221,8 +204,75 @@ const BOQDisplay = ({ project, isVendorView = false, showNegotiatedPrices = fals
   
   const grandTotal = calculateGrandTotal(boqData.tahapanKerja);
 
+  // Flatten BOQ data for table display
+  const flattenBOQData = () => {
+    const flatData = [];
+    
+    boqData.tahapanKerja.forEach((tahapan, tahapanIndex) => {
+      tahapan.jenisKerja?.forEach((jenis, jenisIndex) => {
+        jenis.uraian?.forEach((uraian, uraianIndex) => {
+          // Handle spec items
+          if (uraian.spec && uraian.spec.length > 0) {
+            uraian.spec.forEach((spec, specIndex) => {
+              const originalPrice = spec.pricePerPcs || 0;
+              const negotiatedPrice = spec.negotiatedPrice;
+              const hasNegotiatedPrice = negotiatedPrice !== undefined && negotiatedPrice !== originalPrice;
+              const displayPrice = hasNegotiatedPrice ? negotiatedPrice : originalPrice;
+              const subtotal = (spec.volume || 0) * displayPrice;
+
+              flatData.push({
+                id: `spec-${tahapanIndex}-${jenisIndex}-${uraianIndex}-${specIndex}`,
+                tahapanName: tahapan.name || `Work Phase ${tahapanIndex + 1}`,
+                jenisName: jenis.name || `Category ${jenisIndex + 1}`,
+                uraianName: uraian.name || `Item ${uraianIndex + 1}`,
+                item: spec.description || `Specification ${specIndex + 1}`,
+                volume: spec.volume || 0,
+                unit: spec.satuan || '-',
+                originalPrice: originalPrice,
+                negotiatedPrice: negotiatedPrice,
+                hasNegotiatedPrice: hasNegotiatedPrice,
+                displayPrice: displayPrice,
+                subtotal: subtotal
+              });
+            });
+          }
+          
+          // Handle items
+          if (uraian.items && uraian.items.length > 0) {
+            uraian.items.forEach((item, itemIndex) => {
+              const originalPrice = item.unitPrice || 0;
+              const negotiatedPrice = item.negotiatedPrice;
+              const hasNegotiatedPrice = negotiatedPrice !== undefined && negotiatedPrice !== originalPrice;
+              const displayPrice = hasNegotiatedPrice ? negotiatedPrice : originalPrice;
+              const subtotal = (item.volume || 0) * displayPrice;
+
+              flatData.push({
+                id: `item-${tahapanIndex}-${jenisIndex}-${uraianIndex}-${itemIndex}`,
+                tahapanName: tahapan.name || `Work Phase ${tahapanIndex + 1}`,
+                jenisName: jenis.name || `Category ${jenisIndex + 1}`,
+                uraianName: uraian.name || `Item ${uraianIndex + 1}`,
+                item: item.item || item.description || `Item ${itemIndex + 1}`,
+                volume: item.volume || 0,
+                unit: item.unit || '-',
+                originalPrice: originalPrice,
+                negotiatedPrice: negotiatedPrice,
+                hasNegotiatedPrice: hasNegotiatedPrice,
+                displayPrice: displayPrice,
+                subtotal: subtotal
+              });
+            });
+          }
+        });
+      });
+    });
+    
+    return flatData;
+  };
+
+  const flattenedData = flattenBOQData();
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* BOQ Header */}
       <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between">
@@ -239,323 +289,134 @@ const BOQDisplay = ({ project, isVendorView = false, showNegotiatedPrices = fals
         </div>
       </div>
 
-      {/* BOQ Content */}
-      <div className="p-6">
-        <div className="space-y-4">
-          {boqData.tahapanKerja.map((tahapan, tahapanIndex) => {
-            const tahapanTotal = calculateTahapanKerjaTotal(tahapan);
-            const sectionKey = `tahapan-${tahapan.id || tahapanIndex}`;
-            const isExpanded = expandedSections[sectionKey];
-
-            return (
-              <div key={sectionKey} className="border border-gray-200 rounded-lg overflow-hidden">
-                {/* Tahapan Header */}
-                <div
-                  className="bg-gray-50 p-4 cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => toggleSection(sectionKey)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-90' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900">
-                          {tahapan.name || `Work Phase ${tahapanIndex + 1}`}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          {tahapan.jenisKerja?.length || 0} work categories
-                        </p>
-                      </div>
+      {/* Enhanced BOQ Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+              <tr>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Tahapan
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Jenis Kerja
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Uraian
+                </th>
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Item Description
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Volume
+                </th>
+                <th className="px-4 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                  Unit
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Unit Price
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Subtotal
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {flattenedData.map((item, index) => (
+                <tr key={item.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                  <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-200 font-medium">
+                    {item.tahapanName}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200">
+                    {item.jenisName}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200">
+                    {item.uraianName}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700 border-r border-gray-200">
+                    {item.item}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-900 text-right border-r border-gray-200 font-semibold">
+                    {item.volume}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700 text-center border-r border-gray-200">
+                    <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">{item.unit}</span>
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-600 text-right border-r border-gray-200">
+                    <div className="flex flex-col items-end">
+                      <span className={item.hasNegotiatedPrice ? 'text-green-600 font-medium' : ''}>
+                        {formatCurrency(item.displayPrice)}
+                      </span>
+                      {item.hasNegotiatedPrice && (
+                        <>
+                          <span className="text-xs text-gray-400 line-through">
+                            {formatCurrency(item.originalPrice)}
+                          </span>
+                          <span className="text-xs text-green-600 font-medium">
+                            Negotiated
+                          </span>
+                        </>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">
-                        {formatCurrency(tahapanTotal)}
-                      </p>
-                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-sm font-semibold text-gray-900 text-right">
+                    <span className={item.subtotal > 0 ? 'text-emerald-700' : 'text-gray-400'}>
+                      {formatCurrency(item.subtotal)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="bg-gradient-to-r from-gray-100 to-blue-100">
+              <tr>
+                <td colSpan="7" className="px-4 py-4 text-sm font-semibold text-gray-900 text-right border-r border-gray-300">
+                  <div className="flex items-center justify-end gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0 2.08-.402 2.599-1" />
+                    </svg>
+                    Total Project Value:
                   </div>
-                </div>
-
-                {/* Tahapan Content */}
-                {isExpanded && (
-                  <div className="p-4 space-y-3">
-                    {tahapan.jenisKerja?.map((jenis, jenisIndex) => {
-                      const jenisTotal = calculateJenisKerjaTotal(jenis);
-                      const itemKey = `jenis-${jenis.id || jenisIndex}`;
-                      const isItemExpanded = expandedItems[itemKey];
-
-                      return (
-                        <div key={itemKey} className="bg-white border border-gray-100 rounded-lg">
-                          {/* Jenis Kerja Header */}
-                          <div
-                            className="p-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                            onClick={() => toggleItem(itemKey)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <svg
-                                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                                    isItemExpanded ? 'rotate-90' : ''
-                                  }`}
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                <h5 className="font-medium text-gray-800">
-                                  {jenis.name || `Category ${jenisIndex + 1}`}
-                                </h5>
-                              </div>
-                              <p className="font-semibold text-gray-900">
-                                {formatCurrency(jenisTotal)}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Jenis Kerja Content */}
-                          {isItemExpanded && (
-                            <div className="px-3 pb-3">
-                              {jenis.uraian?.map((uraian, uraianIndex) => {
-                                const uraianTotal = calculateUraianTotal(uraian);
-
-                                return (
-                                  <div key={`uraian-${uraian.id || uraianIndex}`} className="mb-4 last:mb-0">
-                                    <div className="bg-blue-50 p-3 rounded-lg mb-2">
-                                      <div className="flex items-center justify-between">
-                                        <h6 className="font-medium text-blue-900">
-                                          {uraian.name || `Item ${uraianIndex + 1}`}
-                                        </h6>
-                                        <span className="font-bold text-blue-800">
-                                          {formatCurrency(uraianTotal)}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* Specifications Table */}
-                                    {uraian.spec && uraian.spec.length > 0 && (
-                                      <div className="bg-gray-50 rounded-lg overflow-hidden">
-                                        <table className="w-full text-sm">
-                                          <thead className="bg-gray-100">
-                                            <tr>
-                                              <th className="px-3 py-2 text-left font-medium text-gray-700">
-                                                Description
-                                              </th>
-                                              <th className="px-3 py-2 text-center font-medium text-gray-700">
-                                                Unit
-                                              </th>
-                                              <th className="px-3 py-2 text-center font-medium text-gray-700">
-                                                Qty
-                                              </th>
-                                              <th className="px-3 py-2 text-right font-medium text-gray-700">
-                                                Unit Price
-                                              </th>
-                                              <th className="px-3 py-2 text-right font-medium text-gray-700">
-                                                Subtotal
-                                              </th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {uraian.spec.map((spec, specIndex) => (
-                                              <tr key={`spec-${spec.id || specIndex}`} className="border-b border-gray-200">
-                                                <td className="px-3 py-2 text-gray-800">
-                                                  {spec.description || `Specification ${specIndex + 1}`}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-gray-600">
-                                                  {spec.satuan || '-'}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-gray-800 font-medium">
-                                                  {spec.volume || 0}
-                                                </td>
-                                                <td className="px-3 py-2 text-right text-gray-800">
-                                                  <div className="flex flex-col items-end">
-                                                    {(() => {
-                                                      const originalPrice = spec.pricePerPcs || 0;
-                                                      const negotiatedPrice = spec.negotiatedPrice;
-                                                      const hasNegotiatedPrice = negotiatedPrice !== undefined && negotiatedPrice !== originalPrice;
-                                                      const displayPrice = hasNegotiatedPrice ? negotiatedPrice : originalPrice;
-                                                      
-                                                      return (
-                                                        <>
-                                                          <span className={hasNegotiatedPrice ? 'text-green-600 font-medium' : ''}>
-                                                            {formatCurrency(displayPrice)}
-                                                          </span>
-                                                          {hasNegotiatedPrice && (
-                                                            <>
-                                                              <span className="text-xs text-gray-400 line-through">
-                                                                {formatCurrency(originalPrice)}
-                                                              </span>
-                                                              <span className="text-xs text-green-600 font-medium">
-                                                                Negotiated
-                                                              </span>
-                                                            </>
-                                                          )}
-                                                        </>
-                                                      );
-                                                    })()}
-                                                  </div>
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-semibold text-gray-900">
-                                                  {formatCurrency(calculateSpecTotal(spec))}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    )}
-
-                                    {/* Items Table (New Structure) */}
-                                    {uraian.items && uraian.items.length > 0 && (
-                                      <div className="bg-gray-50 rounded-lg overflow-hidden">
-                                        <table className="w-full text-sm">
-                                          <thead className="bg-gray-100">
-                                            <tr>
-                                              <th className="px-3 py-2 text-left text-gray-600 font-medium">
-                                                Item Description
-                                              </th>
-                                              <th className="px-3 py-2 text-center text-gray-600 font-medium">
-                                                Unit
-                                              </th>
-                                              <th className="px-3 py-2 text-center text-gray-600 font-medium">
-                                                Volume
-                                              </th>
-                                              <th className="px-3 py-2 text-right text-gray-600 font-medium">
-                                                Unit Price
-                                              </th>
-                                              <th className="px-3 py-2 text-right text-gray-600 font-medium">
-                                                Total
-                                              </th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {uraian.items.map((item, itemIndex) => (
-                                              <tr key={itemIndex} className="border-t border-gray-200">
-                                                <td className="px-3 py-2 text-gray-800">
-                                                  {item.item || item.description || `Item ${itemIndex + 1}`}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-gray-600">
-                                                  {item.unit || '-'}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-gray-800 font-medium">
-                                                  {item.volume || 0}
-                                                </td>
-                                                <td className="px-3 py-2 text-right text-gray-800">
-                                                  <div className="flex flex-col items-end">
-                                                    {(() => {
-                                                      const originalPrice = item.unitPrice || 0;
-                                                      const negotiatedPrice = item.negotiatedPrice;
-                                                      const hasNegotiatedPrice = negotiatedPrice !== undefined && negotiatedPrice !== originalPrice;
-                                                      const displayPrice = hasNegotiatedPrice ? negotiatedPrice : originalPrice;
-                                                      
-                                                      return (
-                                                        <>
-                                                          <span className={hasNegotiatedPrice ? 'text-green-600 font-medium' : ''}>
-                                                            {formatCurrency(displayPrice)}
-                                                          </span>
-                                                          {hasNegotiatedPrice && (
-                                                            <>
-                                                              <span className="text-xs text-gray-400 line-through">
-                                                                {formatCurrency(originalPrice)}
-                                                              </span>
-                                                              <span className="text-xs text-green-600 font-medium">
-                                                                Negotiated
-                                                              </span>
-                                                            </>
-                                                          )}
-                                                        </>
-                                                      );
-                                                    })()}
-                                                  </div>
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-semibold text-gray-900">
-                                                  {(() => {
-                                                    const unitPrice = item.negotiatedPrice !== undefined ? item.negotiatedPrice : (item.unitPrice || 0);
-                                                    return formatCurrency((item.volume || 0) * unitPrice);
-                                                  })()}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                </td>
+                <td className="px-4 py-4 text-lg font-bold text-blue-700 text-right">
+                  {formatCurrency(grandTotal)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-
-        {/* Summary Footer */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900">Project Total</h4>
-                <p className="text-sm text-gray-600">
-                  {boqData.tahapanKerja.length} work phases • Comprehensive breakdown
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-3xl font-bold text-blue-600">{formatCurrency(grandTotal)}</p>
-                {isVendorView && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Estimated project value
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes for vendor view */}
-        {isVendorView && (
-          <div className={`mt-4 p-4 border rounded-lg ${
-            showNegotiatedPrices 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-amber-50 border-amber-200'
-          }`}>
-            <div className="flex items-start space-x-3">
-              <svg className={`w-5 h-5 mt-0.5 ${
-                showNegotiatedPrices ? 'text-green-600' : 'text-amber-600'
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h5 className={`font-medium mb-1 ${
-                  showNegotiatedPrices ? 'text-green-800' : 'text-amber-800'
-                }`}>
-                  {showNegotiatedPrices ? 'Negotiated Pricing' : 'BOQ Information'}
-                </h5>
-                <p className={`text-sm ${
-                  showNegotiatedPrices ? 'text-green-700' : 'text-amber-700'
-                }`}>
-                  {showNegotiatedPrices 
-                    ? 'This BOQ shows the latest negotiated prices from your discussions with the project owner. Items with negotiated prices are highlighted in green with the original price crossed out.'
-                    : 'This BOQ provides a detailed breakdown of the project scope and estimated costs. You may propose alternative solutions or materials in your proposal while maintaining the project objectives.'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Notes for vendor view */}
+      {isVendorView && (
+        <div className={`mt-4 mx-6 mb-6 p-4 border rounded-lg ${
+          showNegotiatedPrices 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="flex items-start space-x-3">
+            <svg className={`w-5 h-5 mt-0.5 ${
+              showNegotiatedPrices ? 'text-green-600' : 'text-amber-600'
+            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h5 className={`font-medium mb-1 ${
+                showNegotiatedPrices ? 'text-green-800' : 'text-amber-800'
+              }`}>
+                {showNegotiatedPrices ? 'Negotiated Pricing' : 'BOQ Information'}
+              </h5>
+              <p className={`text-sm ${
+                showNegotiatedPrices ? 'text-green-700' : 'text-amber-700'
+              }`}>
+                {showNegotiatedPrices 
+                  ? 'This BOQ shows the latest negotiated prices from your discussions with the project owner. Items with negotiated prices are highlighted in green with the original price crossed out.'
+                  : 'This BOQ provides a detailed breakdown of the project scope and estimated costs. You may propose alternative solutions or materials in your proposal while maintaining the project objectives.'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   FiUser,
   FiFileText,
   FiEdit3,
+  FiEdit,
   FiEye,
   FiCheck,
   FiX,
@@ -227,8 +228,17 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         lastActionAt: new Date(),
         vendorInfo: {
           vendorId: user.uid,
-          vendorName: user.displayName || user.email?.split('@')[0] || 'Unknown Vendor',
-          vendorEmail: user.email
+          vendorName: userProfile?.accountType === 'perusahaan' 
+            ? (userProfile?.company || user.displayName || user.email?.split('@')[0] || 'Unknown Vendor')
+            : (user.displayName || user.email?.split('@')[0] || 'Unknown Vendor'),
+          vendorEmail: user.email,
+          vendorPhone: userProfile?.phone || '',
+          vendorFirstName: userProfile?.firstName || '',
+          vendorLastName: userProfile?.lastName || '',
+          vendorCompany: userProfile?.company || '',
+          vendorAccountType: userProfile?.accountType || 'individu',
+          vendorCity: userProfile?.city || '',
+          vendorProvince: userProfile?.province || ''
         },
         counterOffer: counterOfferData,
         history: [
@@ -303,8 +313,17 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         lastActionAt: now,
         vendorInfo: {
           vendorId: user.uid,
-          vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
-          vendorEmail: user.email
+          vendorName: userProfile?.accountType === 'perusahaan' 
+            ? (userProfile?.company || user.displayName || currentProposal?.vendorName || 'Vendor')
+            : (user.displayName || currentProposal?.vendorName || 'Vendor'),
+          vendorEmail: user.email,
+          vendorPhone: userProfile?.phone || '',
+          vendorFirstName: userProfile?.firstName || '',
+          vendorLastName: userProfile?.lastName || '',
+          vendorCompany: userProfile?.company || '',
+          vendorAccountType: userProfile?.accountType || 'individu',
+          vendorCity: userProfile?.city || '',
+          vendorProvince: userProfile?.province || ''
         },
         ownerInfo: existingNegotiation.ownerInfo || {
           ownerId: project.ownerId,
@@ -389,8 +408,17 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         lastActionAt: now,
         vendorInfo: {
           vendorId: user.uid,
-          vendorName: user.displayName || currentProposal?.vendorName || 'Vendor',
-          vendorEmail: user.email
+          vendorName: userProfile?.accountType === 'perusahaan' 
+            ? (userProfile?.company || user.displayName || currentProposal?.vendorName || 'Vendor')
+            : (user.displayName || currentProposal?.vendorName || 'Vendor'),
+          vendorEmail: user.email,
+          vendorPhone: userProfile?.phone || '',
+          vendorFirstName: userProfile?.firstName || '',
+          vendorLastName: userProfile?.lastName || '',
+          vendorCompany: userProfile?.company || '',
+          vendorAccountType: userProfile?.accountType || 'individu',
+          vendorCity: userProfile?.city || '',
+          vendorProvince: userProfile?.province || ''
         },
         ownerInfo: existingNegotiation.ownerInfo || {
           ownerId: project.ownerId,
@@ -452,6 +480,39 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     }
   };
 
+  // Handle vendor resubmitting proposal with new BOQ
+  const handleResubmitProposal = () => {
+    try {
+      console.log('🔄 Vendor resubmitting proposal...');
+      
+      const proposalIndex = getVendorProposalIndex();
+      if (proposalIndex === -1) {
+        throw new Error('Vendor proposal not found');
+      }
+
+      const currentProposal = project.proposals[proposalIndex];
+      
+      // Use the onCreateProposal callback to open the proposal editor
+      if (onCreateProposal) {
+        // Pass the project but also include resubmission context
+        onCreateProposal({
+          ...project,
+          isResubmission: true,
+          existingProposal: currentProposal,
+          originalProposalIndex: proposalIndex
+        });
+      } else {
+        console.error('onCreateProposal callback not available');
+        alert('Proposal editing is not available. Please contact support.');
+      }
+
+      console.log('✅ Opening proposal editor for resubmission');
+    } catch (error) {
+      console.error('❌ Error opening proposal editor:', error);
+      alert(`Failed to open proposal editor: ${error.message}`);
+    }
+  };
+
   // Utility functions
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', {
@@ -493,6 +554,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         return 'bg-red-100 text-red-800';
       case 'negotiating':
         return 'bg-yellow-100 text-yellow-800';
+      case 'negotiate':
+        return 'bg-blue-100 text-blue-800';
       case 'pending':
       case 'submitted':
         return 'bg-blue-100 text-blue-800';
@@ -808,8 +871,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
             </button>
           </div>
           
-          {/* Preview BOQ with limited height */}
-          <div className="max-h-96 overflow-y-auto">
+          {/* Preview BOQ with proper width handling */}
+          <div className="w-full overflow-hidden">
             <BOQDisplay 
               project={{
                 ...project,
@@ -1209,22 +1272,50 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         {/* Action Buttons */}
         {(currentStatus === 'negotiating' || currentStatus === 'pending_vendor_response') && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Negotiation Actions</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              {currentStatus === 'negotiating' ? 'Negotiation Request' : 'Negotiation Actions'}
+            </h3>
             
-            {/* Check if vendor is waiting for project owner response */}
-            {pendingCounterOffer && !isNegotiating ? (
-              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <FiMessageSquare className="w-5 h-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <h5 className="font-medium text-yellow-800 mb-1">Awaiting Project Owner Response</h5>
-                    <p className="text-sm text-yellow-700">
-                      You have submitted a counter offer. Please wait for the project owner to review and respond before taking any further action.
-                    </p>
+            {/* When project owner initiated negotiation - show Resubmit and Decline */}
+            {currentStatus === 'negotiating' ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <FiMessageSquare className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-blue-800 mb-1">Project Owner Requests Negotiation</h5>
+                      <p className="text-sm text-blue-700">
+                        The project owner would like to negotiate terms. You can resubmit your proposal with updated pricing or decline the negotiation.
+                      </p>
+                    </div>
                   </div>
                 </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      console.log('🔘 Resubmit button clicked (vendor)');
+                      handleResubmitProposal();
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <FiEdit className="inline mr-2" />
+                    Resubmit Proposal
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🔘 Decline negotiation button clicked (vendor)');
+                      handleDeclineNegotiation();
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <FiX className="inline mr-2" />
+                    Decline
+                  </button>
+                </div>
               </div>
-            ) : (
+            ) : vendorProposal.status !== 'negotiating' ? (
+              /* Original negotiation buttons for other statuses (hidden when negotiating) */
               <div className="flex space-x-3">
                 <button
                   onClick={() => {
@@ -1263,7 +1354,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                   Decline Terms
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>
@@ -1397,8 +1488,36 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                   originalProposalStatus: vendorProposal?.status
                 });
                 
-                // If negotiating or waiting for vendor response, show Accept/Reject/Negotiate buttons
-                if (currentStatus === 'negotiating' || currentStatus === 'pending_vendor_response') {
+                // If vendor proposal status is 'negotiating', show new Resubmit/Decline buttons
+                if (vendorProposal?.status === 'negotiating') {
+                  return (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          console.log('🔘 Resubmit button clicked (vendor - mobile)');
+                          handleResubmitProposal();
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        <FiEdit className="inline mr-1" />
+                        Resubmit
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log('🔘 Decline negotiation button clicked (vendor - mobile)');
+                          handleDeclineNegotiation();
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                      >
+                        <FiX className="inline mr-1" />
+                        Decline
+                      </button>
+                    </div>
+                  );
+                }
+                
+                // If negotiating or waiting for vendor response (but not status=negotiating), show Accept/Reject/Negotiate buttons
+                if ((currentStatus === 'negotiating' || currentStatus === 'pending_vendor_response') && vendorProposal?.status !== 'negotiating') {
                   return (
                     <div className="flex space-x-2">
                       <button
