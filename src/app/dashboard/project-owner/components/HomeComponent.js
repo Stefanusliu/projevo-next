@@ -29,6 +29,7 @@ import {
 } from 'react-icons/md';
 import ProjectOwnerDetailModal from './ProjectOwnerDetailModal';
 import ProjectOwnerDetailPage from './ProjectOwnerDetailPage';
+import MidtransPaymentModal from '../../../../components/payments/MidtransPaymentModal';
 
 // Create Project Modal Component
 function CreateProjectModal({ onClose }) {
@@ -1048,6 +1049,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const [filterBy, setFilterBy] = useState('All');
   const [showDetailsView, setShowDetailsView] = useState(false);
   const [activeProjectFilter, setActiveProjectFilter] = useState(null); // Internal project filter state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
   const sortDropdownRef = useRef(null);
   const filterDropdownRef = useRef(null);
   
@@ -1160,12 +1163,43 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   };
 
   const handlePayment = (project) => {
-    // Navigate to payment flow for vendor selection
-    console.log('Initiate payment for project:', project);
-    // TODO: Implement payment flow integration
-    // This could open a payment modal or navigate to payment page
-    setSelectedProject(project);
-    setShowDetailsView(true);
+    console.log('🎯 HANDLE PAYMENT DEBUG:');
+    console.log('  - Project passed to handlePayment:', project);
+    console.log('  - Project ID:', project.id);
+    console.log('  - Project customId:', project.customId);
+    console.log('  - Project ownerId:', project.ownerId);
+    console.log('  - Project ownerEmail:', project.ownerEmail);
+    
+    // Find the selected vendor proposal
+    const selectedProposal = project.proposals?.find(proposal => 
+      proposal.status === 'accepted' || 
+      (proposal.negotiation && proposal.negotiation.status === 'accepted') ||
+      proposal.vendorId === project.selectedVendorId
+    );
+    
+    const proposalIndex = project.proposals?.findIndex(proposal => 
+      proposal.status === 'accepted' || 
+      (proposal.negotiation && proposal.negotiation.status === 'accepted') ||
+      proposal.vendorId === project.selectedVendorId
+    );
+    
+    console.log('  - Selected proposal:', selectedProposal);
+    console.log('  - Proposal index:', proposalIndex);
+    
+    if (!selectedProposal) {
+      alert('Selected vendor proposal not found. Please contact support.');
+      return;
+    }
+    
+    console.log('Initiate payment for project:', project, 'proposal:', selectedProposal);
+    
+    // Prepare data for the payment modal
+    setSelectedProposalForPayment({
+      projectData: project,
+      proposal: selectedProposal,
+      proposalIndex: proposalIndex
+    });
+    setShowPaymentModal(true);
   };
 
   const handleResubmitProject = (project) => {
@@ -2576,6 +2610,29 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       </div>
 
       {/* Removed Enhanced Project Detail Modal - now using in-page view */}
+
+      {/* Midtrans Payment Modal */}
+      <MidtransPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setSelectedProposalForPayment(null);
+        }}
+        projectData={selectedProposalForPayment?.projectData}
+        selectedProposal={selectedProposalForPayment?.proposal}
+        proposalIndex={selectedProposalForPayment?.proposalIndex}
+        onPaymentSuccess={(paymentData) => {
+          console.log('Payment successful:', paymentData);
+          setShowPaymentModal(false);
+          setSelectedProposalForPayment(null);
+          // Refresh projects to show updated status
+          // Projects will auto-refresh due to real-time listener
+        }}
+        onPaymentError={(error) => {
+          console.error('Payment failed:', error);
+          alert('Payment failed. Please try again.');
+        }}
+      />
     </div>
   );
 }

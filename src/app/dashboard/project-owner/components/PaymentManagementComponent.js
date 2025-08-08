@@ -10,54 +10,118 @@ export default function PaymentManagementComponent() {
   const [activeTab, setActiveTab] = useState("pending");
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [debugMode, setDebugMode] = useState(false); // Add debug mode
 
-  // Load payments from Firestore
+  // Debug: Load ALL payments to see what's in the collection
   useEffect(() => {
-    if (!user?.uid) {
+    if (debugMode) {
+      console.log('🔍 DEBUG MODE: Loading ALL payments...');
+      const allPaymentsQuery = query(collection(db, 'payments'));
+      
+      const unsubscribe = onSnapshot(allPaymentsQuery, (snapshot) => {
+        console.log('🔍 ALL PAYMENTS IN DATABASE:');
+        snapshot.forEach((doc) => {
+          console.log('  Payment ID:', doc.id, 'Data:', doc.data());
+        });
+      });
+      
+      return () => unsubscribe();
+    }
+  }, [debugMode]);
+
+  // Load payments from projects collection
+  useEffect(() => {
+    if (!user?.uid || !userProfile?.email) {
       setLoading(false);
       return;
     }
     
-    console.log('Loading payments for user:', user.uid);
+    console.log('Loading project payments for user:', user.uid, 'email:', userProfile.email);
     setLoading(true);
     
-    // Query payments where the current user is the owner (without orderBy to avoid issues)
-    const paymentsQuery = query(
-      collection(db, 'payments'),
-      where('projectOwnerId', '==', user.uid)
+    // Query projects where the current user is the owner
+    const projectsQuery = query(
+      collection(db, 'projects'),
+      where('ownerId', '==', user.uid)
     );
     
-    const unsubscribe = onSnapshot(paymentsQuery, (snapshot) => {
-      const paymentsData = [];
+    const unsubscribe = onSnapshot(projectsQuery, (snapshot) => {
+      const projectPayments = [];
+      
       snapshot.forEach((doc) => {
-        paymentsData.push({
-          id: doc.id,
-          ...doc.data()
-        });
+        const projectData = doc.data();
+        
+        // Check if project has payment information
+        if (projectData.payment) {
+          console.log('Project with payment found:', doc.id, projectData.payment);
+          
+          projectPayments.push({
+            id: `project_${doc.id}`,
+            projectId: doc.id,
+            projectTitle: projectData.title || projectData.projectTitle || 'Unknown Project',
+            orderId: projectData.payment.orderId,
+            amount: projectData.payment.amount,
+            status: projectData.payment.status || 'pending',
+            paymentType: projectData.payment.paymentType || '50% Down Payment',
+            vendorName: projectData.payment.vendorName || 'Unknown Vendor',
+            snapUrl: projectData.payment.snapUrl,
+            snapToken: projectData.payment.snapToken,
+            createdAt: projectData.payment.createdAt,
+            updatedAt: projectData.payment.updatedAt,
+            transactionStatus: projectData.payment.transactionStatus,
+            fraudStatus: projectData.payment.fraudStatus,
+            webhookData: projectData.payment.webhookData,
+            // Project-specific fields
+            projectOwnerEmail: projectData.ownerEmail,
+            projectOwnerId: projectData.ownerId,
+            projectOwnerName: projectData.ownerName
+          });
+        }
       });
       
-      console.log('Loaded payments:', paymentsData);
-      setPayments(paymentsData);
+      console.log('Loaded project payments for user:', user.uid, 'Total payments:', projectPayments.length);
+      console.log('All project payments data:', projectPayments);
+      setPayments(projectPayments);
       setLoading(false);
     }, (error) => {
-      console.error('Error loading payments:', error);
-      // If no payments collection exists, use empty array
-      setPayments([]);
+      console.error('Error loading project payments:', error);
       setLoading(false);
     });
     
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid, userProfile?.email]);
 
   // Organize payments by status
   const paymentData = {
     pending: payments.filter(p => p.status === 'pending'),
     completed: payments.filter(p => p.status === 'completed'),
+    failed: payments.filter(p => p.status === 'failed'),
     overdue: payments.filter(p => p.status === 'overdue')
   };
 
-  const handlePayment = (paymentId) => {
-    alert(`Processing payment for ID: ${paymentId}`);
+  const handlePayment = (payment) => {
+    if (payment.snapUrl && payment.status === 'pending') {
+      // Open Midtrans Snap URL
+      window.open(payment.snapUrl, '_blank');
+    } else {
+      alert(`Processing payment for ID: ${payment.id}`);
+    }
+  };
+
+  const handleViewDetails = (payment) => {
+    // Show payment details modal or navigate to details page
+    console.log('View payment details:', payment);
+    alert(`Payment Details:\nOrder ID: ${payment.orderId}\nAmount: ${formatCurrency(payment.amount)}\nStatus: ${payment.status}`);
+  };
+
+  const formatCurrency = (amount) => {
+    if (!amount) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const getStatusColor = (status) => {
@@ -66,10 +130,27 @@ export default function PaymentManagementComponent() {
         return 'text-white';
       case 'completed':
         return 'text-white';
+      case 'failed':
+        return 'text-white';
       case 'overdue':
         return 'text-white';
       default:
         return 'text-white';
+    }
+  };
+
+  const getStatusBgColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return '#2373FF'; // Blue
+      case 'completed':
+        return '#10B981'; // Green
+      case 'failed':
+        return '#EF4444'; // Red
+      case 'overdue':
+        return '#F59E0B'; // Orange
+      default:
+        return '#6B7280'; // Gray
     }
   };
 
@@ -86,12 +167,33 @@ export default function PaymentManagementComponent() {
   return (
     <div className="bg-white rounded-lg border border-gray-300">
       <div className="p-6">
+        {/* Debug Mode Toggle */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">
+                User ID: <code className="bg-gray-200 px-1 rounded">{user?.uid}</code>
+              </p>
+              <p className="text-sm text-gray-600">
+                Email: <code className="bg-gray-200 px-1 rounded">{userProfile?.email}</code>
+              </p>
+            </div>
+            <button
+              onClick={() => setDebugMode(!debugMode)}
+              className={`px-3 py-1 rounded text-xs ${debugMode ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'}`}
+            >
+              {debugMode ? 'Debug ON' : 'Debug OFF'}
+            </button>
+          </div>
+        </div>
+
         {/* Tab Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
             {[
               { key: 'pending', label: 'Pending', count: paymentData.pending.length },
               { key: 'completed', label: 'Completed', count: paymentData.completed.length },
+              { key: 'failed', label: 'Failed', count: paymentData.failed.length },
               { key: 'overdue', label: 'Overdue', count: paymentData.overdue.length }
             ].map((tab) => (
               <button
@@ -129,6 +231,7 @@ export default function PaymentManagementComponent() {
               <p className="text-gray-500">
                 {activeTab === 'pending' ? 'No pending payments at the moment.' :
                  activeTab === 'completed' ? 'No completed payments yet.' :
+                 activeTab === 'failed' ? 'No failed payments found.' :
                  'No overdue payments found.'}
               </p>
             </div>
@@ -141,42 +244,64 @@ export default function PaymentManagementComponent() {
                     {payment.projectTitle || payment.title || 'Payment'}
                   </h3>
                   <p className="text-gray-600 mb-1">
-                    <span className="font-medium">Vendor:</span> {payment.vendor || payment.vendorName || 'Not specified'}
+                    <span className="font-medium">Vendor:</span> {payment.vendorName || 'Not specified'}
                   </p>
                   <p className="text-gray-600 mb-1">
-                    <span className="font-medium">Milestone:</span> {payment.milestone || payment.description || 'Payment milestone'}
+                    <span className="font-medium">Payment Type:</span> {payment.paymentType || 'Payment milestone'}
                   </p>
-                  {payment.dueDate && (
+                  <p className="text-gray-600 mb-1">
+                    <span className="font-medium">Order ID:</span> {payment.orderId || payment.id}
+                  </p>
+                  {payment.createdAt && (
                     <p className="text-gray-600 mb-1">
-                      <span className="font-medium">Due Date:</span> {new Date(payment.dueDate).toLocaleDateString('id-ID')}
+                      <span className="font-medium">Created:</span> {new Date(payment.createdAt.toDate()).toLocaleDateString('id-ID')}
                     </p>
                   )}
-                  {payment.paidDate && (
+                  {payment.updatedAt && payment.status === 'completed' && (
                     <p className="text-gray-600 mb-1">
-                      <span className="font-medium">Paid Date:</span> {new Date(payment.paidDate).toLocaleDateString('id-ID')}
+                      <span className="font-medium">Completed:</span> {new Date(payment.updatedAt.toDate()).toLocaleDateString('id-ID')}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-black mb-2">
-                    {payment.amount}
+                    {formatCurrency(payment.amount)}
                   </div>
                   <span 
                     className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payment.status)}`}
-                    style={{ backgroundColor: '#2373FF' }}
+                    style={{ backgroundColor: getStatusBgColor(payment.status) }}
                   >
                     {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                   </span>
+                  {payment.environment && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {payment.environment === 'sandbox' ? '🧪 Sandbox' : '🔒 Production'}
+                    </div>
+                  )}
                 </div>
               </div>
               
               <div className="flex justify-end space-x-3">
-                <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                <button 
+                  onClick={() => handleViewDetails(payment)}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                >
                   View Details
                 </button>
-                {payment.status === 'pending' && (
+                {payment.status === 'pending' && payment.snapUrl && (
                   <button
-                    onClick={() => handlePayment(payment.id)}
+                    onClick={() => handlePayment(payment)}
+                    className="text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    style={{ backgroundColor: '#2373FF' }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
+                  >
+                    Continue Payment
+                  </button>
+                )}
+                {payment.status === 'pending' && !payment.snapUrl && (
+                  <button
+                    onClick={() => handlePayment(payment)}
                     className="text-white px-4 py-2 rounded-lg transition-colors text-sm"
                     style={{ backgroundColor: '#2373FF' }}
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
@@ -187,7 +312,7 @@ export default function PaymentManagementComponent() {
                 )}
                 {payment.status === 'overdue' && (
                   <button
-                    onClick={() => handlePayment(payment.id)}
+                    onClick={() => handlePayment(payment)}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     Pay Now

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../../lib/firebase-admin';
 import { emailService } from '../../../../lib/emailService';
+import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { db as clientDb } from '../../../../lib/firebase';
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
 
@@ -57,8 +59,55 @@ export async function POST(request) {
       updatedAt: new Date()
     };
 
-    // Save payment record
+    // Save payment record (existing logic)
     await db.collection('payments').doc(order_id).set(paymentData);
+
+    // Also update our new payment structure
+    try {
+      const paymentId = `payment_${order_id}`;
+      const paymentRef = doc(clientDb, 'payments', paymentId);
+      const paymentDoc = await getDoc(paymentRef);
+      
+      if (paymentDoc.exists()) {
+        const updateData = {
+          status: paymentStatus === 'success' ? 'completed' : paymentStatus === 'failed' ? 'failed' : 'pending',
+          transactionStatus: transaction_status,
+          fraudStatus: fraud_status,
+          updatedAt: serverTimestamp(),
+          webhookData: notification
+        };
+
+        await updateDoc(paymentRef, updateData);
+        console.log('New payment structure updated:', paymentId);
+      }
+    } catch (clientDbError) {
+      console.error('Error updating client DB payment:', clientDbError);
+    }
+
+    // Update project payment status
+    try {
+      const projectRef = doc(clientDb, 'projects', projectId);
+      const projectDoc = await getDoc(projectRef);
+      
+      if (projectDoc.exists()) {
+        const projectData = projectDoc.data();
+        if (projectData.payment && projectData.payment.orderId === order_id) {
+          const projectPaymentUpdate = {
+            'payment.status': paymentStatus === 'success' ? 'completed' : paymentStatus === 'failed' ? 'failed' : 'pending',
+            'payment.transactionStatus': transaction_status,
+            'payment.fraudStatus': fraud_status,
+            'payment.updatedAt': serverTimestamp(),
+            'payment.webhookData': notification,
+            updatedAt: serverTimestamp()
+          };
+
+          await updateDoc(projectRef, projectPaymentUpdate);
+          console.log('✅ Project payment status updated:', projectId, 'Status:', paymentStatus);
+        }
+      }
+    } catch (projectUpdateError) {
+      console.error('❌ Error updating project payment status:', projectUpdateError);
+    }
 
     if (shouldCompleteVendorSelection) {
       try {

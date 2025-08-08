@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiCreditCard, FiLoader, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '../../contexts/AuthContext'; // Add useAuth import
 
 const MidtransPaymentModal = ({ 
   isOpen, 
@@ -11,10 +12,12 @@ const MidtransPaymentModal = ({
   proposalIndex,
   onPaymentSuccess 
 }) => {
+  const { user } = useAuth(); // Add useAuth hook
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [paymentToken, setPaymentToken] = useState(null);
   const [orderAmount, setOrderAmount] = useState(0);
+  const [snapModalOpen, setSnapModalOpen] = useState(false); // Track if Snap modal is open
 
   // Calculate 50% payment amount
   useEffect(() => {
@@ -24,6 +27,16 @@ const MidtransPaymentModal = ({
       setOrderAmount(downPayment);
     }
   }, [selectedProposal, isOpen]);
+
+  // Reset state when modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setLoading(false);
+      setError(null);
+      setPaymentToken(null);
+      setSnapModalOpen(false);
+    }
+  }, [isOpen]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -44,49 +57,74 @@ const MidtransPaymentModal = ({
     setLoading(true);
     setError(null);
 
+    const paymentData = {
+      projectId: projectData.id,
+      vendorId: selectedProposal.vendorId,
+      vendorName: selectedProposal.vendorName,
+      amount: selectedProposal.totalAmount || 0,
+      projectTitle: projectData.title || projectData.projectTitle,
+      projectOwnerEmail: projectData.ownerEmail,
+      projectOwnerName: projectData.ownerName,
+      projectOwnerId: user?.uid, // Add user ID
+      proposalIndex: proposalIndex
+    };
+
+    console.log('🚀 PAYMENT MODAL DEBUG:');
+    console.log('  - Project ID:', projectData.id);
+    console.log('  - Project Data:', projectData);
+    console.log('  - User ID:', user?.uid);
+    console.log('  - User Email:', user?.email);
+    console.log('  - Payment Data:', paymentData);
+    console.log('  - Selected proposal:', selectedProposal);
+
     try {
       const response = await fetch('/api/midtrans/create-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          projectId: projectData.id,
-          vendorId: selectedProposal.vendorId,
-          vendorName: selectedProposal.vendorName,
-          amount: selectedProposal.totalAmount || 0,
-          projectTitle: projectData.title || projectData.projectTitle,
-          projectOwnerEmail: projectData.ownerEmail,
-          projectOwnerName: projectData.ownerName,
-          proposalIndex: proposalIndex
-        }),
+        body: JSON.stringify(paymentData),
       });
 
       const data = await response.json();
+      console.log('Response received:', { status: response.status, data });
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create payment');
+        console.error('Payment creation failed:', data);
+        console.error('Midtrans error details:', data.details);
+        
+        // Show detailed error message
+        const errorMessage = data.details?.error_messages 
+          ? data.details.error_messages.join(', ')
+          : data.error || 'Failed to create payment';
+          
+        throw new Error(errorMessage);
       }
 
       setPaymentToken(data.token);
       
       // Initialize Midtrans Snap
       if (window.snap) {
+        setSnapModalOpen(true); // Hide the main modal
         window.snap.pay(data.token, {
           onSuccess: (result) => {
             console.log('Payment success:', result);
-            handlePaymentSuccess(result);
+            setSnapModalOpen(false);
+            handlePaymentSuccess(result, data);
           },
           onPending: (result) => {
             console.log('Payment pending:', result);
-            setError('Payment is pending. Please complete the payment process.');
+            setSnapModalOpen(false);
+            setError('Payment is pending. Please complete the payment process. You can continue the payment from the Payment tab.');
           },
           onError: (result) => {
             console.log('Payment error:', result);
-            setError('Payment failed. Please try again.');
+            setSnapModalOpen(false);
+            setError('Payment failed. Please try again or use the Payment tab to retry.');
           },
           onClose: () => {
             console.log('Payment modal closed');
+            setSnapModalOpen(false);
             setLoading(false);
           }
         });
@@ -97,24 +135,41 @@ const MidtransPaymentModal = ({
     } catch (err) {
       console.error('Error creating payment:', err);
       setError(err.message);
+      setSnapModalOpen(false); // Ensure Snap modal state is reset on error
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePaymentSuccess = (result) => {
+  const handlePaymentSuccess = (result, paymentData) => {
     console.log('Payment completed successfully:', result);
+    console.log('Payment data:', paymentData);
+    
+    // Reset all states
+    setLoading(false);
+    setError(null);
+    setSnapModalOpen(false);
     
     // Close the modal
     onClose();
     
     // Notify parent component
     if (onPaymentSuccess) {
-      onPaymentSuccess(result);
+      onPaymentSuccess({
+        ...result,
+        paymentId: paymentData?.paymentId,
+        orderId: paymentData?.order_id,
+        amount: paymentData?.amount
+      });
     }
     
-    // Show success message
-    alert('Payment successful! The vendor has been selected and notified.');
+    // Show success message with payment tracking info
+    alert(`Payment successful! 
+    
+Order ID: ${paymentData?.order_id || result.order_id}
+Amount: ${formatCurrency(paymentData?.amount || orderAmount)}
+
+You can track this payment in the Payment tab. The vendor has been selected and notified.`);
   };
 
   const handleProceedToPayment = () => {
@@ -123,8 +178,9 @@ const MidtransPaymentModal = ({
 
   if (!isOpen) return null;
 
+  // Hide main modal content when Snap modal is open to prevent double modals
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <div className={`fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 ${snapModalOpen ? 'opacity-0 pointer-events-none' : ''}`}>
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
         <div className="p-6">
             {/* Header */}
