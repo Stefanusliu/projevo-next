@@ -79,7 +79,7 @@ const MidtransTestPage = () => {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <ol className="list-decimal list-inside space-y-2 text-blue-800">
                 <li>Ensure your Midtrans credentials are configured in .env.local</li>
-                <li>Click "Test Payment Modal" to open the payment interface</li>
+                <li>Click &quot;Test Payment Modal&quot; to open the payment interface</li>
                 <li>Use test card: <strong>4811 1111 1111 1114</strong> for successful payment</li>
                 <li>Use any CVV and future expiry date</li>
                 <li>Complete the payment flow</li>

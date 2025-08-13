@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEdit, MdVisibility, MdArrowBack } from 'react-icons/md';
 import Header from '../components/Header';
@@ -119,7 +119,7 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
 function BOQMakerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [currentView, setCurrentView] = useState('editor');
+  const [currentView, setCurrentView] = useState('list');
   const [currentBOQId, setCurrentBOQId] = useState(null);
   const [boqTitle, setBoqTitle] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -168,6 +168,7 @@ function BOQMakerContent() {
   const [bulkAddUraianCount, setBulkAddUraianCount] = useState(5);
   const [bulkAddUraianTahapanId, setBulkAddUraianTahapanId] = useState(null);
   const [bulkAddUraianJenisId, setBulkAddUraianJenisId] = useState(null);
+  const [hasAutosaveDraft, setHasAutosaveDraft] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
@@ -232,9 +233,9 @@ function BOQMakerContent() {
           // Only load if it's recent (within last 24 hours) and has content
           const hoursSinceAutosave = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
           if (hoursSinceAutosave < 24 && (draft.boqTitle.trim() || draft.tahapanKerja.some(t => t.name.trim()))) {
-            setBoqTitle(draft.boqTitle);
-            setTahapanKerja(draft.tahapanKerja);
-            setCurrentBOQId(draft.currentBOQId);
+            // Don't auto-load the draft - let user stay in saved view
+            // Just store the draft data for potential loading
+            setHasAutosaveDraft(true);
             setLastAutoSave(new Date(draft.timestamp));
             setShowAutosaveNotification(true);
             
@@ -246,7 +247,7 @@ function BOQMakerContent() {
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, loadTempBOQData]);
 
   // Function to load session BOQ data from localStorage (preferred method)
   const loadSessionBOQData = (sessionKey, isReadOnly) => {
@@ -316,7 +317,7 @@ function BOQMakerContent() {
   };
 
   // Function to load temporary BOQ data from Firestore
-  const loadTempBOQData = async (tempId, isReadOnly) => {
+  const loadTempBOQData = useCallback(async (tempId, isReadOnly) => {
     try {
       console.log('📥 Loading temporary BOQ data from Firestore...', tempId);
       
@@ -384,7 +385,7 @@ function BOQMakerContent() {
         setCurrentView('saved'); // Show saved BOQs instead
       }
     }
-  };
+  }, [setCurrentView, setTahapanKerja]);
 
   // Function to load temporary BOQ data from localStorage
   const loadLocalBOQData = (localKey, isReadOnly) => {
@@ -1342,6 +1343,25 @@ function BOQMakerContent() {
     // Clear autosave when creating new BOQ
     localStorage.removeItem('projevo_boq_autosave');
     setLastAutoSave(null);
+    setHasAutosaveDraft(false);
+  };
+
+  const loadAutosaveDraft = () => {
+    const autosaveData = localStorage.getItem('projevo_boq_autosave');
+    if (autosaveData) {
+      try {
+        const draft = JSON.parse(autosaveData);
+        setBoqTitle(draft.boqTitle);
+        setTahapanKerja(draft.tahapanKerja);
+        setCurrentBOQId(draft.currentBOQId);
+        setEditMode(true);
+        setCurrentView('editor');
+        setHasAutosaveDraft(false);
+        setShowAutosaveNotification(false);
+      } catch (error) {
+        console.error('Error loading autosave draft:', error);
+      }
+    }
   };
 
   const getSavedBOQ = (id) => {
@@ -1368,82 +1388,108 @@ function BOQMakerContent() {
         
         <div className="relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {currentView === 'list' ? (
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="bg-blue-600 px-8 py-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">Saved BOQs</h1>
-                  <p className="text-blue-100">Manage your saved Bill of Quantities</p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={() => router.push('/')}
-                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
-                  >
-                    ← Home
-                  </button>
-                  <button
-                    onClick={createNewBOQ}
-                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2 font-medium border text-xs"
-                  >
-                    <span>Create New BOQ</span>
-                  </button>
+          <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                  <div>
+                    <h1 className="text-2xl font-semibold text-gray-900">BOQ Manager</h1>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    {hasAutosaveDraft && (
+                      <button
+                        onClick={loadAutosaveDraft}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors"
+                      >
+                        Continue Draft
+                      </button>
+                    )}
+                    <button
+                      onClick={createNewBOQ}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    >
+                      + New BOQ
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-8">
+            {/* Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               {savedBOQs.length === 0 ? (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-medium text-gray-800 mb-2">No BOQs Found</h3>
-                  <p className="text-gray-500 mb-4">Create your first BOQ to get started.</p>
+                <div className="text-center py-24">
+                  <div className="mx-auto h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                    <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No BOQs yet</h3>
+                  <p className="text-gray-500 mb-8 max-w-md mx-auto">Get started by creating your first Bill of Quantities. You can save, edit, and manage all your BOQs from here.</p>
                   <button
                     onClick={createNewBOQ}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg"
+                    className="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    Create New BOQ
+                    Create Your First BOQ
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {savedBOQs.map((boq) => (
-                    <div key={boq.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 p-6 hover:shadow-lg transition-shadow">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-black mb-2">{boq.title}</h3>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p>Created: {formatDate(boq.createdAt)}</p>
-                            {boq.updatedAt !== boq.createdAt && (
-                              <p>Updated: {formatDate(boq.updatedAt)}</p>
-                            )}
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-lg font-medium text-gray-900">Your BOQs ({savedBOQs.length})</h2>
+                    <p className="text-sm text-gray-500">Manage and organize your Bill of Quantities</p>
+                  </div>
+                  
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {savedBOQs.map((boq) => (
+                      <div key={boq.id} className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 group">
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                {boq.title}
+                              </h3>
+                              <div className="mt-2 space-y-1">
+                                <p className="text-sm text-gray-500">
+                                  Created {formatDate(boq.createdAt)}
+                                </p>
+                                {boq.updatedAt !== boq.createdAt && (
+                                  <p className="text-sm text-gray-500">
+                                    Updated {formatDate(boq.updatedAt)}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="ml-4 flex-shrink-0">
+                              <button
+                                onClick={() => deleteBOQ(boq.id)}
+                                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Delete BOQ"
+                              >
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => loadBOQ(boq.id, 'view')}
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => loadBOQ(boq.id, 'edit')}
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            >
+                              Edit
+                            </button>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => loadBOQ(boq.id, 'view')}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => loadBOQ(boq.id, 'edit')}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => deleteBOQ(boq.id)}
-                          className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1458,16 +1504,10 @@ function BOQMakerContent() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
-                    onClick={() => router.push('/')}
+                    onClick={() => setCurrentView('list')}
                     className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
                   >
                     ← Home
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('list')}
-                    className="bg-gray-200 hover:bg-gray-100 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
-                  >
-                    Saved BOQs
                   </button>
                   {editMode && (
                     <button

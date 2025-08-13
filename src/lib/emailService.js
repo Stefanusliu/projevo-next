@@ -113,6 +113,38 @@ export async function sendOTPEmail(email, otp, name = '') {
   }
 }
 
+// Generic send email function
+export async function sendEmail({ to, subject, html }) {
+  try {
+    console.log('Attempting to send email to:', to);
+    console.log('Subject:', subject);
+
+    const mailOptions = {
+      from: {
+        name: 'Projevo Platform',
+        address: process.env.EMAIL_FROM
+      },
+      to: to,
+      subject: subject,
+      html: html
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
+    return {
+      success: true,
+      messageId: info.messageId
+    };
+  } catch (error) {
+    console.error('Email sending failed:', {
+      error: error.message,
+      code: error.code,
+      responseCode: error.responseCode
+    });
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
+}
+
 // Verify email configuration
 export async function verifyEmailConfig() {
   try {

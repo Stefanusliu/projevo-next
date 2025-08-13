@@ -182,7 +182,7 @@ export async function POST(request) {
       amount: paymentAmount,
       originalAmount: numericAmount,
       paymentType: '50% Down Payment',
-      status: 'pending',
+      status: 'process', // Set to process so it appears in payment management
       snapToken: data.token,
       snapUrl: data.redirect_url,
       projectTitle: projectTitle || 'Untitled Project',
@@ -210,7 +210,7 @@ export async function POST(request) {
           snapToken: data.token,
           snapUrl: data.redirect_url,
           amount: paymentAmount,
-          status: 'pending',
+          status: 'process', // Set to process so it appears in payment management
           paymentType: '50% Down Payment',
           vendorId: vendorId,
           vendorName: vendorName,

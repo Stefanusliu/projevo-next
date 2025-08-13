@@ -168,6 +168,7 @@ export default function RootLayout({ children }) {
             : "https://app.sandbox.midtrans.com/snap/snap.js"
           }
           data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+          async
         ></script>
       </head>
       <body

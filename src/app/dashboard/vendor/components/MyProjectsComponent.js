@@ -296,6 +296,59 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
     return new Date(date).toLocaleDateString('id-ID');
   };
 
+  // Helper functions to match project-owner styling
+  const getVendorPhase = (project) => {
+    if (!user?.uid) return 'Unknown';
+    
+    // Check if vendor has been awarded
+    if (project.awardedVendorId === user.uid) {
+      return 'Implementation';
+    }
+    
+    // Check proposal status
+    const vendorProposal = project.proposals?.find(proposal => proposal.vendorId === user.uid);
+    if (vendorProposal) {
+      if (vendorProposal.status === 'accepted') {
+        return 'Implementation';
+      } else if (vendorProposal.status === 'rejected') {
+        return 'Bid Rejected';
+      } else {
+        return 'Bidding';
+      }
+    }
+    
+    return 'Bidding';
+  };
+
+  const getVendorStatusColor = (project) => {
+    const status = getVendorStatus(project);
+    switch (status) {
+      case 'In Progress':
+        return '#22c55e'; // green
+      case 'Under Review':
+        return '#f59e0b'; // yellow
+      case 'Rejected':
+        return '#ef4444'; // red
+      case 'Completed':
+        return '#3b82f6'; // blue
+      default:
+        return '#6b7280'; // gray
+    }
+  };
+
+  const isProjectStarted = (project) => {
+    if (!user?.uid) return false;
+    
+    // Check if vendor has been awarded and project has started
+    if (project.awardedVendorId === user.uid) {
+      return true;
+    }
+    
+    // Check if vendor proposal has been accepted
+    const vendorProposal = project.proposals?.find(proposal => proposal.vendorId === user.uid);
+    return vendorProposal?.status === 'accepted';
+  };
+
   return (
     <>
       {showDetailsView && selectedProject ? (
@@ -352,13 +405,13 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
       </div>
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredProjects.map((project) => (
           <div
             key={project.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 flex flex-col"
           >
-            <div className="p-6">
+            <div className="p-6 flex flex-col">
               {/* Project ID */}
               <div className="mb-3">
                 <p className="text-xs text-gray-500 mb-1">Project ID</p>
@@ -369,103 +422,131 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
 
               {/* Project Header */}
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                    {getCategoryIcon(project.projectType)}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                      {project.projectTitle || project.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-1">
-                      {project.ownerName || project.ownerEmail?.split('@')[0] || 'Unknown Client'} &bull; {getProjectLocation(project)}
-                    </p>
-                  </div>
+                <div className="flex-1 min-w-0 pr-8">
+                  <h3 className="text-lg font-semibold text-black mb-1 truncate">
+                    {project.projectTitle || project.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 truncate">
+                    {project.ownerName || project.ownerEmail?.split('@')[0] || 'Unknown Client'} • {getProjectLocation(project)}
+                  </p>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(getVendorStatus(project))}`}>
-                    {getVendorStatus(project)}
-                  </span>
-                  <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getTypeColor(getProjectType(project.procurementMethod))}`}>
-                    {getProjectType(project.procurementMethod)}
-                  </span>
+                <div className="flex flex-col items-end space-y-1 flex-shrink-0 ml-3">
+                  <div className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
+                    Phase: {getVendorPhase(project)}
+                  </div>
+                  
+                  <div 
+                    className={`px-2 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap flex items-center gap-1`}
+                    style={{ backgroundColor: getVendorStatusColor(project) }}
+                  >
+                    Status: {getVendorStatus(project)}
+                  </div>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 mb-4">
+              <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-shrink-0">
                 {getProjectDescription(project)}
               </p>
 
-              {/* Progress */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">Progress</span>
-                  <span className="text-sm text-slate-600">{project.progress || 0}%</span>
+              {/* Progress - Only show if there's actual progress and project has started */}
+              {isProjectStarted(project) && project.progress && project.progress > 0 ? (
+                <div className="mb-4 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-black">Progress</span>
+                    <span className="text-sm text-gray-600">{project.progress || 0}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${project.progress || 0}%`,
+                        backgroundColor: '#2373FF'
+                      }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${project.progress || 0}%` }}
-                  ></div>
-                </div>
-              </div>
+              ) : null}
 
-              {/* Milestones */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Milestones</h4>
-                <div className="space-y-1">
-                  {(() => {
-                    const milestones = getMilestones(project);
-                    return milestones.slice(0, 2).map((milestone, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
-                        <span className={`text-xs ${milestone.completed ? 'text-slate-900' : 'text-slate-500'}`}>
-                          {milestone.name} {milestone.completed && milestone.date ? `(${milestone.date})` : ''}
+              {/* Project Details */}
+              <div>
+                <div className="space-y-3">
+                  {/* Scope */}
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Scope</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(project.projectScope || project.scope || []).length > 0 ? (
+                        (project.projectScope || project.scope || []).slice(0, 2).map((scope, index) => (
+                          <span 
+                            key={index}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200"
+                          >
+                            {scope}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-500">No scope specified</span>
+                      )}
+                      {(project.projectScope || project.scope || []).length > 2 && (
+                        <span className="text-xs text-gray-500">
+                          +{(project.projectScope || project.scope || []).length - 2} more
                         </span>
-                      </div>
-                    ));
-                  })()}
-                  {(() => {
-                    const milestones = getMilestones(project);
-                    return milestones.length > 2 && (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-slate-300"></div>
-                        <span className="text-xs text-slate-500">
-                          +{milestones.length - 2} more milestones
-                        </span>
-                      </div>
-                    );
-                  })()}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Property Type and Project Type */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Property Type</p>
+                      <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-200">
+                        {project.propertyType || 'Not specified'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Proyek</p>
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+                        {project.procurementMethod === 'Tender' ? 'Tender' : 
+                         project.procurementMethod === 'Penunjukan Langsung' ? 'Langsung' : 
+                         'Langsung'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Project Info */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-3 gap-4 mb-5 flex-shrink-0">
                 <div>
-                  <p className="text-xs text-slate-500">Budget</p>
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-xs text-gray-500">Budget</p>
+                  <p className="text-sm font-semibold text-black truncate">
                     {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Start Date</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {formatDate(project.estimatedStartDate || project.startDate)}
+                  <p className="text-xs text-gray-500">Start Date</p>
+                  <p className="text-sm font-semibold text-black truncate">
+                    {project.startDate || project.estimatedStartDate || 'TBD'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Proposals</p>
+                  <p className="text-sm font-semibold text-black truncate">
+                    {project.proposals?.length || 0} received
                   </p>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex space-x-3">
+              <div className="flex-shrink-0">
                 <button 
                   onClick={() => handleViewProject(project)}
-                  className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
+                  className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  style={{ backgroundColor: '#2373FF' }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#1d5fd9'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                 >
                   View Details
-                </button>
-                <button className="px-3 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors">
-                  Update
                 </button>
               </div>
             </div>
@@ -475,21 +556,8 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
 
       {/* Empty State */}
       {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No projects found</h3>
-          <p className="text-slate-500 mb-4">
-            {activeFilter === 'All' 
-              ? "You haven't been awarded any projects yet. Browse the marketplace to find and bid on projects." 
-              : `No projects with status "${activeFilter}".`}
-          </p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
-            Browse Marketplace
-          </button>
+        <div className="text-center py-12 bg-white rounded-lg border border-gray-300">
+          <p className="text-gray-500">No projects found</p>
         </div>
       )}
 

@@ -4,14 +4,14 @@ import { useState } from 'react';
 import HomeComponent from '../components/HomeComponent';
 import HistoryComponent from '../components/HistoryComponent';
 import SavedBOQComponent from '../components/SavedBOQComponent';
-import PaymentManagementComponent from '../components/PaymentManagementComponent';
+import TransactionComponent from '../components/TransactionComponent';
 import CreateProjectComponent from '../components/CreateProjectComponent';
 
 export default function HomePage() {
   const [activeMenu, setActiveMenu] = useState("Project");
   const [showCreateProject, setShowCreateProject] = useState(false);
   
-  const menuItems = ['Project', 'BOQ Generator', 'Payment', 'History'];
+  const menuItems = ['Project', 'BOQ Generator', 'Transaction', 'History'];
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#d9d9d9' }}>
@@ -53,7 +53,7 @@ export default function HomePage() {
                 />
               )}
               {activeMenu === "BOQ Generator" && <SavedBOQComponent />}
-              {activeMenu === "Payment" && <PaymentManagementComponent />}
+              {activeMenu === "Transaction" && <TransactionComponent />}
               {activeMenu === "History" && <HistoryComponent />}
             </div>
           </div>

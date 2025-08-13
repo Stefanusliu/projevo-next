@@ -25,26 +25,26 @@ export default function PortfolioComponent() {
   // Portfolio items from Firebase
   const [portfolioItems, setPortfolioItems] = useState([]);
 
-  // Form states - Updated: changed to support multiple images and videos
+  // Form states - Updated: removed budget, added video, changed completedDate to completedYear
   const [newProject, setNewProject] = useState({
     title: '',
     description: '',
-    images: [],
-    videos: [],
+    image: '',
+    video: '',
     category: '',
     client: '',
     completedYear: '',
     duration: ''
   });
 
-  // Upload states - Updated: support multiple files
+  // Upload states - Updated: added video upload states
   const [logoUploading, setLogoUploading] = useState(false);
   const [projectImageUploading, setProjectImageUploading] = useState(false);
   const [projectVideoUploading, setProjectVideoUploading] = useState(false);
-  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
-  const [selectedVideoFiles, setSelectedVideoFiles] = useState([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
-  const [videoPreviewUrls, setVideoPreviewUrls] = useState([]);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [selectedVideoFile, setSelectedVideoFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
   
   // File states for pending uploads
   const [selectedProjectImage, setSelectedProjectImage] = useState(null);
@@ -126,103 +126,77 @@ export default function PortfolioComponent() {
     console.log('Logo upload feature temporarily disabled - using letter-based avatars');
   };
 
-  // Handle multiple image selection
+  // Handle image selection (without uploading)
   const handleProjectImageSelect = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      setSelectedImageFiles([...selectedImageFiles, ...files]);
-      // Create preview URLs for immediate display
-      const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-      setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImageFile(file);
+      // Create preview URL for immediate display
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreviewUrl(previewUrl);
     }
   };
 
-  // Handle multiple video selection
+  // Handle video selection (without uploading) - NEW
   const handleProjectVideoSelect = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      setSelectedVideoFiles([...selectedVideoFiles, ...files]);
-      // Create preview URLs for immediate display
-      const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-      setVideoPreviewUrls([...videoPreviewUrls, ...newPreviewUrls]);
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedVideoFile(file);
+      // Create preview URL for immediate display
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreviewUrl(previewUrl);
     }
   };
 
-  // Remove individual image
-  const removeImage = (index) => {
-    const newImageFiles = selectedImageFiles.filter((_, i) => i !== index);
-    const newImagePreviews = imagePreviewUrls.filter((_, i) => i !== index);
-    const newProjectImages = newProject.images.filter((_, i) => i !== index);
-    
-    setSelectedImageFiles(newImageFiles);
-    setImagePreviewUrls(newImagePreviews);
-    setNewProject({...newProject, images: newProjectImages});
-  };
-
-  // Remove individual video
-  const removeVideo = (index) => {
-    const newVideoFiles = selectedVideoFiles.filter((_, i) => i !== index);
-    const newVideoPreviews = videoPreviewUrls.filter((_, i) => i !== index);
-    const newProjectVideos = newProject.videos.filter((_, i) => i !== index);
-    
-    setSelectedVideoFiles(newVideoFiles);
-    setVideoPreviewUrls(newVideoPreviews);
-    setNewProject({...newProject, videos: newProjectVideos});
-  };
-
-  // Upload multiple images to Firebase Storage
-  const uploadProjectImages = async (files) => {
-    if (!files || files.length === 0) return [];
+  // Upload image to Firebase Storage (called only when adding project)
+  const uploadProjectImage = async (file) => {
+    if (!file) return null;
     
     try {
-      const uploadPromises = files.map(file => uploadImage(file, 'portfolio-images'));
-      const imageUrls = await Promise.all(uploadPromises);
-      return imageUrls;
+      const imageUrl = await uploadImage(file, 'portfolio-images');
+      return imageUrl;
     } catch (error) {
-      console.error('Error uploading project images:', error);
+      console.error('Error uploading project image:', error);
       throw error;
     }
   };
 
-  // Upload multiple videos to Firebase Storage
-  const uploadProjectVideos = async (files) => {
-    if (!files || files.length === 0) return [];
+  // Upload video to Firebase Storage (called only when adding project) - NEW
+  const uploadProjectVideo = async (file) => {
+    if (!file) return null;
     
     try {
-      const uploadPromises = files.map(file => uploadImage(file, 'portfolio-videos'));
-      const videoUrls = await Promise.all(uploadPromises);
-      return videoUrls;
+      const videoUrl = await uploadImage(file, 'portfolio-videos');
+      return videoUrl;
     } catch (error) {
-      console.error('Error uploading project videos:', error);
+      console.error('Error uploading project video:', error);
       throw error;
     }
   };
 
-  // Updated: Handle multiple images and videos upload
+  // Updated: Added video upload handling
   const handleAddProject = async () => {
     if (newProject.title && newProject.description) {
       setProjectImageUploading(true);
       setProjectVideoUploading(true);
       try {
-        let imageUrls = [...newProject.images];
-        let videoUrls = [...newProject.videos];
+        let imageUrl = newProject.image;
+        let videoUrl = newProject.video;
         
-        // Upload new images if files were selected
-        if (selectedImageFiles.length > 0) {
-          const newImageUrls = await uploadProjectImages(selectedImageFiles);
-          imageUrls = [...imageUrls, ...newImageUrls];
+        // Upload image if a new file was selected
+        if (selectedImageFile) {
+          imageUrl = await uploadProjectImage(selectedImageFile);
         }
         
-        // Upload new videos if files were selected
-        if (selectedVideoFiles.length > 0) {
-          const newVideoUrls = await uploadProjectVideos(selectedVideoFiles);
-          videoUrls = [...videoUrls, ...newVideoUrls];
+        // Upload video if a new file was selected
+        if (selectedVideoFile) {
+          videoUrl = await uploadProjectVideo(selectedVideoFile);
         }
         
         const projectData = {
           ...newProject,
-          images: imageUrls.length > 0 ? imageUrls : ['/api/placeholder/400/300'],
-          videos: videoUrls,
+          image: imageUrl || '/api/placeholder/400/300',
+          video: videoUrl || '',
           createdAt: new Date()
         };
         
@@ -251,25 +225,23 @@ export default function PortfolioComponent() {
       setProjectImageUploading(true);
       setProjectVideoUploading(true);
       try {
-        let imageUrls = [...newProject.images];
-        let videoUrls = [...newProject.videos];
+        let imageUrl = newProject.image;
+        let videoUrl = newProject.video;
         
-        // Upload new images if selected
-        if (selectedImageFiles.length > 0) {
-          const newImageUrls = await uploadProjectImages(selectedImageFiles);
-          imageUrls = [...imageUrls, ...newImageUrls];
+        // Upload new image if selected
+        if (selectedImageFile) {
+          imageUrl = await uploadProjectImage(selectedImageFile);
         }
         
-        // Upload new videos if selected
-        if (selectedVideoFiles.length > 0) {
-          const newVideoUrls = await uploadProjectVideos(selectedVideoFiles);
-          videoUrls = [...videoUrls, ...newVideoUrls];
+        // Upload new video if selected
+        if (selectedVideoFile) {
+          videoUrl = await uploadProjectVideo(selectedVideoFile);
         }
         
         const updatedData = {
           ...newProject,
-          images: imageUrls,
-          videos: videoUrls,
+          image: imageUrl,
+          video: videoUrl,
           updatedAt: new Date()
         };
         
@@ -299,8 +271,8 @@ export default function PortfolioComponent() {
     setNewProject({
       title: project.title || '',
       description: project.description || '',
-      images: project.images || (project.image ? [project.image] : []),
-      videos: project.videos || (project.video ? [project.video] : []),
+      image: project.image || '',
+      video: project.video || '',
       category: project.category || '',
       client: project.client || '',
       completedYear: project.completedYear || (project.completedDate ? new Date(project.completedDate).getFullYear().toString() : ''),
@@ -321,37 +293,37 @@ export default function PortfolioComponent() {
     }
   };
 
-  // Updated: Reset form with new field structure for multiple files
+  // Updated: Reset form with new field structure
   const resetForm = () => {
     setEditingProject(null);
     setNewProject({
       title: '',
       description: '',
-      images: [],
-      videos: [],
+      image: '',
+      video: '',
       category: '',
       client: '',
       completedYear: '',
       duration: ''
     });
-    setSelectedImageFiles([]);
-    setSelectedVideoFiles([]);
-    setImagePreviewUrls([]);
-    setVideoPreviewUrls([]);
+    setSelectedImageFile(null);
+    setSelectedVideoFile(null);
+    setImagePreviewUrl('');
+    setVideoPreviewUrl('');
     setShowAddModal(false);
   };
 
   // Cleanup preview URLs to prevent memory leaks
   useEffect(() => {
     return () => {
-      imagePreviewUrls.forEach(url => {
-        if (url) URL.revokeObjectURL(url);
-      });
-      videoPreviewUrls.forEach(url => {
-        if (url) URL.revokeObjectURL(url);
-      });
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl);
+      }
     };
-  }, [imagePreviewUrls, videoPreviewUrls]);
+  }, [imagePreviewUrl, videoPreviewUrl]);
 
   if (!user) {
     return (
@@ -452,18 +424,12 @@ export default function PortfolioComponent() {
                   {/* Project Image */}
                   <div className="relative">
                     <Image 
-                      src={project.images?.[0] || project.image || '/api/placeholder/400/300'} 
+                      src={project.image} 
                       alt={project.title}
                       width={400}
                       height={192}
                       className="w-full h-48 object-cover"
                     />
-                    {/* Multiple images indicator */}
-                    {(project.images?.length > 1) && (
-                      <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                        +{project.images.length - 1} more
-                      </div>
-                    )}
                     {/* Edit/Delete buttons (only visible when editing) */}
                     {isEditing && (
                       <div className="absolute top-2 right-2 flex space-x-2">
@@ -504,32 +470,31 @@ export default function PortfolioComponent() {
                     </p>
 
                     <div className="space-y-2 text-xs text-slate-500">
-                      {project.client && (
+                      <div className="flex justify-between">
+                        <span>Client:</span>
+                        <span className="font-medium">{project.client}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Duration:</span>
+                        <span className="font-medium">{project.duration}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Completed:</span>
+                        <span className="font-medium">
+                          {project.completedYear || (project.completedDate ? new Date(project.completedDate).getFullYear() : 'N/A')}
+                        </span>
+                      </div>
+                      {project.video && (
                         <div className="flex justify-between">
-                          <span>Client:</span>
-                          <span className="font-medium">{project.client}</span>
-                        </div>
-                      )}
-                      {project.duration && (
-                        <div className="flex justify-between">
-                          <span>Duration:</span>
-                          <span className="font-medium">{project.duration}</span>
-                        </div>
-                      )}
-                      {(project.completedYear || (project.completedDate && new Date(project.completedDate).getFullYear())) && (
-                        <div className="flex justify-between">
-                          <span>Completed:</span>
-                          <span className="font-medium">
-                            {project.completedYear || new Date(project.completedDate).getFullYear()}
-                          </span>
-                        </div>
-                      )}
-                      {(project.videos?.length > 0 || project.video) && (
-                        <div className="flex justify-between">
-                          <span>Videos:</span>
-                          <span className="font-medium text-blue-600">
-                            {project.videos?.length || 1} video{(project.videos?.length > 1) ? 's' : ''}
-                          </span>
+                          <span>Video:</span>
+                          <a 
+                            href={project.video} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:text-blue-800"
+                          >
+                            View Video
+                          </a>
                         </div>
                       )}
                     </div>
@@ -565,7 +530,7 @@ export default function PortfolioComponent() {
 
       {/* Add/Edit Project Modal - UPDATED: Removed budget field, added video field, changed completion to year */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-900">
@@ -574,197 +539,6 @@ export default function PortfolioComponent() {
             </div>
             
             <div className="p-6 space-y-6">
-              {/* Media Upload Section - MOVED TO TOP */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">
-                    Project Images
-                  </label>
-                  <div className="space-y-4">
-                    {/* Existing Images Grid */}
-                    {(newProject.images.length > 0 || imagePreviewUrls.length > 0) && (
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        {/* Existing saved images */}
-                        {newProject.images.map((imageUrl, index) => (
-                          <div key={`existing-${index}`} className="relative group">
-                            <Image 
-                              src={imageUrl} 
-                              alt={`Project ${index + 1}`} 
-                              width={150}
-                              height={100}
-                              className="w-full h-24 object-cover rounded-lg border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newImages = newProject.images.filter((_, i) => i !== index);
-                                setNewProject({...newProject, images: newImages});
-                              }}
-                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                        
-                        {/* New selected images */}
-                        {imagePreviewUrls.map((previewUrl, index) => (
-                          <div key={`preview-${index}`} className="relative group">
-                            <Image 
-                              src={previewUrl} 
-                              alt={`Preview ${index + 1}`} 
-                              width={150}
-                              height={100}
-                              className="w-full h-24 object-cover rounded-lg border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Upload Box */}
-                    <div 
-                      onClick={() => document.getElementById('project-image-upload').click()}
-                      className="relative border-2 border-dashed border-slate-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 cursor-pointer group"
-                    >
-                      <div className="text-center">
-                        <svg className="w-12 h-12 mx-auto text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        <p className="mt-2 text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
-                          Add More Images
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          PNG, JPG, GIF up to 10MB each
-                        </p>
-                      </div>
-                      
-                      {projectImageUploading && (
-                        <div className="absolute inset-0 bg-white bg-opacity-90 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm font-medium text-slate-900">Uploading images...</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <input
-                      id="project-image-upload"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleProjectImageSelect}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">
-                    Project Videos
-                  </label>
-                  <div className="space-y-4">
-                    {/* Existing Videos Grid */}
-                    {(newProject.videos.length > 0 || videoPreviewUrls.length > 0) && (
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        {/* Existing saved videos */}
-                        {newProject.videos.map((videoUrl, index) => (
-                          <div key={`existing-video-${index}`} className="relative group">
-                            <div className="w-full h-24 bg-slate-100 rounded-lg border flex items-center justify-center">
-                              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newVideos = newProject.videos.filter((_, i) => i !== index);
-                                setNewProject({...newProject, videos: newVideos});
-                              }}
-                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                        
-                        {/* New selected videos */}
-                        {videoPreviewUrls.map((previewUrl, index) => (
-                          <div key={`video-preview-${index}`} className="relative group">
-                            <video 
-                              src={previewUrl} 
-                              className="w-full h-24 object-cover rounded-lg border"
-                              controls={false}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeVideo(index)}
-                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Upload Box */}
-                    <div 
-                      onClick={() => document.getElementById('project-video-upload').click()}
-                      className="relative border-2 border-dashed border-slate-300 rounded-lg p-6 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 cursor-pointer group"
-                    >
-                      <div className="text-center">
-                        <svg className="w-12 h-12 mx-auto text-slate-400 group-hover:text-purple-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <p className="mt-2 text-sm font-medium text-slate-900 group-hover:text-purple-600 transition-colors">
-                          Add More Videos
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          MP4, MOV, AVI up to 50MB each
-                        </p>
-                      </div>
-                      
-                      {projectVideoUploading && (
-                        <div className="absolute inset-0 bg-white bg-opacity-90 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm font-medium text-slate-900">Uploading videos...</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <input
-                      id="project-video-upload"
-                      type="file"
-                      accept="video/*"
-                      multiple
-                      onChange={handleProjectVideoSelect}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -809,6 +583,148 @@ export default function PortfolioComponent() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
                   placeholder="Describe your project..."
                 />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Project Image
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('project-image-upload').click()}
+                      disabled={projectImageUploading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span>{projectImageUploading ? 'Uploading...' : 'Upload Image'}</span>
+                    </button>
+                    <input
+                      id="project-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProjectImageSelect}
+                      className="hidden"
+                    />
+                    <span className="text-sm text-slate-500">Or enter URL below</span>
+                  </div>
+                  <input
+                    type="url"
+                    value={selectedImageFile ? '' : newProject.image}
+                    onChange={(e) => setNewProject({...newProject, image: e.target.value})}
+                    disabled={selectedImageFile}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:bg-slate-100"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  {(imagePreviewUrl || newProject.image) && (
+                    <div className="mt-3">
+                      <div className="flex items-center space-x-3">
+                        <Image 
+                          src={imagePreviewUrl || newProject.image} 
+                          alt="Preview" 
+                          width={128}
+                          height={96}
+                          className="w-32 h-24 object-cover rounded-lg border border-slate-200 shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedImageFile(null);
+                            setImagePreviewUrl('');
+                            setNewProject({...newProject, image: ''});
+                          }}
+                          className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {selectedImageFile && (
+                        <p className="text-sm text-slate-500 mt-2">
+                          Selected: {selectedImageFile.name} (will upload when project is added)
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Video Upload - NEW FIELD */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Project Video
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('project-video-upload').click()}
+                      disabled={projectVideoUploading}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>{projectVideoUploading ? 'Uploading...' : 'Upload Video'}</span>
+                    </button>
+                    <input
+                      id="project-video-upload"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleProjectVideoSelect}
+                      className="hidden"
+                    />
+                    <span className="text-sm text-slate-500">Or enter URL below</span>
+                  </div>
+                  <input
+                    type="url"
+                    value={selectedVideoFile ? '' : newProject.video}
+                    onChange={(e) => setNewProject({...newProject, video: e.target.value})}
+                    disabled={selectedVideoFile}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none disabled:bg-slate-100"
+                    placeholder="https://example.com/video.mp4"
+                  />
+                  {(videoPreviewUrl || newProject.video) && (
+                    <div className="mt-3">
+                      <div className="flex items-center space-x-3">
+                        {videoPreviewUrl ? (
+                          <video 
+                            src={videoPreviewUrl} 
+                            width={128}
+                            height={96}
+                            className="w-32 h-24 object-cover rounded-lg border border-slate-200 shadow-sm"
+                            controls
+                          />
+                        ) : (
+                          <div className="w-32 h-24 bg-slate-100 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center">
+                            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m2 2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v9a2 2 0 002 2h8a2 2 0 002-2z" />
+                            </svg>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedVideoFile(null);
+                            setVideoPreviewUrl('');
+                            setNewProject({...newProject, video: ''});
+                          }}
+                          className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {selectedVideoFile && (
+                        <p className="text-sm text-slate-500 mt-2">
+                          Selected: {selectedVideoFile.name} (will upload when project is added)
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -876,7 +792,7 @@ export default function PortfolioComponent() {
 
       {/* Company Details Modal */}
       {showCompanyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-900">Edit Company Details</h2>

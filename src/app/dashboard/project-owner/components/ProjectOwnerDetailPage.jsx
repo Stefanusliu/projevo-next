@@ -22,7 +22,9 @@ import {
   FiMessageCircle,
   FiMail,
   FiAlertTriangle,
-  FiInfo
+  FiInfo,
+  FiBarChart,
+  FiBell
 } from 'react-icons/fi';
 import BOQDisplay from '../../../components/BOQDisplay';
 import { firestoreService } from '../../../../hooks/useFirestore';
@@ -77,6 +79,11 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
   const [selectedProposalIndex, setSelectedProposalIndex] = useState(null);
+  
+  // Negotiation tab states
+  const [negotiationFilter, setNegotiationFilter] = useState('all'); // 'all', 'newest', 'price-low', 'price-high', 'active', 'completed'
+  const [newNegotiationCount, setNewNegotiationCount] = useState(0);
+  const [lastViewedNegotiations, setLastViewedNegotiations] = useState(null);
 
   // Function to navigate to BOQ maker page in read-only mode
   const handleViewBOQInMaker = async (proposal) => {
@@ -134,7 +141,15 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FiEye },
     { id: 'tahapan', label: 'Tahapan', icon: FiFileText },
+    { id: 'boq', label: 'BOQ', icon: FiBarChart },
     { id: 'proposals', label: `Proposals (${getProposalsLength(project.proposals)})`, icon: FiUser },
+    { 
+      id: 'negotiation', 
+      label: 'Negotiation', 
+      icon: FiMessageSquare,
+      hasNotification: newNegotiationCount > 0,
+      notificationCount: newNegotiationCount
+    },
   ];
 
   const formatCurrency = (amount) => {
@@ -659,62 +674,105 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Vendor Negotiation Activities - Show if there are negotiations */}
-      {getNegotiationActivities(project).length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <FiMessageSquare className="text-gray-600" size={20} />
+  const renderNegotiationTab = () => {
+    const allNegotiations = getNegotiationActivities(project);
+    const filteredNegotiations = getFilteredNegotiations(allNegotiations);
+    
+    return (
+      <div className="max-w-7xl mx-auto">
+        {/* Top Right Dropdown */}
+        <div className="flex justify-end mb-6">
+          {allNegotiations.length > 0 && (
+            <div className="flex items-center gap-2">
+              {/* New Notification Badge */}
+              {newNegotiationCount > 0 && (
+                <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                  {newNegotiationCount}
+                </span>
+              )}
+              
+              {/* Filter Dropdown */}
+              <select
+                value={negotiationFilter}
+                onChange={(e) => setNegotiationFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All</option>
+                <option value="newest">Newest</option>
+                <option value="price-low">Price ↑</option>
+                <option value="price-high">Price ↓</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Vendor Negotiations</h3>
-              <p className="text-sm text-gray-500">Latest negotiation activities sorted by recent activity</p>
-            </div>
-          </div>
+          )}
+        </div>
 
+        {/* Negotiation Activities */}
+        {filteredNegotiations.length > 0 ? (
           <div className="space-y-4">
-            {getNegotiationActivities(project).map((activity, index) => (
-              <div key={`${activity.vendorId}-${index}`} className={`border rounded-lg p-4 ${
-                activity.statusColor === 'green' ? 'bg-green-50 border-green-200' :
-                activity.statusColor === 'orange' ? 'bg-orange-50 border-orange-200' :
-                'bg-gray-50 border-gray-200'
+            {filteredNegotiations.map((activity, index) => (
+              <div key={`${activity.vendorId}-${index}`} className={`bg-white rounded-xl border p-6 shadow-sm transition-all hover:shadow-md ${
+                activity.statusColor === 'green' ? 'border-green-200 bg-green-50' :
+                activity.statusColor === 'orange' ? 'border-orange-200 bg-orange-50' :
+                'border-gray-200'
               }`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
+                <div className="flex items-start gap-4">
+                  {/* Status Icon */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     activity.statusColor === 'green' ? 'bg-green-500' :
                     activity.statusColor === 'orange' ? 'bg-orange-500' :
-                    'bg-gray-500'
+                    'bg-blue-500'
                   }`}>
                     {activity.status === 'accepted' ? (
-                      <FiCheck className="text-white" size={16} />
+                      <FiCheck className="text-white" size={20} />
                     ) : activity.status === 'counter_offer' ? (
-                      <FiAlertTriangle className="text-white" size={16} />
+                      <FiAlertTriangle className="text-white" size={20} />
                     ) : (
-                      <FiMessageSquare className="text-white" size={16} />
+                      <FiMessageSquare className="text-white" size={20} />
                     )}
                   </div>
+
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className={`font-semibold ${
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className={`text-lg font-semibold ${
                         activity.statusColor === 'green' ? 'text-green-800' :
                         activity.statusColor === 'orange' ? 'text-orange-800' :
                         'text-gray-800'
                       }`}>
                         {activity.vendorName}
                       </h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        activity.statusColor === 'green' ? 'bg-green-100 text-green-700' :
-                        activity.statusColor === 'orange' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {activity.status === 'accepted' ? 'Completed' :
-                         activity.status === 'counter_offer' ? 'Counter Offer' :
-                         'Active'}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          activity.statusColor === 'green' ? 'bg-green-100 text-green-700' :
+                          activity.statusColor === 'orange' ? 'bg-orange-100 text-orange-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {activity.status === 'accepted' ? 'Completed' :
+                           activity.status === 'counter_offer' ? 'Counter Offer' :
+                           'Active'}
+                        </span>
+                        
+                        {/* New Badge for recent activities */}
+                        {(() => {
+                          const activityTime = activity.lastActivity || activity.startedAt;
+                          const activityTimestamp = activityTime?.toDate ? activityTime.toDate().getTime() : new Date(activityTime).getTime();
+                          const hoursSinceActivity = (Date.now() - activityTimestamp) / (1000 * 60 * 60);
+                          return hoursSinceActivity < 24;
+                        })() && (
+                          <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                            NEW
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
-                    <p className={`text-sm mb-3 ${
+                    {/* Message */}
+                    <p className={`text-sm mb-4 ${
                       activity.statusColor === 'green' ? 'text-green-700' :
                       activity.statusColor === 'orange' ? 'text-orange-700' :
                       'text-gray-700'
@@ -722,16 +780,13 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       {activity.message}
                     </p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                    {/* Price Information Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white bg-opacity-60 rounded-lg mb-4">
                       <div>
-                        <span className={`font-medium ${
-                          activity.statusColor === 'green' ? 'text-green-600' :
-                          activity.statusColor === 'orange' ? 'text-orange-600' :
-                          'text-gray-600'
-                        }`}>
-                          {activity.status === 'accepted' ? 'Final Price:' : 'Current Price:'}
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                          {activity.status === 'accepted' ? 'Final Price' : 'Current Price'}
                         </span>
-                        <p className={`font-semibold ${
+                        <p className={`text-lg font-bold ${
                           activity.statusColor === 'green' ? 'text-green-800' :
                           activity.statusColor === 'orange' ? 'text-orange-800' :
                           'text-gray-800'
@@ -742,57 +797,40 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       
                       {activity.originalPrice && activity.currentPrice !== activity.originalPrice && (
                         <div>
-                          <span className={`font-medium ${
-                            activity.statusColor === 'green' ? 'text-green-600' :
-                            activity.statusColor === 'orange' ? 'text-orange-600' :
-                            'text-gray-600'
-                          }`}>Original Price:</span>
-                          <p className={`line-through ${
-                            activity.statusColor === 'green' ? 'text-green-800' :
-                            activity.statusColor === 'orange' ? 'text-orange-800' :
-                            'text-gray-800'
-                          }`}>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            Original Price
+                          </span>
+                          <p className="text-lg font-bold text-gray-600 line-through">
                             {formatCurrency(activity.originalPrice)}
+                          </p>
+                          <p className="text-xs text-green-600 font-medium">
+                            {activity.originalPrice > activity.currentPrice ? 'Reduced' : 'Increased'}
                           </p>
                         </div>
                       )}
                       
                       <div>
-                        <span className={`font-medium ${
-                          activity.statusColor === 'green' ? 'text-green-600' :
-                          activity.statusColor === 'orange' ? 'text-orange-600' :
-                          'text-gray-600'
-                        }`}>
-                          {activity.status === 'accepted' ? 'Completed:' : 'Started:'}
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                          {activity.status === 'accepted' ? 'Completed' : 'Started'}
                         </span>
-                        <p className={`${
-                          activity.statusColor === 'green' ? 'text-green-800' :
-                          activity.statusColor === 'orange' ? 'text-orange-800' :
-                          'text-gray-800'
-                        }`}>
+                        <p className="text-sm font-medium text-gray-700">
                           {formatDate(activity.status === 'accepted' ? activity.acceptedAt : activity.startedAt)}
                         </p>
                       </div>
                       
                       {activity.lastActivity && activity.status !== 'accepted' && (
                         <div>
-                          <span className={`font-medium ${
-                            activity.statusColor === 'green' ? 'text-green-600' :
-                            activity.statusColor === 'orange' ? 'text-orange-600' :
-                            'text-gray-600'
-                          }`}>Last Activity:</span>
-                          <p className={`${
-                            activity.statusColor === 'green' ? 'text-green-800' :
-                            activity.statusColor === 'orange' ? 'text-orange-800' :
-                            'text-gray-800'
-                          }`}>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                            Last Activity
+                          </span>
+                          <p className="text-sm font-medium text-gray-700">
                             {formatDate(activity.lastActivity)}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Action Buttons - Similar to proposals section */}
+                    {/* Action Buttons */}
                     <div className="flex gap-3 flex-wrap">
                       {/* WhatsApp Button */}
                       {activity.vendorPhone && (
@@ -843,8 +881,45 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          /* No Negotiations Message */
+          <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FiMessageSquare className="text-gray-400" size={32} />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {allNegotiations.length === 0 ? 'No Active Negotiations' : 'No Negotiations Match Filter'}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {allNegotiations.length === 0 
+                ? 'There are currently no vendor negotiations for this project.'
+                : 'Try adjusting your filter to see more negotiation activities.'
+              }
+            </p>
+            {allNegotiations.length === 0 ? (
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                View Proposals
+              </button>
+            ) : (
+              <button
+                onClick={() => setNegotiationFilter('all')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Show All Negotiations
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderBOQTab = () => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <BOQDisplay project={project} />
     </div>
   );
 
@@ -980,6 +1055,65 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
     return negotiationActivities;
   };
+
+  // Helper function to filter negotiations based on filter type
+  const getFilteredNegotiations = (negotiations) => {
+    switch (negotiationFilter) {
+      case 'newest':
+        return [...negotiations].sort((a, b) => {
+          const aTime = a.lastActivity || a.startedAt || new Date(0);
+          const bTime = b.lastActivity || b.startedAt || new Date(0);
+          const aDate = aTime?.toDate ? aTime.toDate() : new Date(aTime);
+          const bDate = bTime?.toDate ? bTime.toDate() : new Date(bTime);
+          return bDate.getTime() - aDate.getTime();
+        });
+      case 'price-low':
+        return [...negotiations].sort((a, b) => (a.currentPrice || 0) - (b.currentPrice || 0));
+      case 'price-high':
+        return [...negotiations].sort((a, b) => (b.currentPrice || 0) - (a.currentPrice || 0));
+      case 'active':
+        return negotiations.filter(n => n.status === 'active' || n.status === 'counter_offer');
+      case 'completed':
+        return negotiations.filter(n => n.status === 'accepted');
+      default:
+        return negotiations;
+    }
+  };
+
+  // Helper function to check for new negotiations and update notification count
+  const checkForNewNegotiations = () => {
+    const currentNegotiations = getNegotiationActivities(project);
+    const currentTimestamp = Date.now();
+    const lastViewed = lastViewedNegotiations || currentTimestamp;
+    
+    const newCount = currentNegotiations.filter(negotiation => {
+      const activityTime = negotiation.lastActivity || negotiation.startedAt;
+      const activityTimestamp = activityTime?.toDate ? activityTime.toDate().getTime() : new Date(activityTime).getTime();
+      return activityTimestamp > lastViewed;
+    }).length;
+    
+    setNewNegotiationCount(newCount);
+  };
+
+  // Function to mark negotiations as viewed
+  const markNegotiationsAsViewed = () => {
+    setLastViewedNegotiations(Date.now());
+    setNewNegotiationCount(0);
+  };
+
+  // useEffect to check for new negotiations when project updates
+  useEffect(() => {
+    if (project && project.proposals) {
+      checkForNewNegotiations();
+    }
+  }, [project, lastViewedNegotiations]);
+
+  // useEffect to mark negotiations as viewed when negotiation tab becomes active
+  useEffect(() => {
+    if (activeTab === 'negotiation') {
+      markNegotiationsAsViewed();
+    }
+  }, [activeTab]);
 
   // Helper function to get milestones from BOQ data
   const getMilestones = (project) => {
@@ -1143,70 +1277,6 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                     <p className="text-blue-800 mb-4 italic">
                       {tahapan.description}
                     </p>
-                  )}
-                  
-                  {tahapan.items && tahapan.items.length > 0 && (
-                    <div className="bg-white rounded-lg border border-blue-200 overflow-hidden">
-                      <div className="bg-blue-100 px-4 py-3 border-b border-blue-200">
-                        <h5 className="font-semibold text-blue-900">Detail Pekerjaan</h5>
-                      </div>
-                      <div className="divide-y divide-gray-100">
-                        {tahapan.items.map((item, itemIndex) => (
-                          <div key={itemIndex} className="p-4 hover:bg-gray-50 transition-colors">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              {/* Jenis Kerja */}
-                              <div>
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Jenis Kerja
-                                </label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">
-                                  {item.jenisName || item.jenis || 'Tidak ditentukan'}
-                                </p>
-                              </div>
-                              
-                              {/* Uraian */}
-                              <div>
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Uraian
-                                </label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">
-                                  {item.uraianName || item.uraian || 'Tidak ditentukan'}
-                                </p>
-                              </div>
-                              
-                              {/* Volume & Unit */}
-                              <div>
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Volume & Satuan
-                                </label>
-                                <p className="text-sm font-medium text-gray-900 mt-1">
-                                  {item.volume || '0'} {item.unit || 'unit'}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Item Description */}
-                            {item.item && (
-                              <div className="mt-3 pt-3 border-t border-gray-100">
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Deskripsi Item
-                                </label>
-                                <p className="text-sm text-gray-700 mt-1">
-                                  {item.item}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(!tahapan.items || tahapan.items.length === 0) && (
-                    <div className="bg-white rounded-lg border border-blue-200 p-6 text-center">
-                      <FiFileText className="mx-auto text-blue-400 mb-2" size={32} />
-                      <p className="text-blue-600">Tidak ada detail pekerjaan untuk tahapan ini</p>
-                    </div>
                   )}
                 </div>
               ))}
@@ -1967,8 +2037,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         return renderOverviewTab();
       case 'tahapan':
         return renderTahapanTab();
+      case 'boq':
+        return renderBOQTab();
       case 'proposals':
         return renderProposalsTab();
+      case 'negotiation':
+        return renderNegotiationTab();
       default:
         return renderOverviewTab();
     }
@@ -1977,7 +2051,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
@@ -2006,7 +2080,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`relative flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -2014,6 +2088,11 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   >
                     <Icon size={16} />
                     {tab.label}
+                    {tab.hasNotification && tab.notificationCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {tab.notificationCount > 9 ? '9+' : tab.notificationCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}

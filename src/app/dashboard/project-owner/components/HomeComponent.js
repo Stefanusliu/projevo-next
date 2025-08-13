@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import { 
   FiChevronDown, 
@@ -28,6 +28,7 @@ import {
   MdFolder
 } from 'react-icons/md';
 import ProjectOwnerDetailModal from './ProjectOwnerDetailModal';
+import ModernTooltip from '../../../../components/ui/ModernTooltip';
 import ProjectOwnerDetailPage from './ProjectOwnerDetailPage';
 import MidtransPaymentModal from '../../../../components/payments/MidtransPaymentModal';
 
@@ -1074,7 +1075,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       orderBy('createdAt', 'desc')
     );
     
-    const unsubscribe = onSnapshot(projectsQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(projectsQuery, async (snapshot) => {
       const projectsData = [];
       snapshot.forEach((doc) => {
         projectsData.push({
@@ -1084,7 +1085,31 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       });
       
       console.log('Loaded projects:', projectsData);
-      setProjects(projectsData);
+      
+      // Check payment status for projects that have payments
+      const projectsWithUpdatedPayments = await Promise.all(
+        projectsData.map(async (project) => {
+          // Only check payment status for projects that:
+          // 1. Have payment information
+          // 2. Are in awarded status or have pending payments
+          // 3. Don't already have completed payments
+          if (project.payment && 
+              project.payment.orderId && 
+              !project.initialPaymentCompleted &&
+              (project.payment.status === 'process' || 
+               project.payment.status === 'waiting-approval' || 
+               getProjectStatus(project) === 'Awarded')) {
+            
+            console.log('🔄 Checking payment for project:', project.id);
+            return await checkPaymentStatus(project);
+          }
+          
+          return project;
+        })
+      );
+      
+      console.log('Projects with updated payment status:', projectsWithUpdatedPayments);
+      setProjects(projectsWithUpdatedPayments);
       setLoading(false);
     }, (error) => {
       console.error('Error loading projects:', error);
@@ -1274,7 +1299,95 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     return `Rp ${numBudget.toLocaleString('id-ID')}`;
   };
 
-  // Helper function to get company name from user profile
+  // Helper function to check payment status with Midtrans
+  const checkPaymentStatus = async (project) => {
+    if (!project.payment || !project.payment.orderId) {
+      return project;
+    }
+
+    try {
+      console.log('🔍 Checking payment status for project:', project.id, 'orderId:', project.payment.orderId);
+      
+      const response = await fetch(`/api/midtrans/check-payment-status?orderId=${project.payment.orderId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const paymentStatus = await response.json();
+        console.log('💳 Payment status from Midtrans:', paymentStatus);
+        
+        // Update project status based on Midtrans response
+        if (paymentStatus.isCompleted && (paymentStatus.transactionStatus === 'settlement' || paymentStatus.transactionStatus === 'capture')) {
+          // Payment completed - update project in Firestore
+          const updatedProject = {
+            ...project,
+            initialPaymentCompleted: true,
+            status: 'On Going',
+            payment: {
+              ...project.payment,
+              status: 'settle',
+              transactionStatus: paymentStatus.transactionStatus,
+              completedAt: new Date(),
+              midtransResponse: paymentStatus
+            }
+          };
+          
+          console.log('✅ Payment completed, updating project status to On Going');
+          
+          // Update project in Firestore
+          try {
+            await updateDoc(doc(db, 'projects', project.id), {
+              initialPaymentCompleted: true,
+              status: 'On Going',
+              payment: updatedProject.payment
+            });
+            console.log('✅ Project status updated in Firestore to On Going');
+          } catch (firestoreError) {
+            console.error('❌ Error updating project in Firestore:', firestoreError);
+          }
+          
+          return updatedProject;
+        } else if (paymentStatus.transactionStatus === 'pending') {
+          // Payment still pending
+          const updatedProject = {
+            ...project,
+            payment: {
+              ...project.payment,
+              status: 'process',
+              transactionStatus: paymentStatus.transactionStatus,
+              midtransResponse: paymentStatus
+            }
+          };
+          
+          console.log('⏳ Payment still pending');
+          return updatedProject;
+        } else if (paymentStatus.transactionStatus === 'expire' || paymentStatus.transactionStatus === 'cancel') {
+          // Payment expired or cancelled
+          const updatedProject = {
+            ...project,
+            payment: {
+              ...project.payment,
+              status: 'failed',
+              transactionStatus: paymentStatus.transactionStatus,
+              midtransResponse: paymentStatus
+            }
+          };
+          
+          console.log('❌ Payment expired/cancelled');
+          return updatedProject;
+        }
+      } else {
+        console.log('⚠️ Failed to check payment status:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error checking payment status:', error);
+    }
+    
+    return project;
+  };
   const getCompanyName = (project) => {
     // Try to get from user profile first
     if (userProfile?.companyName) {
@@ -2412,7 +2525,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 min-h-[500px] flex flex-col relative"
+                className="bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1 flex flex-col relative"
               >
                 {/* Delete Icon for Failed Projects - Absolute Top Right Corner */}
                 {getProjectStatus(project) === 'Failed' && (
@@ -2425,7 +2538,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   </button>
                 )}
                 
-                <div className="p-6 flex-1 flex flex-col">
+                <div className="p-6 flex flex-col">
                   {/* Project ID */}
                   <div className="mb-3">
                     <p className="text-xs text-gray-500 mb-1">Project ID</p>
@@ -2444,56 +2557,24 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                         {getCompanyName(project)} • {project.marketplace?.location?.city || project.city || 'Unknown Location'}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end space-y-2 flex-shrink-0 ml-3">
-                      <span 
-                        className="px-2 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap"
-                        style={{ backgroundColor: getStatusColor(project) }}
-                      >
-                        {getDisplayStatus(project)}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
-                        {getProjectType(project.procurementMethod)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Phase Section */}
-                  <div className="mb-4 flex-shrink-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-gray-500">Project Phase</p>
-                      <div className="flex items-center space-x-1">
-                        {/* Phase indicators */}
-                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Draft' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Tender' ? 'bg-orange-500' : 'bg-gray-300'}`}></div>
-                        <div className={`w-2 h-2 rounded-full ${getProjectPhase(project) === 'Bid' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full mr-2 ${
-                            getProjectPhase(project) === 'Draft' ? 'bg-blue-500' : 
-                            getProjectPhase(project) === 'Tender' ? 'bg-orange-500' : 
-                            'bg-green-500'
-                          }`}></div>
-                          <span className="text-sm font-medium text-gray-700">
-                            {getProjectPhase(project)} Phase
-                          </span>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          getProjectPhase(project) === 'Draft' ? 'bg-blue-100 text-blue-700' : 
-                          getProjectPhase(project) === 'Tender' ? 'bg-orange-100 text-orange-700' : 
-                          'bg-green-100 text-green-700'
-                        }`}>
-                          {getProjectStatus(project)}
-                        </span>
+                    <div className="flex flex-col items-end space-y-1 flex-shrink-0 ml-3">
+                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
+                        Phase: {getProjectPhase(project)}
                       </div>
                       
-                      {/* Phase description */}
-                      <div className="mt-2 text-xs text-gray-600">
-                        {getProjectPhase(project) === 'Draft' && 'Project creation and approval process'}
-                        {getProjectPhase(project) === 'Tender' && 'Vendor bidding and selection process'}
-                        {getProjectPhase(project) === 'Bid' && 'Project execution and completion'}
+                      <div 
+                        className={`px-2 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap flex items-center gap-1 ${
+                          getProjectStatus(project) === 'Revise' ? 'cursor-help' : ''
+                        }`}
+                        style={{ backgroundColor: getStatusColor(project) }}
+                        title={getProjectStatus(project) === 'Revise' ? (project.adminNotes || 'Admin requires revision') : ''}
+                      >
+                        Status: {getDisplayStatus(project)}
+                        {getProjectStatus(project) === 'Revise' && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2502,23 +2583,6 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-shrink-0">
                     {project.specialNotes || project.description || `${project.projectType} project for ${project.propertyType || 'property'} in ${project.marketplace?.location?.city || project.city || 'Unknown Location'}`}
                   </p>
-
-                  {/* Admin Notes - Show for projects that need revision */}
-                  {getProjectStatus(project) === 'Revise' && project.adminNotes && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex-shrink-0">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <svg className="w-4 h-4 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-2">
-                          <h4 className="text-sm font-medium text-red-800">Revision Required</h4>
-                          <p className="text-sm text-red-700">{project.adminNotes}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Progress - Only show if there's actual progress and project has started */}
                   {isProjectStarted(project) && project.progress && project.progress > 0 ? (
@@ -2540,7 +2604,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   ) : null}
 
                   {/* Project Details */}
-                  <div className="mb-5 flex-1">
+                  <div>
                     <div className="space-y-3">
                       {/* Scope */}
                       <div>
@@ -2566,12 +2630,22 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                         </div>
                       </div>
 
-                      {/* Property Type */}
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Property Type</p>
-                        <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-200">
-                          {project.propertyType || 'Not specified'}
-                        </span>
+                      {/* Property Type and Project Type */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Property Type</p>
+                          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-200">
+                            {project.propertyType || 'Not specified'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Proyek</p>
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+                            {project.procurementMethod === 'Tender' ? 'Tender' : 
+                             project.procurementMethod === 'Penunjukan Langsung' ? 'Langsung' : 
+                             'Langsung'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2621,11 +2695,28 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         projectData={selectedProposalForPayment?.projectData}
         selectedProposal={selectedProposalForPayment?.proposal}
         proposalIndex={selectedProposalForPayment?.proposalIndex}
-        onPaymentSuccess={(paymentData) => {
+        onPaymentSuccess={async (paymentData) => {
           console.log('Payment successful:', paymentData);
           setShowPaymentModal(false);
           setSelectedProposalForPayment(null);
-          // Refresh projects to show updated status
+          
+          // Immediately check payment status and update project
+          const currentProject = selectedProposalForPayment?.projectData;
+          if (currentProject) {
+            console.log('🔄 Checking payment status immediately after payment success...');
+            const updatedProject = await checkPaymentStatus(currentProject);
+            
+            // Update the projects list with the updated project
+            setProjects(prevProjects => 
+              prevProjects.map(project => 
+                project.id === updatedProject.id ? updatedProject : project
+              )
+            );
+          }
+          
+          // Show success alert
+          alert('🎉 Payment Successful!\n\nYour project status has been updated to "On Going" and work will begin shortly.');
+          
           // Projects will auto-refresh due to real-time listener
         }}
         onPaymentError={(error) => {

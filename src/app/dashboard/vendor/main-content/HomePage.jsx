@@ -5,6 +5,7 @@ import MyProjectsComponent from '../components/MyProjectsComponent';
 import EarningsComponent from '../components/EarningsComponent';
 import HistoryComponent from '../components/HistoryComponent';
 import PortfolioComponent from '../components/PortfolioComponent';
+import VendorTransactionComponent from '../components/VendorTransactionComponent';
 
 export default function HomePage() {
   const [activeMenu, setActiveMenu] = useState("Project");
@@ -12,16 +13,9 @@ export default function HomePage() {
   const [projectFilter, setProjectFilter] = useState('Tender');
   
   const menuItems = [
-    { 
-      id: 'Project', 
-      label: 'Project', 
-      subItems: [
-        { id: 'Tender', label: 'Tender' },
-        { id: 'Contract', label: 'Contract' }
-      ]
-    },
+    { id: 'Project', label: 'Project' },
     { id: 'Portfolio', label: 'Portfolio' },
-    { id: 'Earnings', label: 'Earnings' },
+    { id: 'Transaction', label: 'Transaction' },
     { id: 'History', label: 'History' }
   ];
 
@@ -105,7 +99,7 @@ export default function HomePage() {
         <div className="flex-1">
           {activeMenu === "Project" && <MyProjectsComponent projectFilter={projectFilter} />}
           {activeMenu === "Portfolio" && <PortfolioComponent />}
-          {activeMenu === "Earnings" && <EarningsComponent />}
+          {activeMenu === "Transaction" && <VendorTransactionComponent />}
           {activeMenu === "History" && <HistoryComponent />}
         </div>
       </div>

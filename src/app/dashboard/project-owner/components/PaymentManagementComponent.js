@@ -7,27 +7,9 @@ import { db } from '../../../../lib/firebase';
 
 export default function PaymentManagementComponent() {
   const { user, userProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState("pending");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [debugMode, setDebugMode] = useState(false); // Add debug mode
-
-  // Debug: Load ALL payments to see what's in the collection
-  useEffect(() => {
-    if (debugMode) {
-      console.log('🔍 DEBUG MODE: Loading ALL payments...');
-      const allPaymentsQuery = query(collection(db, 'payments'));
-      
-      const unsubscribe = onSnapshot(allPaymentsQuery, (snapshot) => {
-        console.log('🔍 ALL PAYMENTS IN DATABASE:');
-        snapshot.forEach((doc) => {
-          console.log('  Payment ID:', doc.id, 'Data:', doc.data());
-        });
-      });
-      
-      return () => unsubscribe();
-    }
-  }, [debugMode]);
 
   // Load payments from projects collection
   useEffect(() => {
@@ -91,13 +73,43 @@ export default function PaymentManagementComponent() {
     return () => unsubscribe();
   }, [user?.uid, userProfile?.email]);
 
-  // Organize payments by status
+  // Organize payments by status and get filtered payments
   const paymentData = {
-    pending: payments.filter(p => p.status === 'pending'),
-    completed: payments.filter(p => p.status === 'completed'),
-    failed: payments.filter(p => p.status === 'failed'),
-    overdue: payments.filter(p => p.status === 'overdue')
+    'waiting-approval': payments.filter(p => p.status === 'waiting-approval'),
+    'release': payments.filter(p => p.status === 'release'),
+    'settle': payments.filter(p => p.status === 'settle'),
+    'refund': payments.filter(p => p.status === 'refund'),
+    'indispute': payments.filter(p => p.status === 'indispute'),
+    'add-funds': payments.filter(p => p.status === 'add-funds'),
+    'inescrow': payments.filter(p => p.status === 'inescrow'),
+    'process': payments.filter(p => p.status === 'process'),
+    'failed': payments.filter(p => p.status === 'failed'),
+    // Keep legacy statuses for backward compatibility
+    'pending': payments.filter(p => p.status === 'pending'),
+    'completed': payments.filter(p => p.status === 'completed'),
+    'overdue': payments.filter(p => p.status === 'overdue')
   };
+
+  // Get filtered payments based on selected status
+  const filteredPayments = selectedStatus === 'all' ? payments : paymentData[selectedStatus] || [];
+
+  // Status options for dropdown
+  const statusOptions = [
+    { value: 'all', label: 'All Payments', count: payments.length },
+    { value: 'waiting-approval', label: 'Waiting Approval', count: paymentData['waiting-approval'].length, description: 'Menunggu admin' },
+    { value: 'process', label: 'Process', count: paymentData['process'].length, description: 'Sedang proses' },
+    { value: 'inescrow', label: 'In Escrow', count: paymentData['inescrow'].length, description: 'Dana di rekening bersama' },
+    { value: 'release', label: 'Release', count: paymentData['release'].length, description: 'Dana ke vendor' },
+    { value: 'settle', label: 'Settle', count: paymentData['settle'].length, description: 'Pembayaran complete' },
+    { value: 'add-funds', label: 'Add Funds', count: paymentData['add-funds'].length, description: 'Request dana tambahan' },
+    { value: 'refund', label: 'Refund', count: paymentData['refund'].length, description: 'Dana kembali' },
+    { value: 'indispute', label: 'In Dispute', count: paymentData['indispute'].length, description: 'Dana di hold' },
+    { value: 'failed', label: 'Failed', count: paymentData['failed'].length, description: 'Gagal' },
+    // Legacy statuses
+    { value: 'pending', label: 'Pending', count: paymentData['pending'].length, description: 'Menunggu pembayaran' },
+    { value: 'completed', label: 'Completed', count: paymentData['completed'].length, description: 'Selesai' },
+    { value: 'overdue', label: 'Overdue', count: paymentData['overdue'].length, description: 'Terlambat' }
+  ];
 
   const handlePayment = (payment) => {
     if (payment.snapUrl && payment.status === 'pending') {
@@ -141,12 +153,29 @@ export default function PaymentManagementComponent() {
 
   const getStatusBgColor = (status) => {
     switch (status) {
+      case 'waiting-approval':
+        return '#F59E0B'; // Orange - Menunggu admin
+      case 'process':
+        return '#2373FF'; // Blue - Sedang proses
+      case 'inescrow':
+        return '#8B5CF6'; // Purple - Dana di rekening bersama
+      case 'release':
+        return '#06B6D4'; // Cyan - Dana ke vendor
+      case 'settle':
+        return '#10B981'; // Green - Pembayaran complete
+      case 'add-funds':
+        return '#F59E0B'; // Orange - Request dana tambahan
+      case 'refund':
+        return '#6B7280'; // Gray - Dana kembali
+      case 'indispute':
+        return '#DC2626'; // Red - Dana di hold
+      case 'failed':
+        return '#EF4444'; // Red - Gagal
+      // Legacy statuses
       case 'pending':
         return '#2373FF'; // Blue
       case 'completed':
         return '#10B981'; // Green
-      case 'failed':
-        return '#EF4444'; // Red
       case 'overdue':
         return '#F59E0B'; // Orange
       default:
@@ -167,76 +196,63 @@ export default function PaymentManagementComponent() {
   return (
     <div className="bg-white rounded-lg border border-gray-300">
       <div className="p-6">
-        {/* Debug Mode Toggle */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        {/* Status Filter Dropdown */}
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
+              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by Status
+              </label>
+              <select
+                id="status-filter"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="block w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} ({option.count})
+                    {option.description && ` - ${option.description}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-right">
               <p className="text-sm text-gray-600">
-                User ID: <code className="bg-gray-200 px-1 rounded">{user?.uid}</code>
-              </p>
-              <p className="text-sm text-gray-600">
-                Email: <code className="bg-gray-200 px-1 rounded">{userProfile?.email}</code>
+                Showing {filteredPayments.length} of {payments.length} payments
               </p>
             </div>
-            <button
-              onClick={() => setDebugMode(!debugMode)}
-              className={`px-3 py-1 rounded text-xs ${debugMode ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-            >
-              {debugMode ? 'Debug ON' : 'Debug OFF'}
-            </button>
           </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { key: 'pending', label: 'Pending', count: paymentData.pending.length },
-              { key: 'completed', label: 'Completed', count: paymentData.completed.length },
-              { key: 'failed', label: 'Failed', count: paymentData.failed.length },
-              { key: 'overdue', label: 'Overdue', count: paymentData.overdue.length }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                  activeTab === tab.key
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
         </div>
 
         {/* Payment List */}
         <div className="space-y-4">
-          {paymentData[activeTab].length === 0 ? (
+          {filteredPayments.length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
               </svg>
               <h3 className="text-lg font-medium text-black mb-2">
-                No {activeTab} payments
+                {selectedStatus === 'all' ? 'No payments found' : `No ${selectedStatus} payments`}
               </h3>
               <p className="text-gray-500">
-                {activeTab === 'pending' ? 'No pending payments at the moment.' :
-                 activeTab === 'completed' ? 'No completed payments yet.' :
-                 activeTab === 'failed' ? 'No failed payments found.' :
-                 'No overdue payments found.'}
+                {selectedStatus === 'all' ? 'No payments have been created yet.' :
+                 selectedStatus === 'waiting-approval' ? 'No payments waiting for approval.' :
+                 selectedStatus === 'process' ? 'No payments currently being processed.' :
+                 selectedStatus === 'inescrow' ? 'No funds currently in escrow.' :
+                 selectedStatus === 'release' ? 'No payments being released to vendors.' :
+                 selectedStatus === 'settle' ? 'No settled payments yet.' :
+                 selectedStatus === 'add-funds' ? 'No fund requests at the moment.' :
+                 selectedStatus === 'refund' ? 'No refunds processed.' :
+                 selectedStatus === 'indispute' ? 'No payments currently in dispute.' :
+                 selectedStatus === 'failed' ? 'No failed payments found.' :
+                 selectedStatus === 'pending' ? 'No pending payments at the moment.' :
+                 selectedStatus === 'completed' ? 'No completed payments yet.' :
+                 'No payments found for this status.'}
               </p>
             </div>
           ) : (
-            paymentData[activeTab].map((payment) => (
+            filteredPayments.map((payment) => (
             <div key={payment.id} className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:bg-gray-100 transition-colors">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -288,6 +304,110 @@ export default function PaymentManagementComponent() {
                 >
                   View Details
                 </button>
+                
+                {/* Waiting Approval */}
+                {payment.status === 'waiting-approval' && (
+                  <button
+                    onClick={() => alert('Waiting for admin approval')}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    disabled
+                  >
+                    Waiting Approval
+                  </button>
+                )}
+                
+                {/* Process */}
+                {payment.status === 'process' && payment.snapUrl && (
+                  <button
+                    onClick={() => window.open(payment.snapUrl, '_blank')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    Continue Payment
+                  </button>
+                )}
+                {payment.status === 'process' && !payment.snapUrl && (
+                  <button
+                    onClick={() => alert('Payment is being processed')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    disabled
+                  >
+                    Processing...
+                  </button>
+                )}
+                
+                {/* In Escrow */}
+                {payment.status === 'inescrow' && (
+                  <button
+                    onClick={() => alert('Funds are secured in escrow')}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    Release Funds
+                  </button>
+                )}
+                
+                {/* Release */}
+                {payment.status === 'release' && (
+                  <button
+                    onClick={() => alert('Funds are being released to vendor')}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    disabled
+                  >
+                    Releasing...
+                  </button>
+                )}
+                
+                {/* Settle */}
+                {payment.status === 'settle' && (
+                  <button
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    onClick={() => alert('Payment completed successfully')}
+                  >
+                    Download Receipt
+                  </button>
+                )}
+                
+                {/* Add Funds */}
+                {payment.status === 'add-funds' && (
+                  <button
+                    onClick={() => handlePayment(payment)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    Add Funds
+                  </button>
+                )}
+                
+                {/* Refund */}
+                {payment.status === 'refund' && (
+                  <button
+                    onClick={() => alert('Refund has been processed')}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    disabled
+                  >
+                    Refunded
+                  </button>
+                )}
+                
+                {/* In Dispute */}
+                {payment.status === 'indispute' && (
+                  <button
+                    onClick={() => alert('Payment is under dispute review')}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    View Dispute
+                  </button>
+                )}
+                
+                {/* Failed */}
+                {payment.status === 'failed' && (
+                  <button
+                    onClick={() => handlePayment(payment)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    Retry Payment
+                  </button>
+                )}
+                
+                {/* Legacy Statuses */}
                 {payment.status === 'pending' && payment.snapUrl && (
                   <button
                     onClick={() => handlePayment(payment)}

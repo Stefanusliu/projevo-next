@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../../lib/firebase-admin';
-import { emailService } from '../../../../lib/emailService';
+import { adminDb } from '../../../../lib/firebase-admin';
+import { sendEmail } from '../../../../lib/emailService';
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db as clientDb } from '../../../../lib/firebase';
 
@@ -265,7 +265,7 @@ async function sendVendorNotification(projectData, selectedProposal, orderId) {
     </div>
   `;
 
-  await emailService.sendEmail({
+  await sendEmail({
     to: vendorEmail,
     subject: `🎉 Project Award Confirmation - ${projectTitle}`,
     html: emailContent
@@ -319,7 +319,7 @@ async function sendProjectOwnerConfirmation(projectData, selectedProposal, order
     </div>
   `;
 
-  await emailService.sendEmail({
+  await sendEmail({
     to: ownerEmail,
     subject: `✅ Payment Successful - Vendor Selected for ${projectTitle}`,
     html: emailContent
