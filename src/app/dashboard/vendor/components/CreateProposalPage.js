@@ -1157,7 +1157,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
               </div>
             </div>
             <p className="text-gray-600 mb-6">
-              To submit a proposal, you need to complete your location information (city and province). This helps project owners know where you're located.
+              To submit a proposal, you need to complete your location information (city and province). This helps project owners know where you&apos;re located.
             </p>
             <p className="text-sm text-gray-500 mb-6">
               Do you want to set your location now or later?
