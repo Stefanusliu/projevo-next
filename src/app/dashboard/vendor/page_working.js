@@ -177,7 +177,7 @@ function VendorDashboardContent() {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, selectedLocation]);
+  }, [searchQuery, selectedLocation, performSearch]);
 
   // Handle search button click
   const handleSearchClick = () => {

@@ -1958,7 +1958,7 @@ function BOQMakerContent() {
                 {showNegotiationDetails && negotiationNotes && (
                   <div className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
                     <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                      <MdMessageSquare className="w-4 h-4 mr-1" />
+                      <MdMessage className="w-4 h-4 mr-1" />
                       Project Owner Feedback:
                     </h4>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{negotiationNotes}</p>
@@ -1976,7 +1976,7 @@ function BOQMakerContent() {
                     onClick={() => setShowNegotiationDetails(true)}
                     className="mt-2 text-sm text-amber-600 hover:text-amber-800 font-medium flex items-center"
                   >
-                    <MdMessageSquare className="w-4 h-4 mr-1" />
+                    <MdMessage className="w-4 h-4 mr-1" />
                     Show project owner feedback
                   </button>
                 )}
