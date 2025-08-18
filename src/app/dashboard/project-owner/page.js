@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '../../../contexts/AuthContext';
@@ -54,7 +54,7 @@ function ProjectOwnerDashboardContent() {
   ];
 
   // Search function to find contractors and project owners
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -163,7 +163,7 @@ function ProjectOwnerDashboardContent() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [searchQuery, selectedLocation, user.uid]);
 
   // Handle search input changes
   useEffect(() => {

@@ -81,7 +81,7 @@ export default function ProjectHistoryDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Project Not Found</h2>
-          <p className="text-slate-600 mb-4">The project you're looking for doesn't exist or you don't have access to it.</p>
+          <p className="text-slate-600 mb-4">The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
           <button
             onClick={() => router.push('/dashboard/project-owner')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

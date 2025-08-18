@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +12,7 @@ export default function HistoryComponent() {
   const [loading, setLoading] = useState(true);
 
   // Dummy data for testing UI with all project statuses
-  const dummyProjects = [
+  const dummyProjects = useMemo(() => [
     {
       id: 'dummy_hist_1',
       title: 'Modern Office Renovation',
@@ -61,7 +61,7 @@ export default function HistoryComponent() {
       completedAt: new Date('2024-07-20'),
       isDummy: true
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (!user) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,7 +25,7 @@ export default function TransactionComponent() {
   };
 
   // Dummy data for testing UI with all transaction statuses - Project Owner perspective
-  const dummyTransactions = [
+  const dummyTransactions = useMemo(() => [
     {
       id: 'dummy_po_txn_1',
       projectId: 'dummy_project_1',
@@ -194,7 +194,7 @@ export default function TransactionComponent() {
       updatedAt: new Date('2024-07-15'),
       isDummy: true
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (!user) return;

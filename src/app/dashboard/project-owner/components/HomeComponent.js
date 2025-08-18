@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
@@ -1625,7 +1625,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   };
 
   // Helper function to get the project status for display and logic
-  const getProjectStatus = (project) => {
+  const getProjectStatus = useCallback((project) => {
     console.log('Getting status for project:', project.id, {
       status: project.status,
       moderationStatus: project.moderationStatus,
@@ -1731,7 +1731,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     // Default fallback
     console.log('Using fallback status for project:', project.id, project.status);
     return project.status || 'In Progress';
-  };
+  }, []);
 
   // Helper function to calculate hours to deadline
   const getTimeToDeadlineInHours = (project) => {

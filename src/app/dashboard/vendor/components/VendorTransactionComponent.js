@@ -1,4 +1,4 @@
-"use client";
+"uimport { useState, useEffect, useMemo } from 'react';e client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -14,7 +14,7 @@ export default function VendorTransactionComponent() {
   const [showDetails, setShowDetails] = useState(false);
 
   // Dummy data for testing UI with all transaction statuses
-  const dummyTransactions = [
+  const dummyTransactions = useMemo(() => [
     {
       id: 'dummy_txn_1',
       projectId: 'dummy_project_1',
@@ -183,7 +183,7 @@ export default function VendorTransactionComponent() {
       updatedAt: new Date('2024-07-12'),
       isDummy: true
     }
-  ];
+  ], []);
 
   // Load transactions from projects where vendor is the current user
   useEffect(() => {
