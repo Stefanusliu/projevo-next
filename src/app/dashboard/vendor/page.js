@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -56,7 +56,7 @@ function VendorDashboardContent() {
   }, [searchParams]);
 
   // Search function to find contractors and project owners
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -165,7 +165,7 @@ function VendorDashboardContent() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [searchQuery, selectedLocation, user.uid]);
 
   // Handle search input changes
   useEffect(() => {

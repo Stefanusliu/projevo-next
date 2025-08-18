@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEdit, MdVisibility, MdArrowBack } from 'react-icons/md';
+import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEdit, MdVisibility, MdArrowBack, MdMessage } from 'react-icons/md';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { firestoreService } from '../../hooks/useFirestore';
@@ -259,7 +259,7 @@ function BOQMakerContent() {
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, loadTempBOQData]);
 
   // Function to load session BOQ data from localStorage (preferred method)
   const loadSessionBOQData = (sessionKey, isReadOnly) => {
