@@ -10,6 +10,19 @@ export default function TransactionComponent() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleViewDetails = (transaction) => {
+    // Show transaction details inline
+    setSelectedTransaction(transaction);
+    setShowDetails(true);
+  };
+
+  const handleBackToList = () => {
+    setShowDetails(false);
+    setSelectedTransaction(null);
+  };
 
   // Dummy data for testing UI with all transaction statuses - Project Owner perspective
   const dummyTransactions = [
@@ -294,6 +307,161 @@ export default function TransactionComponent() {
     );
   }
 
+  // Show transaction details view
+  if (showDetails && selectedTransaction) {
+    return (
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="border-b border-slate-200 pb-6">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Transactions
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900">Transaction Details</h1>
+          <p className="text-slate-600">Complete information about this payment transaction</p>
+        </div>
+
+        {/* Transaction Details Content */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedTransaction.projectTitle}</h2>
+              <div className="flex items-center space-x-4">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedTransaction.status)}`}>
+                  {getProjectOwnerStatusDescription(selectedTransaction.status)}
+                </span>
+                {selectedTransaction.isDummy && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Demo Data
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-slate-900">
+                {formatCurrency(selectedTransaction.amount)}
+              </div>
+              <p className="text-slate-600 mt-1">{getProjectOwnerStatusDescription(selectedTransaction.status)}</p>
+            </div>
+          </div>
+
+          {/* Transaction Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-600">Order ID</label>
+                <p className="text-slate-900 font-mono">{selectedTransaction.orderId}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Vendor Name</label>
+                <p className="text-slate-900">{selectedTransaction.vendorName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Vendor Email</label>
+                <p className="text-slate-900">{selectedTransaction.vendorEmail}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Payment Type</label>
+                <p className="text-slate-900">{selectedTransaction.paymentType}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-600">Created Date</label>
+                <p className="text-slate-900">
+                  {selectedTransaction.createdAt ? (
+                    selectedTransaction.createdAt.toDate ? 
+                      new Date(selectedTransaction.createdAt.toDate()).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) :
+                      new Date(selectedTransaction.createdAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                  ) : 'N/A'}
+                </p>
+              </div>
+              {selectedTransaction.updatedAt && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Last Updated</label>
+                  <p className="text-slate-900">
+                    {selectedTransaction.updatedAt.toDate ? 
+                      new Date(selectedTransaction.updatedAt.toDate()).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) :
+                      new Date(selectedTransaction.updatedAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    }
+                  </p>
+                </div>
+              )}
+              <div>
+                <label className="text-sm font-medium text-slate-600">Status</label>
+                <p className="text-slate-900">{getProjectOwnerStatusDescription(selectedTransaction.status)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4">
+            {selectedTransaction.status === 'waiting-approval' && (
+              <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium">
+                View Details
+              </button>
+            )}
+            {selectedTransaction.status === 'release' && (
+              <button className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-medium">
+                Release Funds
+              </button>
+            )}
+            {selectedTransaction.status === 'settle' && (
+              <button className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium">
+                Download Receipt
+              </button>
+            )}
+            {selectedTransaction.status === 'add-funds' && (
+              <button className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium">
+                Add Additional Funds
+              </button>
+            )}
+            {selectedTransaction.status === 'indispute' && (
+              <button className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium">
+                View Dispute Details
+              </button>
+            )}
+            <button 
+              onClick={handleBackToList}
+              className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
+            >
+              Back to Transactions
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Demo Data Notice */}
@@ -348,7 +516,11 @@ export default function TransactionComponent() {
           </div>
         ) : (
           filteredTransactions.map((transaction) => (
-            <div key={transaction.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+            <div 
+              key={transaction.id} 
+              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleViewDetails(transaction)}
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">

@@ -8,7 +8,21 @@ import { db } from '../../../../lib/firebase';
 export default function HistoryComponent() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState('All');
-  const [selectedYear, setSelectedYear] = useState('2024');
+  const [selectedYear, setSelectedYear] = useState('all');
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleViewDetails = (project) => {
+    // Show project details inline
+    setSelectedProject(project);
+    setShowDetails(true);
+  };
+
+  const handleBackToList = () => {
+    setShowDetails(false);
+    setSelectedProject(null);
+  };
+
   const [projectHistory, setProjectHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -142,6 +156,145 @@ export default function HistoryComponent() {
     );
   }
 
+  // Show project details view
+  if (showDetails && selectedProject) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="border-b border-slate-200 pb-6">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to History
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900">Project Details</h1>
+          <p className="text-slate-600">Complete information about this project</p>
+        </div>
+
+        {/* Project Details Content */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedProject.title}</h2>
+              <div className="flex items-center space-x-4 mb-4">
+                <span className={`inline-flex px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedProject.status)}`}>
+                  {selectedProject.status || 'Unknown'}
+                </span>
+                {selectedProject.rating && (
+                  <div className="flex items-center space-x-2">
+                    <div className="flex">{renderStars(selectedProject.rating)}</div>
+                    <span className="text-slate-600">({selectedProject.rating}/5)</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-slate-600 leading-relaxed">{selectedProject.description || 'No description available'}</p>
+            </div>
+            <div className="text-right ml-8">
+              <div className="text-3xl font-bold text-slate-900 mb-2">
+                {new Intl.NumberFormat('id-ID', {
+                  style: 'currency',
+                  currency: 'IDR',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }).format(selectedProject.budget || 0)}
+              </div>
+              <p className="text-slate-600">Project Budget</p>
+            </div>
+          </div>
+
+          {/* Project Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Basic Information</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Location</label>
+                <p className="text-slate-900">{selectedProject.location || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Category</label>
+                <p className="text-slate-900">{selectedProject.category || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Duration</label>
+                <p className="text-slate-900">{selectedProject.timeline ? `${selectedProject.timeline} days` : 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Timeline</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Start Date</label>
+                <p className="text-slate-900">
+                  {selectedProject.createdAt ? 
+                    new Date(selectedProject.createdAt.toDate()).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'N/A'
+                  }
+                </p>
+              </div>
+              {selectedProject.completedAt && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Completion Date</label>
+                  <p className="text-slate-900">
+                    {new Date(selectedProject.completedAt.toDate()).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Client Information</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Client Name</label>
+                <p className="text-slate-900">{selectedProject.ownerName || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Final Amount</label>
+                <p className="text-slate-900">
+                  {selectedProject.selectedBid ? 
+                    new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      minimumFractionDigits: 0
+                    }).format(selectedProject.selectedBid.amount) : 'N/A'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4 mt-8">
+            {selectedProject.status === 'completed' && (
+              <button className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium">
+                Download Certificate
+              </button>
+            )}
+            <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium">
+              View Portfolio Entry
+            </button>
+            <button 
+              onClick={handleBackToList}
+              className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
+            >
+              Back to History
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -221,7 +374,8 @@ export default function HistoryComponent() {
         {filteredHistory.map((project) => (
           <div
             key={project.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer"
+            onClick={() => handleViewDetails(project)}
           >
             <div className="p-6">
               {/* Project Header */}
@@ -307,14 +461,32 @@ export default function HistoryComponent() {
 
               {/* Actions */}
               <div className="flex space-x-3">
-                <button className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetails(project);
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
+                >
                   View Full Details
                 </button>
-                <button className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert('Download report functionality');
+                  }}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                >
                   Download Report
                 </button>
                 {project.status === 'completed' && (
-                  <button className="px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Use as reference functionality');
+                    }}
+                    className="px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors"
+                  >
                     Use as Reference
                   </button>
                 )}

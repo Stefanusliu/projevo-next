@@ -234,6 +234,191 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     }
   };
 
+  // Helper function to calculate tender deadline
+  const calculateTenderDeadline = (createdAt, tenderDuration) => {
+    if (!createdAt || !tenderDuration) return null;
+    
+    try {
+      let createdDate;
+      if (createdAt instanceof Date) {
+        createdDate = createdAt;
+      } else if (createdAt?.toDate) {
+        createdDate = createdAt.toDate();
+      } else if (typeof createdAt === 'string') {
+        createdDate = new Date(createdAt);
+      } else if (typeof createdAt === 'object' && createdAt.seconds) {
+        createdDate = new Date(createdAt.seconds * 1000);
+      } else {
+        return null;
+      }
+
+      if (!createdDate || isNaN(createdDate.getTime())) {
+        return null;
+      }
+
+      // Add tender duration to created date
+      const deadline = new Date(createdDate);
+      deadline.setDate(deadline.getDate() + parseInt(tenderDuration));
+      return deadline;
+    } catch (error) {
+      console.error('Error calculating tender deadline:', error);
+      return null;
+    }
+  };
+
+  // Helper function to calculate hours to deadline
+  const getTimeToDeadlineInHours = (project) => {
+    // First try to calculate deadline from createdAt + tenderDuration if it's a tender project
+    let deadline = null;
+    
+    if (project.procurementMethod === 'Tender' && project.createdAt && project.tenderDuration) {
+      deadline = calculateTenderDeadline(project.createdAt, project.tenderDuration);
+    }
+    
+    // Fallback to pre-existing deadline fields
+    if (!deadline) {
+      deadline = project.tenderDeadline || project.deadline;
+    }
+    
+    if (!deadline) return null;
+    
+    try {
+      let deadlineDate;
+      
+      if (deadline instanceof Date) {
+        deadlineDate = deadline;
+      } else if (deadline?.toDate) {
+        deadlineDate = deadline.toDate();
+      } else if (typeof deadline === 'string') {
+        deadlineDate = new Date(deadline);
+      } else if (typeof deadline === 'object' && deadline.seconds) {
+        deadlineDate = new Date(deadline.seconds * 1000);
+      } else {
+        return null;
+      }
+
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+        return null;
+      }
+
+      const now = new Date();
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      return diffTime / (1000 * 60 * 60); // Convert to hours
+    } catch (error) {
+      console.error('Error calculating time to deadline:', error);
+      return null;
+    }
+  };
+
+  // Function to get project status
+  const getProjectStatus = (project) => {
+    console.log('Getting status for project:', project.id, {
+      status: project.status,
+      moderationStatus: project.moderationStatus,
+      procurementMethod: project.procurementMethod,
+      createdAt: project.createdAt,
+      tenderDuration: project.tenderDuration,
+      deadline: project.deadline
+    });
+
+    // Draft Mode Statuses
+    if (project.status === 'Draft' || project.moderationStatus === 'draft') {
+      return 'In Progress'; // Owner still creates the project draft
+    }
+    
+    if (project.moderationStatus === 'pending' || project.status === 'Under Review' || project.status === 'Review') {
+      return 'Review'; // Owner clicks "Submit Draft"
+    }
+    
+    if (project.moderationStatus === 'rejected' || project.status === 'Revise' || project.moderationStatus === 'revision_required') {
+      return 'Revise'; // Admin require project owner to edit/revise the project details
+    }
+    
+    if (project.moderationStatus === 'approved' && project.procurementMethod !== 'Tender') {
+      return 'Approve'; // Admin approve the project and it's live in Project Market Place
+    }
+    
+    // Tender Mode Statuses
+    if (project.moderationStatus === 'approved' && project.procurementMethod === 'Tender') {
+      // Check if tender is locked (less than 24 hours to deadline)
+      const timeLeft = getTimeToDeadlineInHours(project);
+      
+      // Check if any proposal has been accepted (vendor accepted negotiation)
+      const hasAcceptedProposal = project.proposals && project.proposals.some(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+      
+      // Get the selected vendor from accepted proposal
+      const selectedVendor = project.proposals?.find(proposal => 
+        proposal.status === 'accepted' || 
+        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      );
+      
+      console.log('Tender time analysis:', {
+        timeLeft,
+        hasNegotiationOffer: project.hasNegotiationOffer,
+        selectedVendorId: project.selectedVendorId,
+        negotiationAccepted: project.negotiationAccepted,
+        paymentCompleted: project.paymentCompleted,
+        initialPaymentCompleted: project.initialPaymentCompleted,
+        hasAcceptedProposal,
+        selectedVendor: selectedVendor ? {
+          id: selectedVendor.vendorId,
+          status: selectedVendor.status,
+          negotiationStatus: selectedVendor.negotiation?.status
+        } : null
+      });
+      
+      // Check if vendor was awarded/selected (negotiation was accepted)
+      if (project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted || hasAcceptedProposal) {
+        // Set the selected vendor ID if not already set
+        if (!project.selectedVendorId && selectedVendor) {
+          project.selectedVendorId = selectedVendor.vendorId;
+        }
+        
+        // If initial payment is completed, project is ongoing
+        if (project.initialPaymentCompleted) {
+          return 'On Going'; // Project started, work in progress
+        }
+        // If vendor is selected but payment not completed, show payment needed
+        return 'Awarded'; // Show awarded status with payment needed
+      }
+      
+      // Check for active negotiation status (vendor hasn't accepted yet)
+      if (project.hasNegotiationOffer || 
+          project.status === 'Negotiate' || 
+          project.status === 'negotiation' ||
+          project.negotiationStatus === 'active' ||
+          (project.proposals && project.proposals.some(proposal => 
+            proposal.status === 'negotiating' || 
+            proposal.status === 'counter_offer' ||
+            (proposal.negotiation && proposal.negotiation.status === 'pending')
+          ))) {
+        // Only show negotiate if negotiation hasn't been accepted yet
+        if (!project.negotiationAccepted && !hasAcceptedProposal) {
+          return 'Negotiate';
+        }
+        // If negotiation was accepted, fall through to check other conditions
+      }
+      
+      if (timeLeft !== null) {
+        if (timeLeft <= 24 && timeLeft > 0) {
+          return 'Locked'; // Locked if less than 24 hours to deadline
+        }
+        if (timeLeft <= 0) {
+          return 'Failed'; // No winner chosen until deadline
+        }
+      }
+      
+      return 'Open'; // Default for approved tender projects
+    }
+    
+    // Default fallback
+    console.log('Using fallback status for project:', project.id, project.status);
+    return project.status || 'In Progress';
+  };
+
   const getProposalStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'accepted':
@@ -466,18 +651,23 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Project Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{project.projectTitle}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {project.projectTitle} 
+              <span className="ml-3 px-3 py-1 bg-white border border-black text-sm font-normal rounded">
+                {getProjectStatus(project)}
+              </span>
+            </h2>
             <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
+              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
                 {project.projectType}
               </span>
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">
+              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
                 {project.propertyType}
               </span>
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(project.status)}`}>
+              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
                 {project.status || 'Active'}
               </span>
             </div>

@@ -1812,20 +1812,19 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiEdit className="w-3 h-3 text-blue-600 mr-2" />
                   <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">
-                    In Progress
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               </div>
               
               <div className="text-sm font-semibold text-blue-800">
-                In Progress
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-blue-600 mt-1">
-                Continue editing
+                {/* Continue editing */}
               </div>
             </div>
             
@@ -1859,9 +1858,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiClock className="w-3 h-3 text-yellow-600 mr-2" />
                   <span className="text-xs font-medium text-yellow-700 uppercase tracking-wide">
-                    Review
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="flex space-x-1">
@@ -1872,11 +1870,11 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               </div>
               
               <div className="text-sm font-semibold text-yellow-800">
-                Under Review
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-yellow-600 mt-1">
-                Admin approval pending
+                {/* Admin approval pending */}
               </div>
             </div>
             
@@ -1899,20 +1897,19 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiEdit className="w-3 h-3 text-orange-600 mr-2" />
                   <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">
-                    Revision
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
               </div>
               
               <div className="text-sm font-semibold text-orange-800">
-                Action Required
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-orange-600 mt-1">
-                Admin feedback received
+                {/* Admin feedback received */}
               </div>
             </div>
             
@@ -1935,20 +1932,18 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
-                    Approved
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
-                <FiExternalLink className="w-3 h-3 text-green-600" />
               </div>
               
               <div className="text-sm font-semibold text-green-800">
-                Live on Market
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-green-600 mt-1">
-                Receiving proposals
+                {/* Receiving proposals */}
               </div>
             </div>
             
@@ -1971,20 +1966,18 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
                   <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
-                    {getProjectStatus(project)}
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
-                <FiClock className="w-3 h-3 text-green-600" />
               </div>
               
               <div className="text-sm font-semibold text-green-800">
-                {timeLeft}
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-green-600 mt-1">
-                Accepting bids
+                {timeLeft}
               </div>
             </div>
             
@@ -2007,20 +2000,19 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiLock className="w-3 h-3 text-orange-600 mr-2" />
                   <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">
-                    {getProjectStatus(project)}
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
               </div>
               
               <div className="text-sm font-semibold text-orange-800">
-                {lockedTimeLeft}
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-orange-600 mt-1">
-                Bidding closed
+                {lockedTimeLeft}
               </div>
             </div>
             
@@ -2042,9 +2034,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiMessageSquare className="w-3 h-3 text-purple-600 mr-2" />
                   <span className="text-xs font-medium text-purple-700 uppercase tracking-wide">
-                    Negotiation
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="flex space-x-1">
@@ -2055,11 +2046,11 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               </div>
               
               <div className="text-sm font-semibold text-purple-800">
-                Active Discussion
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-purple-600 mt-1">
-                Vendor selected
+                {/* Vendor selected */}
               </div>
             </div>
             
@@ -2081,20 +2072,19 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiCreditCard className="w-3 h-3 text-red-600 mr-2" />
                   <span className="text-xs font-medium text-red-700 uppercase tracking-wide">
-                    Payment Due
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
               </div>
               
               <div className="text-sm font-semibold text-red-800">
-                Vendor Awarded
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-red-600 mt-1">
-                Pay 50% to start project
+                {/* Pay 50% to start project */}
               </div>
             </div>
             
@@ -2116,20 +2106,18 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <FiXCircle className="w-3 h-3 text-gray-600 mr-2" />
                   <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
-                    Expired
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
-                <FiRefreshCw className="w-3 h-3 text-gray-500" />
               </div>
               
               <div className="text-sm font-semibold text-gray-800">
-                No Winner
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-gray-600 mt-1">
-                Tender ended
+                {/* Tender ended */}
               </div>
             </div>
             
@@ -2151,20 +2139,18 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
                   <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">
-                    In Progress
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
-                <FiExternalLink className="w-3 h-3 text-blue-600" />
               </div>
               
               <div className="text-sm font-semibold text-blue-800">
-                Project Active
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-blue-600 mt-1">
-                Work in progress
+                {/* Work in progress */}
               </div>
             </div>
             
@@ -2186,20 +2172,18 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                   <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
-                    Completed
+                    Phase: {getProjectPhase(project)}
                   </span>
                 </div>
-                <FiExternalLink className="w-3 h-3 text-green-600" />
               </div>
               
               <div className="text-sm font-semibold text-green-800">
-                Project Finished
+                Status: {getDisplayStatus(project)}
               </div>
               
               <div className="text-xs text-green-600 mt-1">
-                Successfully delivered
+                {/* Successfully delivered */}
               </div>
             </div>
             
@@ -2484,13 +2468,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           {/* Create New Project Button */}
           <button
             onClick={handleCreateProject}
-            className="flex items-center text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+            className="flex items-center justify-center text-white w-10 h-10 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
             style={{ backgroundColor: '#2373FF' }}
             onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
             onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
           >
-            <FiPlus className="w-4 h-4 mr-2" />
-            Create New Project
+            <FiPlus className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -2548,132 +2531,136 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                   </div>
 
                   {/* Project Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0 pr-8">
+                  <div className="mb-4">
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-semibold text-black mb-1 truncate">
                         {project.title || project.projectTitle}
                       </h3>
                       <p className="text-sm text-gray-600 truncate">
-                        {getCompanyName(project)} • {project.marketplace?.location?.city || project.city || 'Unknown Location'}
+                        {project.marketplace?.location?.city || project.city || 'Unknown Location'}, Indonesia
                       </p>
                     </div>
-                    <div className="flex flex-col items-end space-y-1 flex-shrink-0 ml-3">
-                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
-                        Phase: {getProjectPhase(project)}
-                      </div>
-                      
-                      <div 
-                        className={`px-2 py-1 rounded-full text-xs font-medium text-white whitespace-nowrap flex items-center gap-1 ${
-                          getProjectStatus(project) === 'Revise' ? 'cursor-help' : ''
-                        }`}
-                        style={{ backgroundColor: getStatusColor(project) }}
-                        title={getProjectStatus(project) === 'Revise' ? (project.adminNotes || 'Admin requires revision') : ''}
-                      >
-                        Status: {getDisplayStatus(project)}
-                        {getProjectStatus(project) === 'Revise' && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
+                    
+                    {/* Progress Bar under name */}
+                    <div className="mt-3">
+                      {isProjectStarted(project) && project.progress && project.progress > 0 ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-700">Progress Proyek</span>
+                            <span className="text-xs text-gray-600">{project.progress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-4">
+                            <div
+                              className="h-4 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${project.progress}%`,
+                                backgroundColor: '#2373FF'
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-700">Progress Proyek</span>
+                            <span className="text-xs text-gray-600">0%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-4 relative">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs text-gray-500 font-medium">Proyek Belum Mulai</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-shrink-0">
-                    {project.specialNotes || project.description || `${project.projectType} project for ${project.propertyType || 'property'} in ${project.marketplace?.location?.city || project.city || 'Unknown Location'}`}
-                  </p>
-
-                  {/* Progress - Only show if there's actual progress and project has started */}
-                  {isProjectStarted(project) && project.progress && project.progress > 0 ? (
-                    <div className="mb-4 flex-shrink-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-black">Progress</span>
-                        <span className="text-sm text-gray-600">{project.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full transition-all duration-300"
-                          style={{ 
-                            width: `${project.progress}%`,
-                            backgroundColor: '#2373FF'
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ) : null}
 
                   {/* Project Details */}
                   <div>
-                    <div className="space-y-3">
-                      {/* Scope */}
+                    <div className="space-y-4">
+                      {/* Anggaran */}
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Scope</p>
-                        <div className="flex flex-wrap gap-1">
-                          {(project.projectScope || project.scope || []).length > 0 ? (
-                            (project.projectScope || project.scope || []).slice(0, 2).map((scope, index) => (
-                              <span 
-                                key={index}
-                                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200"
-                              >
-                                {scope}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-gray-500">No scope specified</span>
-                          )}
-                          {(project.projectScope || project.scope || []).length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{(project.projectScope || project.scope || []).length - 2} more
-                            </span>
-                          )}
+                        <p className="text-xs text-gray-500 mb-1">Anggaran</p>
+                        <p className="text-base font-bold text-black">
+                          {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
+                        </p>
+                      </div>
+
+                      {/* Jenis Proyek & Properti */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Jenis Proyek</p>
+                          <p className="text-sm font-bold text-black">
+                            {project.projectType || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Properti</p>
+                          <p className="text-sm font-bold text-black">
+                            {project.propertyType || 'Not specified'}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Property Type and Project Type */}
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Ruang Lingkup & Metode Pengadaan */}
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Property Type</p>
-                          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-200">
-                            {project.propertyType || 'Not specified'}
-                          </span>
+                          <p className="text-xs text-gray-500 mb-1">Ruang Lingkup</p>
+                          <p className="text-sm font-bold text-black">
+                            {(project.projectScope || project.scope || []).length > 0 
+                              ? (project.projectScope || project.scope || [])[0]
+                              : 'No scope'
+                            }
+                          </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Proyek</p>
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+                          <p className="text-xs text-gray-500 mb-1">Metode Pengadaan</p>
+                          <p className="text-sm font-bold text-black">
                             {project.procurementMethod === 'Tender' ? 'Tender' : 
                              project.procurementMethod === 'Penunjukan Langsung' ? 'Langsung' : 
                              'Langsung'}
-                          </span>
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Project Info */}
-                  <div className="grid grid-cols-3 gap-4 mb-5 flex-shrink-0">
-                    <div>
-                      <p className="text-xs text-gray-500">Budget</p>
-                      <p className="text-sm font-semibold text-black truncate">
-                        {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Start Date</p>
-                      <p className="text-sm font-semibold text-black truncate">
-                        {project.startDate || project.estimatedStartDate || 'TBD'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Proposals</p>
-                      <p className="text-sm font-semibold text-black truncate">
-                        {project.proposals?.length || 0} received
-                      </p>
+                      {/* Durasi Tender, Durasi Proyek, Estimasi Mulai, Pemilik Proyek - 4 columns in one row */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Durasi Tender</p>
+                          <p className="text-sm font-bold text-black">
+                            {project.tenderDuration || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Durasi Proyek</p>
+                          <p className="text-sm font-bold text-black">
+                            {project.estimatedDuration || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Estimasi Mulai</p>
+                          <p className="text-sm font-bold text-black">
+                            {project.estimatedStartDate 
+                              ? new Date(project.estimatedStartDate).toLocaleDateString('id-ID', { 
+                                  year: 'numeric', 
+                                  month: 'long' 
+                                })
+                              : 'Not specified'
+                            }
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Pemilik Proyek</p>
+                          <p className="text-sm font-bold text-black">
+                            {getCompanyName(project)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 mt-5">
                     {getActionButton(project)}
                   </div>
                 </div>

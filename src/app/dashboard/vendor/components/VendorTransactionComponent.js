@@ -10,6 +10,8 @@ export default function VendorTransactionComponent() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   // Dummy data for testing UI with all transaction statuses
   const dummyTransactions = [
@@ -291,9 +293,14 @@ export default function VendorTransactionComponent() {
   ];
 
   const handleViewDetails = (transaction) => {
-    // Show transaction details modal or navigate to details page
-    console.log('View transaction details:', transaction);
-    alert(`Transaction Details:\nOrder ID: ${transaction.orderId}\nAmount: ${formatCurrency(transaction.amount)}\nStatus: ${transaction.status}\nClient: ${transaction.clientName}`);
+    // Show transaction details inline
+    setSelectedTransaction(transaction);
+    setShowDetails(true);
+  };
+
+  const handleBackToList = () => {
+    setShowDetails(false);
+    setSelectedTransaction(null);
   };
 
   const handleRequestFunds = (transaction) => {
@@ -393,6 +400,162 @@ export default function VendorTransactionComponent() {
     );
   }
 
+  // Show transaction details view
+  if (showDetails && selectedTransaction) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        {/* Header */}
+        <div className="border-b border-slate-200 p-6">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Transactions
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900">Transaction Details</h1>
+          <p className="text-slate-600">Complete information about this payment transaction</p>
+        </div>
+
+        {/* Transaction Details Content */}
+        <div className="p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedTransaction.projectTitle}</h2>
+              <div className="flex items-center space-x-4">
+                <span 
+                  className={`inline-flex px-4 py-2 rounded-full text-sm font-medium text-white ${getStatusBgColor(selectedTransaction.status)}`}
+                >
+                  {selectedTransaction.status.charAt(0).toUpperCase() + selectedTransaction.status.slice(1).replace('-', ' ')}
+                </span>
+                {selectedTransaction.isDummy && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Demo Data
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-slate-900">
+                {formatCurrency(selectedTransaction.amount)}
+              </div>
+              <p className="text-slate-600 mt-1">{getVendorStatusDescription(selectedTransaction.status)}</p>
+            </div>
+          </div>
+
+          {/* Transaction Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-600">Order ID</label>
+                <p className="text-slate-900 font-mono">{selectedTransaction.orderId || selectedTransaction.id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Client Name</label>
+                <p className="text-slate-900">{selectedTransaction.clientName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Client Email</label>
+                <p className="text-slate-900">{selectedTransaction.clientEmail}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Payment Type</label>
+                <p className="text-slate-900">{selectedTransaction.paymentType}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-600">Created Date</label>
+                <p className="text-slate-900">
+                  {selectedTransaction.createdAt ? (
+                    selectedTransaction.createdAt.toDate ? 
+                      new Date(selectedTransaction.createdAt.toDate()).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) :
+                      new Date(selectedTransaction.createdAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                  ) : 'N/A'}
+                </p>
+              </div>
+              {selectedTransaction.updatedAt && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Last Updated</label>
+                  <p className="text-slate-900">
+                    {selectedTransaction.updatedAt.toDate ? 
+                      new Date(selectedTransaction.updatedAt.toDate()).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) :
+                      new Date(selectedTransaction.updatedAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    }
+                  </p>
+                </div>
+              )}
+              {selectedTransaction.environment && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Environment</label>
+                  <p className="text-slate-900">
+                    {selectedTransaction.environment === 'sandbox' ? '🧪 Sandbox' : '🔒 Production'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4">
+            {selectedTransaction.status === 'waiting-approval' && (
+              <button className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium">
+                Contact Client
+              </button>
+            )}
+            {selectedTransaction.status === 'settle' && (
+              <button className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium">
+                Download Receipt
+              </button>
+            )}
+            {selectedTransaction.status === 'add-funds' && (
+              <button className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium">
+                Request Additional Funds
+              </button>
+            )}
+            {selectedTransaction.status === 'indispute' && (
+              <button className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium">
+                View Dispute Details
+              </button>
+            )}
+            <button 
+              onClick={handleBackToList}
+              className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
+            >
+              Back to Transactions
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       {/* Header */}
@@ -485,7 +648,11 @@ export default function VendorTransactionComponent() {
             </div>
           ) : (
             filteredTransactions.map((transaction) => (
-            <div key={transaction.id} className="bg-slate-50 rounded-lg p-6 border border-slate-200 hover:bg-slate-100 transition-colors">
+            <div 
+              key={transaction.id} 
+              className="bg-slate-50 rounded-lg p-6 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
+              onClick={() => handleViewDetails(transaction)}
+            >
               {transaction.isDummy && (
                 <div className="mb-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -552,7 +719,10 @@ export default function VendorTransactionComponent() {
               
               <div className="flex justify-end space-x-3">
                 <button 
-                  onClick={() => handleViewDetails(transaction)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetails(transaction);
+                  }}
                   className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                 >
                   View Details
@@ -561,7 +731,10 @@ export default function VendorTransactionComponent() {
                 {/* Waiting Approval - Vendor can contact client */}
                 {transaction.status === 'waiting-approval' && (
                   <button
-                    onClick={() => handleContactClient(transaction)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleContactClient(transaction);
+                    }}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     Contact Client
@@ -571,7 +744,10 @@ export default function VendorTransactionComponent() {
                 {/* Process - Client is paying */}
                 {transaction.status === 'process' && (
                   <button
-                    onClick={() => alert('Client is processing payment')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Client is processing payment');
+                    }}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                     disabled
                   >
@@ -582,7 +758,10 @@ export default function VendorTransactionComponent() {
                 {/* In Escrow - Funds secured, project ongoing */}
                 {transaction.status === 'inescrow' && (
                   <button
-                    onClick={() => alert('Continue working on the project. Funds will be released upon completion.')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Continue working on the project. Funds will be released upon completion.');
+                    }}
                     className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     Funds Secured
@@ -592,7 +771,10 @@ export default function VendorTransactionComponent() {
                 {/* Release - Funds being sent to vendor */}
                 {transaction.status === 'release' && (
                   <button
-                    onClick={() => alert('Funds are being transferred to your account')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Funds are being transferred to your account');
+                    }}
                     className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                     disabled
                   >
@@ -604,7 +786,10 @@ export default function VendorTransactionComponent() {
                 {transaction.status === 'settle' && (
                   <button
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                    onClick={() => alert('Payment received successfully!')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Payment received successfully!');
+                    }}
                   >
                     Payment Received
                   </button>
@@ -613,7 +798,10 @@ export default function VendorTransactionComponent() {
                 {/* Add Funds - Vendor can request additional funds */}
                 {transaction.status === 'add-funds' && (
                   <button
-                    onClick={() => handleRequestFunds(transaction)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRequestFunds(transaction);
+                    }}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     Request More Funds
@@ -623,7 +811,10 @@ export default function VendorTransactionComponent() {
                 {/* Refund - Payment refunded */}
                 {transaction.status === 'refund' && (
                   <button
-                    onClick={() => alert('Payment has been refunded to client')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Payment has been refunded to client');
+                    }}
                     className="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                     disabled
                   >
@@ -634,7 +825,10 @@ export default function VendorTransactionComponent() {
                 {/* In Dispute - Under review */}
                 {transaction.status === 'indispute' && (
                   <button
-                    onClick={() => alert('Transaction is under dispute review')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('Transaction is under dispute review');
+                    }}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     View Dispute
@@ -644,7 +838,10 @@ export default function VendorTransactionComponent() {
                 {/* Failed - Payment failed */}
                 {transaction.status === 'failed' && (
                   <button
-                    onClick={() => handleContactClient(transaction)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleContactClient(transaction);
+                    }}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                   >
                     Contact Client
@@ -654,7 +851,10 @@ export default function VendorTransactionComponent() {
                 {/* Legacy Statuses */}
                 {transaction.status === 'pending' && (
                   <button
-                    onClick={() => handleContactClient(transaction)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleContactClient(transaction);
+                    }}
                     className="text-white px-4 py-2 rounded-lg transition-colors text-sm bg-blue-600 hover:bg-blue-700"
                   >
                     Follow Up Payment

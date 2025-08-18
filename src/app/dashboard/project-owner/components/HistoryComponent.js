@@ -10,6 +10,19 @@ export default function HistoryComponent() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleViewDetails = (project) => {
+    // Show project details inline
+    setSelectedProject(project);
+    setShowDetails(true);
+  };
+
+  const handleBackToList = () => {
+    setShowDetails(false);
+    setSelectedProject(null);
+  };
 
   // Dummy data for testing UI with all project statuses - Project Owner perspective
   const dummyProjects = [
@@ -206,6 +219,151 @@ export default function HistoryComponent() {
     );
   }
 
+  // Show project details view
+  if (showDetails && selectedProject) {
+    return (
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="border-b border-slate-200 pb-6">
+          <button
+            onClick={handleBackToList}
+            className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to History
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900">Project Details</h1>
+          <p className="text-slate-600">Complete information about this project</p>
+        </div>
+
+        {/* Project Details Content */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedProject.title}</h2>
+              <div className="flex items-center space-x-4 mb-4">
+                <span className={`inline-flex px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedProject.status)}`}>
+                  {selectedProject.status || 'Unknown'}
+                </span>
+                {selectedProject.isDummy && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Demo Data
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-600 leading-relaxed">{selectedProject.description || 'No description available'}</p>
+            </div>
+            <div className="text-right ml-8">
+              <div className="text-3xl font-bold text-slate-900 mb-2">
+                {formatCurrency(selectedProject.budget || selectedProject.finalCost || 0)}
+              </div>
+              <p className="text-slate-600">Project Budget</p>
+            </div>
+          </div>
+
+          {/* Project Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Basic Information</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Vendor</label>
+                <p className="text-slate-900">{selectedProject.vendorName || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Location</label>
+                <p className="text-slate-900">{selectedProject.location || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Duration</label>
+                <p className="text-slate-900">{selectedProject.duration || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Timeline</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Start Date</label>
+                <p className="text-slate-900">
+                  {selectedProject.createdAt ? 
+                    new Date(selectedProject.createdAt).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'N/A'
+                  }
+                </p>
+              </div>
+              {selectedProject.completedAt && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Completion Date</label>
+                  <p className="text-slate-900">
+                    {new Date(selectedProject.completedAt).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              )}
+              {selectedProject.cancelledAt && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Cancelled Date</label>
+                  <p className="text-slate-900">
+                    {new Date(selectedProject.cancelledAt).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-2">Financial</h3>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Budget</label>
+                <p className="text-slate-900">{formatCurrency(selectedProject.budget || 0)}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600">Final Cost</label>
+                <p className="text-slate-900">{formatCurrency(selectedProject.finalCost || 0)}</p>
+              </div>
+              {selectedProject.finalCost && selectedProject.budget && (
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Savings</label>
+                  <p className={`text-slate-900 ${selectedProject.budget - selectedProject.finalCost >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(selectedProject.budget - selectedProject.finalCost)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4 mt-8">
+            {selectedProject.status === 'completed' && (
+              <button className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium">
+                Download Final Report
+              </button>
+            )}
+            <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium">
+              Duplicate Project
+            </button>
+            <button 
+              onClick={handleBackToList}
+              className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
+            >
+              Back to History
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Demo Data Notice */}
@@ -252,7 +410,11 @@ export default function HistoryComponent() {
           </div>
         ) : (
           filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+            <div 
+              key={project.id} 
+              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleViewDetails(project)}
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">

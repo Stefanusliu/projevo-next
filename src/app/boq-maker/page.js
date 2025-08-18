@@ -169,6 +169,14 @@ function BOQMakerContent() {
   const [bulkAddUraianTahapanId, setBulkAddUraianTahapanId] = useState(null);
   const [bulkAddUraianJenisId, setBulkAddUraianJenisId] = useState(null);
   const [hasAutosaveDraft, setHasAutosaveDraft] = useState(false);
+  
+  // Resubmission states
+  const [resubmissionMode, setResubmissionMode] = useState(false);
+  const [resubmissionData, setResubmissionData] = useState(null);
+  const [negotiationNotes, setNegotiationNotes] = useState('');
+  const [showNegotiationDetails, setShowNegotiationDetails] = useState(false);
+  const [vendorName, setVendorName] = useState('');
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
@@ -198,8 +206,8 @@ function BOQMakerContent() {
     const mode = searchParams.get('mode');
     const isReadOnly = searchParams.get('readOnly') === 'true';
     
-    if ((tempId || localKey || sessionKey) && mode === 'view') {
-      console.log('🔍 Loading BOQ data in view mode:', {
+    if ((tempId || localKey || sessionKey) && (mode === 'view' || mode === 'resubmission')) {
+      console.log('🔍 Loading BOQ data in view/resubmission mode:', {
         tempId,
         localKey,
         sessionKey,
@@ -211,7 +219,11 @@ function BOQMakerContent() {
       if (sessionKey) {
         // Load from localStorage using session key (preferred method)
         console.log('📱 Loading from session key:', sessionKey);
-        loadSessionBOQData(sessionKey, isReadOnly);
+        if (mode === 'resubmission') {
+          loadResubmissionBOQData(sessionKey);
+        } else {
+          loadSessionBOQData(sessionKey, isReadOnly);
+        }
       } else if (tempId) {
         // Load from Firestore (legacy method)
         console.log('📱 Attempting to load from Firestore with tempId:', tempId);
@@ -247,7 +259,7 @@ function BOQMakerContent() {
         }
       }
     }
-  }, [searchParams, loadTempBOQData]);
+  }, [searchParams]);
 
   // Function to load session BOQ data from localStorage (preferred method)
   const loadSessionBOQData = (sessionKey, isReadOnly) => {
@@ -312,6 +324,234 @@ function BOQMakerContent() {
         window.history.back();
       } else {
         setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  };
+
+  // Function to load resubmission BOQ data directly from Firestore
+  const loadResubmissionBOQData = async (sessionKey) => {
+    try {
+      console.log('📥 Loading resubmission BOQ data from localStorage for project info...', sessionKey);
+      
+      // Get basic project info from localStorage
+      const sessionDataString = localStorage.getItem(sessionKey);
+      if (!sessionDataString) {
+        throw new Error('Resubmission session data not found. Please try resubmitting the proposal again.');
+      }
+      
+      const sessionData = JSON.parse(sessionDataString);
+      console.log('📄 Session data:', sessionData);
+      
+      if (!sessionData.projectId || !sessionData.vendorId) {
+        throw new Error('Invalid resubmission session data - missing project or vendor ID');
+      }
+      
+      // Fetch the latest project data directly from Firestore
+      console.log('🔄 Fetching latest project data from Firestore...', sessionData.projectId);
+      const latestProject = await firestoreService.get('projects', sessionData.projectId);
+      
+      if (!latestProject) {
+        throw new Error('Project not found in Firestore');
+      }
+      
+      console.log('📊 Latest project data loaded:', latestProject);
+      
+      // Find the vendor's proposal in the latest project data
+      let vendorProposal = null;
+      let proposalIndex = -1;
+      
+      if (latestProject.proposals && Array.isArray(latestProject.proposals)) {
+        proposalIndex = latestProject.proposals.findIndex(proposal => 
+          proposal.vendorId === sessionData.vendorId
+        );
+        
+        if (proposalIndex !== -1) {
+          vendorProposal = latestProject.proposals[proposalIndex];
+          console.log('✅ Vendor proposal found at index:', proposalIndex, vendorProposal);
+        }
+      }
+      
+      if (!vendorProposal) {
+        throw new Error('Vendor proposal not found in the latest project data');
+      }
+      
+      console.log('🔍 Full vendor proposal data:', JSON.stringify(vendorProposal, null, 2));
+      console.log('🔍 Full project data for negotiation check:', JSON.stringify(latestProject, null, 2));
+      
+      // Get the latest negotiation data from multiple possible locations
+      let latestNegotiationData = {};
+      
+      // Check vendor proposal negotiation
+      if (vendorProposal.negotiation && Object.keys(vendorProposal.negotiation).length > 0) {
+        latestNegotiationData = vendorProposal.negotiation;
+        console.log('📍 Found negotiation data in vendor proposal:', latestNegotiationData);
+      }
+      // Check project-level negotiations
+      else if (latestProject.negotiations && Array.isArray(latestProject.negotiations)) {
+        const vendorNegotiation = latestProject.negotiations.find(neg => 
+          neg.vendorId === sessionData.vendorId
+        );
+        if (vendorNegotiation) {
+          latestNegotiationData = vendorNegotiation;
+          console.log('📍 Found negotiation data in project negotiations:', latestNegotiationData);
+        }
+      }
+      // Check project-level negotiation object
+      else if (latestProject.negotiation && Object.keys(latestProject.negotiation).length > 0) {
+        latestNegotiationData = latestProject.negotiation;
+        console.log('📍 Found negotiation data in project negotiation:', latestNegotiationData);
+      }
+      // Check if negotiation data is embedded in proposal status
+      else if (vendorProposal.status === 'negotiating' && vendorProposal.negotiationHistory) {
+        const latestNegotiation = vendorProposal.negotiationHistory[vendorProposal.negotiationHistory.length - 1];
+        if (latestNegotiation) {
+          latestNegotiationData = latestNegotiation;
+          console.log('� Found negotiation data in negotiation history:', latestNegotiationData);
+        }
+      }
+      
+      console.log('💬 Final negotiation data used:', latestNegotiationData);
+      
+      // Get the existing BOQ pricing from the latest proposal
+      const existingBOQPricing = vendorProposal.boqPricing || [];
+      console.log('📋 Existing BOQ pricing:', existingBOQPricing);
+      console.log('📋 BOQ pricing detailed structure:', JSON.stringify(existingBOQPricing, null, 2));
+      
+      // Set up BOQ for resubmission editing
+      if (existingBOQPricing.length > 0) {
+        // Convert existing BOQ pricing back to tahapan kerja format with original prices for comparison
+        const recreatedTahapanKerja = existingBOQPricing.map((item, index) => {
+          // Get original vendor price from multiple possible fields
+          const originalVendorPrice = item.pricePerPcs || 
+                                     item.unitPrice || 
+                                     item.price || 
+                                     item.harga || 
+                                     item.subtotal / (item.volume || item.quantity || 1) ||
+                                     0;
+          
+          // Get negotiated price from negotiation data (if available)
+          let negotiatedPrice = originalVendorPrice;
+          
+          // Look for negotiated price in various locations
+          if (latestNegotiationData.boqPricing && latestNegotiationData.boqPricing[index]) {
+            negotiatedPrice = latestNegotiationData.boqPricing[index].negotiatedPrice || 
+                             latestNegotiationData.boqPricing[index].pricePerPcs || 
+                             latestNegotiationData.boqPricing[index].unitPrice ||
+                             originalVendorPrice;
+          } else if (latestNegotiationData.negotiatedItems && latestNegotiationData.negotiatedItems[index]) {
+            negotiatedPrice = latestNegotiationData.negotiatedItems[index].negotiatedPrice ||
+                             latestNegotiationData.negotiatedItems[index].newPrice ||
+                             originalVendorPrice;
+          } else if (item.negotiatedPrice) {
+            negotiatedPrice = item.negotiatedPrice;
+          } else if (item.negotiation && item.negotiation.negotiatedPrice) {
+            negotiatedPrice = item.negotiation.negotiatedPrice;
+          }
+          
+          console.log(`💰 Item ${index} (${item.itemDescription || item.name || 'Unknown'}):`, {
+            originalVendorPrice,
+            negotiatedPrice,
+            itemData: {
+              pricePerPcs: item.pricePerPcs,
+              unitPrice: item.unitPrice,
+              price: item.price,
+              harga: item.harga,
+              subtotal: item.subtotal,
+              volume: item.volume,
+              quantity: item.quantity,
+              unit: item.unit,
+              satuan: item.satuan,
+              unitType: item.unitType
+            }
+          });
+          
+          // Extract unit/satuan from multiple possible fields
+          const unitValue = item.satuan || 
+                           item.unit || 
+                           item.unitType || 
+                           item.unitName ||
+                           item.satuanType ||
+                           'unit';
+          
+          return {
+            id: item.id || `tahapan-${index + 1}`,
+            name: item.tahapanName || item.name || item.tahapan || `Tahapan ${index + 1}`,
+            jenisKerja: [{
+              id: item.jenisId || `jenis-${index + 1}`,
+              name: item.jenisName || item.jenisKerja || 'Jenis Kerja',
+              uraian: [{
+                id: item.uraianId || `uraian-${index + 1}`,
+                name: item.uraianName || item.description || item.itemDescription || 'Uraian Pekerjaan',
+                spec: [{
+                  id: item.specId || `spec-${index + 1}`,
+                  name: item.specName || item.specification || 'Spesifikasi',
+                  satuan: unitValue, // Use satuan instead of unit
+                  volume: item.volume || item.quantity || 1,
+                  pricePerPcs: negotiatedPrice, // Start with negotiated price for editing
+                  originalPrice: originalVendorPrice, // Show original vendor price for comparison
+                  negotiatedPrice: negotiatedPrice, // Store negotiated price for reference
+                  isResubmission: true // Flag to indicate this is a resubmission item
+                }]
+              }]
+            }]
+          };
+        });
+        
+        setTahapanKerja(recreatedTahapanKerja);
+        console.log('✅ BOQ data recreated from existing proposal with original prices:', recreatedTahapanKerja);
+      } else {
+        console.log('⚠️ No existing BOQ pricing found, starting with default structure');
+      }
+      
+      // Set project information
+      setBoqTitle(`${latestProject.projectTitle || 'Project'} - Resubmission`);
+      
+      // Set resubmission context
+      setIsReadOnly(false); // Allow editing for resubmission
+      setResubmissionMode(true);
+      setResubmissionData({
+        projectId: sessionData.projectId,
+        vendorId: sessionData.vendorId,
+        proposalIndex: proposalIndex,
+        originalProposal: vendorProposal,
+        latestProject: latestProject,
+        latestNegotiationData: latestNegotiationData
+      });
+      
+      // Show negotiation details/comments if available
+      const negotiationNotes = latestNegotiationData.notes || 
+                              latestNegotiationData.ownerComments || 
+                              latestNegotiationData.requirements || 
+                              latestNegotiationData.message || 
+                              '';
+      
+      if (negotiationNotes) {
+        setNegotiationNotes(negotiationNotes);
+        setShowNegotiationDetails(true);
+        console.log('💬 Showing negotiation notes:', negotiationNotes);
+      }
+      
+      // Set view to editor for resubmission
+      setCurrentView('editor');
+      setEditMode(true);
+      
+      console.log('✅ Resubmission BOQ data loaded successfully from Firestore');
+      
+    } catch (error) {
+      console.error('❌ Error loading resubmission BOQ data:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'Resubmission data could not be found. Please try resubmitting the proposal again from the project details page.'
+        : `Error loading resubmission data: ${error.message}. Please try again or contact support if the problem persists.`;
+      
+      alert(errorMessage);
+      
+      // Redirect back to vendor dashboard
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = '/dashboard/vendor';
       }
     }
   };
@@ -1368,6 +1608,160 @@ function BOQMakerContent() {
     return savedBOQs.find(boq => boq.id === id);
   };
 
+  // Helper function to count total items in BOQ
+  const getTotalItems = () => {
+    let totalItems = 0;
+    tahapanKerja.forEach(tahapan => {
+      tahapan.jenisKerja.forEach(jenis => {
+        jenis.uraian.forEach(uraian => {
+          totalItems += uraian.spec.length;
+        });
+      });
+    });
+    return totalItems;
+  };
+
+  // Handle resubmitting updated proposal to project owner
+  const handleResubmitUpdatedProposal = async () => {
+    if (!resubmissionData) {
+      alert('Data resubmission tidak ditemukan. Silakan coba lagi.');
+      return;
+    }
+
+    if (!boqTitle.trim()) {
+      alert('Silakan masukkan judul BOQ terlebih dahulu.');
+      return;
+    }
+
+    if (calculateGrandTotal() === 0) {
+      alert('BOQ tidak boleh kosong. Silakan tambahkan minimal satu item dengan harga.');
+      return;
+    }
+
+    try {
+      console.log('🚀 Starting proposal resubmission to project owner...');
+      
+      // Convert current BOQ data to pricing format
+      const updatedBOQPricing = [];
+      let itemIndex = 0;
+      
+      tahapanKerja.forEach((tahapan, tahapanIndex) => {
+        tahapan.jenisKerja.forEach((jenis, jenisIndex) => {
+          jenis.uraian.forEach((uraian, uraianIndex) => {
+            uraian.spec.forEach((spec, specIndex) => {
+              if (spec.pricePerPcs > 0 && spec.volume > 0) {
+                const subtotal = spec.pricePerPcs * spec.volume;
+                updatedBOQPricing.push({
+                  id: `${tahapanIndex}-${jenisIndex}-${uraianIndex}-${specIndex}`,
+                  tahapanName: tahapan.name,
+                  jenisName: jenis.name,
+                  uraianName: uraian.name,
+                  itemDescription: spec.description || spec.name,
+                  specification: spec.description || spec.name,
+                  satuan: spec.satuan,
+                  volume: spec.volume,
+                  pricePerPcs: spec.pricePerPcs,
+                  subtotal: subtotal,
+                  tahapanId: tahapan.id,
+                  jenisId: jenis.id,
+                  uraianId: uraian.id,
+                  specId: spec.id,
+                  // Keep track of original and negotiated prices for history
+                  originalPrice: spec.originalPrice,
+                  previousNegotiatedPrice: spec.negotiatedPrice,
+                  isResubmission: true,
+                  resubmissionDate: new Date().toISOString()
+                });
+                itemIndex++;
+              }
+            });
+          });
+        });
+      });
+
+      if (updatedBOQPricing.length === 0) {
+        alert('Tidak ada item BOQ dengan harga dan volume yang valid. Silakan lengkapi data BOQ terlebih dahulu.');
+        return;
+      }
+
+      const totalAmount = calculateGrandTotal();
+      const totalAmountWithPPN = totalAmount * 1.11;
+
+      // Prepare updated proposal data
+      const updatedProposal = {
+        // Preserve original proposal data
+        ...resubmissionData.originalProposal,
+        // Update with new data
+        vendorId: resubmissionData.vendorId,
+        boqPricing: updatedBOQPricing,
+        totalAmount: totalAmount,
+        finalAmount: totalAmountWithPPN,
+        boqTitle: boqTitle,
+        proposalDate: new Date().toISOString(),
+        status: 'pending_review', // Reset to pending review
+        isResubmission: true,
+        resubmissionDate: new Date().toISOString(),
+        originalProposalIndex: resubmissionData.proposalIndex,
+        resubmissionNotes: `Proposal telah diperbarui berdasarkan feedback project owner. Total item: ${updatedBOQPricing.length}, Total harga: Rp ${totalAmountWithPPN.toLocaleString('id-ID')}`,
+        previousTotalAmount: resubmissionData.originalProposal?.totalAmount || 0,
+        negotiationHistory: resubmissionData.originalProposal?.negotiationHistory || [],
+        // Ensure these critical fields are preserved
+        submittedAt: resubmissionData.originalProposal?.submittedAt || new Date().toISOString(),
+        submittedBy: resubmissionData.originalProposal?.submittedBy || resubmissionData.vendorId,
+        userId: resubmissionData.originalProposal?.userId || resubmissionData.vendorId,
+        message: resubmissionData.originalProposal?.message || '',
+        negotiable: resubmissionData.originalProposal?.negotiable || 'negotiable',
+        // Update timestamps
+        updatedAt: new Date().toISOString()
+      };
+
+      console.log('📝 Updated proposal data:', updatedProposal);
+      console.log('🔍 Original proposal data preserved:', {
+        submittedAt: resubmissionData.originalProposal?.submittedAt,
+        submittedBy: resubmissionData.originalProposal?.submittedBy,
+        userId: resubmissionData.originalProposal?.userId,
+        vendorId: resubmissionData.originalProposal?.vendorId,
+        message: resubmissionData.originalProposal?.message
+      });
+
+      // Update proposal in Firestore
+      const projectId = resubmissionData.projectId;
+      const proposalIndex = resubmissionData.proposalIndex;
+
+      // Get current project data
+      const currentProject = await firestoreService.get('projects', projectId);
+      if (!currentProject) {
+        throw new Error('Project not found');
+      }
+
+      // Update the specific proposal
+      const updatedProposals = [...currentProject.proposals];
+      updatedProposals[proposalIndex] = {
+        ...updatedProposals[proposalIndex],
+        ...updatedProposal,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update project with new proposal data
+      await firestoreService.update('projects', projectId, {
+        proposals: updatedProposals,
+        updatedAt: new Date().toISOString()
+      });
+
+      console.log('✅ Proposal resubmitted successfully to project owner');
+
+      // Show success message
+      alert('🎉 Proposal berhasil dikirim ulang ke project owner!\n\nProposal Anda akan direview kembali dan Anda akan mendapat notifikasi hasilnya.');
+
+      // Redirect back to vendor dashboard
+      window.location.href = '/dashboard/vendor';
+
+    } catch (error) {
+      console.error('❌ Error resubmitting proposal:', error);
+      alert(`Gagal mengirim proposal: ${error.message}\n\nSilakan coba lagi atau hubungi support jika masalah berlanjut.`);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
@@ -1544,6 +1938,50 @@ function BOQMakerContent() {
                 </div>
               </div>
             </div>
+
+            {/* Resubmission Mode Banner */}
+            {resubmissionMode && (
+              <div className="px-8 py-4 bg-amber-50 border-b border-amber-200">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-amber-100 p-2 rounded-full">
+                    <MdEdit className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-amber-800">Proposal Resubmission Mode</h3>
+                    <p className="text-sm text-amber-700">
+                      You are editing your proposal based on project owner feedback. Previous prices are shown for comparison.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Negotiation Details */}
+                {showNegotiationDetails && negotiationNotes && (
+                  <div className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                      <MdMessageSquare className="w-4 h-4 mr-1" />
+                      Project Owner Feedback:
+                    </h4>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{negotiationNotes}</p>
+                    <button
+                      onClick={() => setShowNegotiationDetails(false)}
+                      className="mt-2 text-xs text-amber-600 hover:text-amber-800 font-medium"
+                    >
+                      Hide feedback
+                    </button>
+                  </div>
+                )}
+                
+                {!showNegotiationDetails && negotiationNotes && (
+                  <button
+                    onClick={() => setShowNegotiationDetails(true)}
+                    className="mt-2 text-sm text-amber-600 hover:text-amber-800 font-medium flex items-center"
+                  >
+                    <MdMessageSquare className="w-4 h-4 mr-1" />
+                    Show project owner feedback
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="px-8 py-6 border-b border-gray-200 bg-white">
               <div className="max-w-2xl">
@@ -1990,30 +2428,46 @@ function BOQMakerContent() {
                                   if (input && editMode) input.focus();
                                 }}>
                               {row.spec ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                      updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
+                                <div className="space-y-1">
+                                  {/* Show original and negotiated prices for comparison in resubmission mode */}
+                                  {resubmissionMode && row.spec.originalPrice !== undefined && (
+                                    <div className="text-xs text-gray-500 space-y-0.5">
+                                      <div className="italic">
+                                        Harga Sebelumnya: Rp {parseFloat(row.spec.originalPrice || 0).toLocaleString('id-ID')}
+                                      </div>
+                                      {row.spec.negotiatedPrice && row.spec.negotiatedPrice !== row.spec.originalPrice && (
+                                        <div className="italic text-blue-600">
+                                          Hasil Negosiasi: Rp {parseFloat(row.spec.negotiatedPrice || 0).toLocaleString('id-ID')}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                        updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
+                                      }
+                                    }}
+                                    onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
+                                    onKeyPress={(e) => {
+                                      if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                    disabled={!editMode}
+                                    tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
+                                    className={
+                                      editMode 
+                                        ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500" 
+                                        : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-right"
                                     }
-                                  }}
-                                  onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
-                                  onKeyPress={(e) => {
-                                    if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
-                                      e.preventDefault();
-                                    }
-                                  }}
-                                  disabled={!editMode}
-                                  tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
-                                  className={
-                                    editMode 
-                                      ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500" 
-                                      : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-right"
-                                  }
-                                />
+                                    placeholder={resubmissionMode ? "Harga baru" : "Enter new price"}
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-full h-6"></div>
                               )}
@@ -2063,10 +2517,63 @@ function BOQMakerContent() {
                   </table>
                   </div>
                 </div>
+                
+                {/* Resubmission Action Button */}
+                {resubmissionMode && (
+                  <div className="px-8 py-6 border-t border-gray-200 bg-gray-50">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="text-sm text-gray-600">
+                        <p className="font-medium">Ready to resubmit your updated proposal?</p>
+                        <p>Total Amount: <span className="font-bold text-black">Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}</span></p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => window.history.back()}
+                          className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleResubmitUpdatedProposal}
+                          disabled={!boqTitle.trim() || calculateGrandTotal() === 0}
+                          className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
+                        >
+                         Kirim Proposal
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Resubmission Summary */}
+                    {resubmissionData && (
+                      <div className="mt-4 p-4 bg-white border border-blue-200 rounded-lg">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-2">📋 Ringkasan Resubmisi:</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Proyek:</span>
+                            <span className="ml-2 font-medium">{resubmissionData.latestProject?.projectTitle}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Total Item:</span>
+                            <span className="ml-2 font-medium">{getTotalItems()} item</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Total Harga:</span>
+                            <span className="ml-2 font-medium text-blue-600">Rp {(calculateGrandTotal() * 1.11).toLocaleString('id-ID')}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Status:</span>
+                            <span className="ml-2 font-medium text-amber-600">Menunggu Review</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
+        
         
         {/* Custom Tooltip */}
         {tooltip.show && (

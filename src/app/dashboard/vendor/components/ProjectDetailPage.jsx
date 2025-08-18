@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   FiArrowLeft, 
   FiMapPin, 
@@ -25,6 +26,7 @@ import BOQDisplay from '../../../components/BOQDisplay';
 
 export default function ProjectDetailPage({ project, onBack, onCreateProposal }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [negotiations, setNegotiations] = useState({});
   const [counterOffers, setCounterOffers] = useState({});
@@ -62,13 +64,37 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     // Normalize proposals to handle both array and object formats
     const normalizedProposals = normalizeProposals(project?.proposals);
     
-    if (!normalizedProposals || !user?.uid) return -1;
+    if (!normalizedProposals || !user?.uid) {
+      console.log('🔍 No proposals or user ID found:', { 
+        hasProposals: !!normalizedProposals, 
+        userUid: user?.uid,
+        projectId: project?.id 
+      });
+      return -1;
+    }
     
-    return normalizedProposals.findIndex(proposal => 
+    console.log('🔍 Searching for vendor proposal:', {
+      userUid: user.uid,
+      totalProposals: normalizedProposals.length,
+      proposals: normalizedProposals.map((p, index) => ({
+        index,
+        vendorId: p.vendorId,
+        userId: p.userId,
+        submittedBy: p.submittedBy,
+        status: p.status,
+        isResubmission: p.isResubmission
+      }))
+    });
+    
+    const proposalIndex = normalizedProposals.findIndex(proposal => 
       proposal.vendorId === user.uid || 
       proposal.userId === user.uid || 
       proposal.submittedBy === user.uid
     );
+    
+    console.log('🔍 Vendor proposal index found:', proposalIndex);
+    
+    return proposalIndex;
   };
 
   // Load negotiations and counter offers for this vendor
@@ -483,7 +509,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
   // Handle vendor resubmitting proposal with new BOQ
   const handleResubmitProposal = () => {
     try {
-      console.log('🔄 Vendor resubmitting proposal...');
+      console.log('🔄 Starting proposal resubmission process...');
       
       const proposalIndex = getVendorProposalIndex();
       if (proposalIndex === -1) {
@@ -491,25 +517,54 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
       }
 
       const currentProposal = project.proposals[proposalIndex];
+      const negotiationData = currentProposal?.negotiation;
       
-      // Use the onCreateProposal callback to open the proposal editor
-      if (onCreateProposal) {
-        // Pass the project but also include resubmission context
-        onCreateProposal({
-          ...project,
-          isResubmission: true,
-          existingProposal: currentProposal,
-          originalProposalIndex: proposalIndex
+      // Prepare BOQ resubmission data for BOQ maker
+      const boqResubmissionData = {
+        mode: 'resubmission',
+        isResubmission: true,
+        projectId: project.id,
+        projectTitle: project.projectTitle,
+        vendorId: user.uid,
+        vendorName: user.displayName || user.email,
+        proposalIndex: proposalIndex,
+        existingProposal: currentProposal,
+        originalBOQPricing: currentProposal.boqPricing || [],
+        negotiationDetails: negotiationData || {},
+        negotiationNotes: negotiationData?.notes || '',
+        negotiationRequirements: negotiationData?.requirements || '',
+        ownerComments: negotiationData?.ownerComments || '',
+        deadline: negotiationData?.deadline || null,
+        requestedChanges: negotiationData?.requestedChanges || []
+      };
+      
+      // Store resubmission data in localStorage with a session key
+      const sessionKey = `boq_resubmission_${project.id}_${user.uid}_${Date.now()}`;
+      try {
+        localStorage.setItem(sessionKey, JSON.stringify(boqResubmissionData));
+        console.log('✅ BOQ resubmission data stored in localStorage with key:', sessionKey);
+        
+        // Navigate to BOQ maker page with resubmission parameters
+        const queryParams = new URLSearchParams({
+          mode: 'resubmission',
+          sessionKey: sessionKey,
+          projectTitle: project.projectTitle || 'Project Resubmission',
+          vendorName: user.displayName || user.email || 'Vendor',
+          proposalIndex: proposalIndex.toString()
         });
-      } else {
-        console.error('onCreateProposal callback not available');
-        alert('Proposal editing is not available. Please contact support.');
+        
+        console.log('🚀 Navigating to BOQ maker for proposal resubmission');
+        router.push(`/boq-maker?${queryParams.toString()}`);
+        
+      } catch (storageError) {
+        console.error('❌ Failed to store resubmission data in localStorage:', storageError);
+        alert('Unable to open BOQ editor for resubmission. Please try again.');
       }
 
-      console.log('✅ Opening proposal editor for resubmission');
+      console.log('✅ Opening BOQ maker for proposal resubmission');
     } catch (error) {
-      console.error('❌ Error opening proposal editor:', error);
-      alert(`Failed to open proposal editor: ${error.message}`);
+      console.error('❌ Error opening proposal resubmission:', error);
+      alert(`Failed to open proposal resubmission: ${error.message}`);
     }
   };
 
@@ -943,8 +998,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         const counterOfferKey = `${proposalIndex}_${index}`;
         const counterOffer = counterOffers[counterOfferKey];
         
-        // Get the original vendor price from the proposal
-        const originalPrice = parseFloat(item.vendorPrice || item.price || 0);
+        // Get the original vendor price from the proposal - check multiple field names
+        const originalPrice = parseFloat(item.vendorPrice || item.price || item.pricePerPcs || item.unitPrice || 0);
         
         // Use temp negotiation price if in negotiation mode, otherwise use negotiated or original price
         let currentPrice;
@@ -956,9 +1011,19 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
           currentPrice = originalPrice;
         }
         
-        total += currentPrice * (item.volume || 0);
+        const volume = item.volume || item.quantity || 0;
+        total += currentPrice * volume;
+        
+        console.log(`💰 Total calculation item ${index}:`, {
+          originalPrice,
+          currentPrice,
+          volume,
+          itemTotal: currentPrice * volume,
+          runningTotal: total
+        });
       });
       
+      console.log(`💰 Final calculated total: ${total}`);
       return total;
     };
 
@@ -1169,7 +1234,17 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                     const counterOffer = counterOffers[counterOfferKey];
                     
                     // Get the original vendor price from the proposal
-                    const originalPrice = parseFloat(item.vendorPrice || item.price || 0);
+                    const originalPrice = parseFloat(item.vendorPrice || item.price || item.pricePerPcs || item.unitPrice || 0);
+                    
+                    console.log(`💰 BOQ Item ${index} price data:`, {
+                      vendorPrice: item.vendorPrice,
+                      price: item.price,
+                      pricePerPcs: item.pricePerPcs,
+                      unitPrice: item.unitPrice,
+                      calculatedOriginalPrice: originalPrice,
+                      itemDescription: item.description || item.itemName,
+                      volume: item.volume
+                    });
                     
                     // Check if there's a negotiated price
                     const hasNegotiation = counterOffer?.vendorPrice !== undefined;
@@ -1190,10 +1265,10 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                           {item.description || item.itemName || `Item ${index + 1}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {item.unit || 'unit'}
+                          {item.unit || item.satuan || 'unit'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.volume || 0}
+                          {item.volume || item.quantity || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {isNegotiating ? (
@@ -1227,7 +1302,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-sm font-medium ${hasNegotiation && !isNegotiating ? 'text-blue-600' : 'text-gray-900'}`}>
-                            {formatCurrency(currentPrice * (item.volume || 0))}
+                            {formatCurrency(currentPrice * (item.volume || item.quantity || 0))}
                           </span>
                         </td>
                       </tr>
