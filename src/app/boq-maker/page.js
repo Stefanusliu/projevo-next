@@ -178,6 +178,173 @@ function BOQMakerContent() {
   const [vendorName, setVendorName] = useState('');
   const [isReadOnly, setIsReadOnly] = useState(false);
 
+  // Function to load temporary BOQ data from Firestore
+  const loadTempBOQData = useCallback(async (tempId, isReadOnly) => {
+    try {
+      console.log('📥 Loading temporary BOQ data from Firestore...', tempId);
+      
+      const tempBOQData = await firestoreService.get('temp_boq_views', tempId);
+      
+      if (!tempBOQData) {
+        console.warn('⚠️ Temporary BOQ data not found in Firestore, checking localStorage fallback...');
+        
+        // Try to find a fallback in localStorage using a pattern
+        const localStorageKeys = Object.keys(localStorage);
+        const boqKey = localStorageKeys.find(key => 
+          key.startsWith('temp_boq_') && 
+          localStorage.getItem(key) !== null
+        );
+        
+        if (boqKey) {
+          console.log('🔄 Found localStorage fallback, switching to local data...');
+          loadLocalBOQData(boqKey, isReadOnly);
+          return;
+        }
+        
+        throw new Error('Temporary BOQ data not found in Firestore or localStorage. The data may have expired or been removed.');
+      }
+      
+      console.log('✅ Temporary BOQ data loaded:', tempBOQData);
+      
+      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
+        // Convert boqPricing array to tahapanKerja structure
+        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
+        
+        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
+        setTahapanKerja(convertedTahapanKerja);
+        setEditMode(!isReadOnly); // Set read-only mode based on parameter
+        setCurrentView('editor');
+        console.log('✅ BOQ data loaded successfully for viewing');
+        
+        // Clean up temporary data after loading (give more time for navigation)
+        setTimeout(async () => {
+          try {
+            await firestoreService.delete('temp_boq_views', tempId);
+            console.log('🗑️ Temporary BOQ data cleaned up');
+          } catch (cleanupError) {
+            console.warn('⚠️ Failed to cleanup temporary data:', cleanupError);
+          }
+        }, 30000); // Clean up after 30 seconds instead of 5
+      } else {
+        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
+        throw new Error('BOQ data structure is invalid or missing pricing information');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading temporary BOQ data:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
+        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+      
+      alert(errorMessage);
+      
+      // Redirect back to dashboard or show empty editor
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  }, [setCurrentView, setTahapanKerja]);
+
+  // Function to load temporary BOQ data from localStorage
+  const loadLocalBOQData = (localKey, isReadOnly) => {
+    try {
+      console.log('📥 Loading temporary BOQ data from localStorage...', localKey);
+      
+      const tempBOQDataString = localStorage.getItem(localKey);
+      
+      if (!tempBOQDataString) {
+        console.warn('⚠️ Temporary BOQ data not found in localStorage with key:', localKey);
+        
+        // Try to find any temporary BOQ data as fallback
+        const localStorageKeys = Object.keys(localStorage);
+        const allBoqKeys = localStorageKeys.filter(key => key.startsWith('temp_boq_'));
+        
+        if (allBoqKeys.length > 0) {
+          console.log('🔄 Found alternative BOQ data, using most recent...', allBoqKeys);
+          const fallbackKey = allBoqKeys[allBoqKeys.length - 1]; // Use the most recent
+          const fallbackDataString = localStorage.getItem(fallbackKey);
+          
+          if (fallbackDataString) {
+            const fallbackData = JSON.parse(fallbackDataString);
+            console.log('✅ Using fallback temporary BOQ data:', fallbackData);
+            
+            if (fallbackData.boqPricing && Array.isArray(fallbackData.boqPricing)) {
+              const convertedTahapanKerja = convertBoqPricingToTahapanKerja(fallbackData.boqPricing);
+              
+              setBoqTitle(`${fallbackData.vendorName} - ${fallbackData.projectTitle} BOQ`);
+              setTahapanKerja(convertedTahapanKerja);
+              setEditMode(!isReadOnly);
+              setCurrentView('editor');
+              console.log('✅ Fallback BOQ data loaded successfully');
+              
+              // Clean up the fallback data after use
+              setTimeout(() => {
+                try {
+                  localStorage.removeItem(fallbackKey);
+                  console.log('🗑️ Fallback temporary data cleaned up');
+                } catch (cleanupError) {
+                  console.warn('⚠️ Failed to cleanup fallback data:', cleanupError);
+                }
+              }, 5000);
+              
+              return;
+            }
+          }
+        }
+        
+        throw new Error('Temporary BOQ data not found in localStorage. The data may have expired or been removed.');
+      }
+      
+      const tempBOQData = JSON.parse(tempBOQDataString);
+      console.log('✅ Temporary BOQ data loaded from localStorage:', tempBOQData);
+      
+      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
+        // Convert boqPricing array to tahapanKerja structure
+        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
+        
+        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
+        setTahapanKerja(convertedTahapanKerja);
+        setEditMode(!isReadOnly); // Set read-only mode based on parameter
+        setCurrentView('editor');
+        console.log('✅ BOQ data loaded successfully for viewing');
+        
+        // Clean up temporary data after loading
+        setTimeout(() => {
+          try {
+            localStorage.removeItem(localKey);
+            console.log('🗑️ Temporary BOQ data cleaned up from localStorage');
+          } catch (cleanupError) {
+            console.warn('⚠️ Failed to cleanup localStorage data:', cleanupError);
+          }
+        }, 5000); // Clean up after 5 seconds
+      } else {
+        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
+        throw new Error('BOQ data structure is invalid or missing pricing information');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading temporary BOQ data from localStorage:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message.includes('not found') 
+        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
+        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+      
+      alert(errorMessage);
+      
+      // Redirect back to dashboard or show empty editor
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        setCurrentView('saved'); // Show saved BOQs instead
+      }
+    }
+  };
+
   useEffect(() => {
     const savedData = localStorage.getItem('projevo_boqs');
     if (savedData) {
@@ -552,173 +719,6 @@ function BOQMakerContent() {
         window.history.back();
       } else {
         window.location.href = '/dashboard/vendor';
-      }
-    }
-  };
-
-  // Function to load temporary BOQ data from Firestore
-  const loadTempBOQData = useCallback(async (tempId, isReadOnly) => {
-    try {
-      console.log('📥 Loading temporary BOQ data from Firestore...', tempId);
-      
-      const tempBOQData = await firestoreService.get('temp_boq_views', tempId);
-      
-      if (!tempBOQData) {
-        console.warn('⚠️ Temporary BOQ data not found in Firestore, checking localStorage fallback...');
-        
-        // Try to find a fallback in localStorage using a pattern
-        const localStorageKeys = Object.keys(localStorage);
-        const boqKey = localStorageKeys.find(key => 
-          key.startsWith('temp_boq_') && 
-          localStorage.getItem(key) !== null
-        );
-        
-        if (boqKey) {
-          console.log('🔄 Found localStorage fallback, switching to local data...');
-          loadLocalBOQData(boqKey, isReadOnly);
-          return;
-        }
-        
-        throw new Error('Temporary BOQ data not found in Firestore or localStorage. The data may have expired or been removed.');
-      }
-      
-      console.log('✅ Temporary BOQ data loaded:', tempBOQData);
-      
-      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
-        // Convert boqPricing array to tahapanKerja structure
-        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
-        
-        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
-        setTahapanKerja(convertedTahapanKerja);
-        setEditMode(!isReadOnly); // Set read-only mode based on parameter
-        setCurrentView('editor');
-        console.log('✅ BOQ data loaded successfully for viewing');
-        
-        // Clean up temporary data after loading (give more time for navigation)
-        setTimeout(async () => {
-          try {
-            await firestoreService.delete('temp_boq_views', tempId);
-            console.log('🗑️ Temporary BOQ data cleaned up');
-          } catch (cleanupError) {
-            console.warn('⚠️ Failed to cleanup temporary data:', cleanupError);
-          }
-        }, 30000); // Clean up after 30 seconds instead of 5
-      } else {
-        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
-        throw new Error('BOQ data structure is invalid or missing pricing information');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error loading temporary BOQ data:', error);
-      
-      // Show user-friendly error message
-      const errorMessage = error.message.includes('not found') 
-        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
-        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
-      
-      alert(errorMessage);
-      
-      // Redirect back to dashboard or show empty editor
-      if (typeof window !== 'undefined' && window.history.length > 1) {
-        window.history.back();
-      } else {
-        setCurrentView('saved'); // Show saved BOQs instead
-      }
-    }
-  }, [setCurrentView, setTahapanKerja]);
-
-  // Function to load temporary BOQ data from localStorage
-  const loadLocalBOQData = (localKey, isReadOnly) => {
-    try {
-      console.log('📥 Loading temporary BOQ data from localStorage...', localKey);
-      
-      const tempBOQDataString = localStorage.getItem(localKey);
-      
-      if (!tempBOQDataString) {
-        console.warn('⚠️ Temporary BOQ data not found in localStorage with key:', localKey);
-        
-        // Try to find any temporary BOQ data as fallback
-        const localStorageKeys = Object.keys(localStorage);
-        const allBoqKeys = localStorageKeys.filter(key => key.startsWith('temp_boq_'));
-        
-        if (allBoqKeys.length > 0) {
-          console.log('🔄 Found alternative BOQ data, using most recent...', allBoqKeys);
-          const fallbackKey = allBoqKeys[allBoqKeys.length - 1]; // Use the most recent
-          const fallbackDataString = localStorage.getItem(fallbackKey);
-          
-          if (fallbackDataString) {
-            const fallbackData = JSON.parse(fallbackDataString);
-            console.log('✅ Using fallback temporary BOQ data:', fallbackData);
-            
-            if (fallbackData.boqPricing && Array.isArray(fallbackData.boqPricing)) {
-              const convertedTahapanKerja = convertBoqPricingToTahapanKerja(fallbackData.boqPricing);
-              
-              setBoqTitle(`${fallbackData.vendorName} - ${fallbackData.projectTitle} BOQ`);
-              setTahapanKerja(convertedTahapanKerja);
-              setEditMode(!isReadOnly);
-              setCurrentView('editor');
-              console.log('✅ Fallback BOQ data loaded successfully');
-              
-              // Clean up the fallback data after use
-              setTimeout(() => {
-                try {
-                  localStorage.removeItem(fallbackKey);
-                  console.log('🗑️ Fallback temporary data cleaned up');
-                } catch (cleanupError) {
-                  console.warn('⚠️ Failed to cleanup fallback data:', cleanupError);
-                }
-              }, 5000);
-              
-              return;
-            }
-          }
-        }
-        
-        throw new Error('Temporary BOQ data not found in localStorage. The data may have expired or been removed.');
-      }
-      
-      const tempBOQData = JSON.parse(tempBOQDataString);
-      console.log('✅ Temporary BOQ data loaded from localStorage:', tempBOQData);
-      
-      if (tempBOQData.boqPricing && Array.isArray(tempBOQData.boqPricing)) {
-        // Convert boqPricing array to tahapanKerja structure
-        const convertedTahapanKerja = convertBoqPricingToTahapanKerja(tempBOQData.boqPricing);
-        
-        setBoqTitle(`${tempBOQData.vendorName} - ${tempBOQData.projectTitle} BOQ`);
-        setTahapanKerja(convertedTahapanKerja);
-        setEditMode(!isReadOnly); // Set read-only mode based on parameter
-        setCurrentView('editor');
-        console.log('✅ BOQ data loaded successfully for viewing');
-        
-        // Clean up temporary data after loading
-        setTimeout(() => {
-          try {
-            localStorage.removeItem(localKey);
-            console.log('🗑️ Temporary BOQ data cleaned up from localStorage');
-          } catch (cleanupError) {
-            console.warn('⚠️ Failed to cleanup localStorage data:', cleanupError);
-          }
-        }, 5000); // Clean up after 5 seconds
-      } else {
-        console.warn('⚠️ BOQ data structure is invalid:', tempBOQData);
-        throw new Error('BOQ data structure is invalid or missing pricing information');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error loading temporary BOQ data from localStorage:', error);
-      
-      // Show user-friendly error message
-      const errorMessage = error.message.includes('not found') 
-        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
-        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
-      
-      alert(errorMessage);
-      
-      // Redirect back to dashboard or show empty editor
-      if (typeof window !== 'undefined' && window.history.length > 1) {
-        window.history.back();
-      } else {
-        setCurrentView('saved'); // Show saved BOQs instead
       }
     }
   };

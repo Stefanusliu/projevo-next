@@ -429,10 +429,15 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         return 'bg-yellow-100 text-yellow-800';
       case 'negotiate':
         return 'bg-blue-100 text-blue-800';
+      case 'resubmitted':
+      case 'negotiated':
+      case 'counter_offer':
+        return 'bg-purple-100 text-purple-800';
       case 'locked':
         return 'bg-yellow-100 text-yellow-800';
       case 'pending':
       case 'submitted':
+      case 'pending_review':
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-600';
@@ -648,224 +653,182 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     }
   };
 
-  const renderOverviewTab = () => (
-    <div className="space-y-6">
-      {/* Project Header */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-start justify-between">
+  const renderOverviewTab = () => {
+    // Helper function to get BOQ tahapan data
+    const getTahapanFromBOQ = () => {
+      const boqData = project.boq || project.attachedBOQ || project.boqData || project.originalData?.boq || project.originalData?.attachedBOQ;
+      
+      if (boqData?.tahapanKerja && Array.isArray(boqData.tahapanKerja)) {
+        return boqData.tahapanKerja.map((tahapan, index) => ({
+          name: tahapan.name || `Tahapan ${index + 1}`,
+          description: tahapan.description || '',
+          jenisKerjaCount: tahapan.jenisKerja ? tahapan.jenisKerja.length : 0
+        }));
+      }
+      return [];
+    };
+
+    const tahapanList = getTahapanFromBOQ();
+
+    return (
+      <div className="max-w-7xl mx-auto">
+        {/* Single Box Container */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
+          {/* Project Title and Location */}
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-gray-900">{project.projectTitle || project.title}</h1>
+            <span className="text-lg font-medium text-gray-600">
+              {`${project.city || ''}, ${project.province || ''}`.replace(/^,\s*|,\s*$/g, '') || project.location || 'Location not specified'}
+            </span>
+          </div>
+
+          {/* Progress Bar for Milestones */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {project.projectTitle} 
-              <span className="ml-3 px-3 py-1 bg-white border border-black text-sm font-normal rounded">
-                {getProjectStatus(project)}
-              </span>
-            </h2>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
-                {project.projectType}
-              </span>
-              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
-                {project.propertyType}
-              </span>
-              <span className="px-3 py-1 text-sm font-medium rounded bg-white border border-black text-black">
-                {project.status || 'Active'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project Milestones - Only show if project has started or vendor is chosen */}
-      {isProjectStarted(project) && (
-        <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-sm">
-          <div className="max-w-full mx-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FiCalendar className="text-blue-600" size={20} />
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Progress Proyek</h2>
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Progress Keseluruhan</span>
+                <span className="text-sm font-semibold text-blue-600">{calculateProgressPercentage(getMilestones(project))}%</span>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Project Milestones</h3>
-                <p className="text-sm text-gray-500">Track your project progress</p>
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${calculateProgressPercentage(getMilestones(project))}%` }}
+                ></div>
               </div>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-gray-700">Project Progress</span>
-              <span className="text-lg font-bold text-blue-600">{calculateProgressPercentage(getMilestones(project))}%</span>
-            </div>
-            
-            <div className="w-full bg-gray-200 rounded-full h-4 shadow-inner mb-6">
-              <div 
-                className="bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 h-4 rounded-full transition-all duration-1000 ease-out shadow-lg"
-                style={{ width: `${calculateProgressPercentage(getMilestones(project))}%` }}
-              ></div>
-            </div>
-            
-            <div className="flex justify-between mt-6 overflow-x-auto pb-2">
-              {getMilestones(project).map((milestone, index) => {
-                const isCompleted = milestone.completed;
-                const isCurrent = !isCompleted && index === getMilestones(project).findIndex(m => !m.completed);
-                
-                return (
-                  <div key={index} className="flex flex-col items-center min-w-0 flex-1 px-1">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300 ${
-                      isCompleted 
-                        ? 'bg-green-500 text-white shadow-lg scale-110' 
-                        : isCurrent 
-                        ? 'bg-blue-500 text-white shadow-lg scale-110 animate-pulse'
-                        : 'bg-gray-300 text-gray-600'
-                    }`}>
-                      {isCompleted ? '✓' : index + 1}
+              
+              {/* Tahapan Dots */}
+              <div className="flex justify-between items-center">
+                {tahapanList.map((tahapan, index) => (
+                  <div 
+                    key={index} 
+                    className="relative group cursor-pointer"
+                    title={`${tahapan.name}${tahapan.description ? ': ' + tahapan.description : ''}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index < tahapanList.length * (calculateProgressPercentage(getMilestones(project)) / 100)
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-300'
+                    }`}></div>
+                    
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                      <div className="font-medium">{tahapan.name}</div>
+                      {tahapan.description && (
+                        <div className="text-gray-300">{tahapan.description}</div>
+                      )}
+                      <div className="text-gray-400">{tahapan.jenisKerjaCount} jenis kerja</div>
+                      {/* Arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
-                    <span className="text-xs text-gray-600 mt-2 text-center leading-tight">
-                      {milestone.name}
-                    </span>
-                    {isCompleted && milestone.date && (
-                      <span className="text-xs text-green-600 mt-1">
-                        {milestone.date}
-                      </span>
-                    )}
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Project Information - Indonesian Format */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Informasi Proyek</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {/* Judul Proyek */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Judul Proyek</label>
-              <p className="text-gray-900 font-medium">{project.projectTitle || 'Not specified'}</p>
+          {/* Budget */}
+          <div>
+            <h2 className="text-lg font-normal text-gray-900 mb-2">Anggaran</h2>
+            <p className="text-xl font-bold text-gray-900">
+              {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
+            </p>
+          </div>
+
+          {/* Jenis Proyek and Properti */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Jenis Proyek</h3>
+              <p className="text-gray-700 font-bold">{project.projectType || 'Not specified'}</p>
             </div>
-
-            {/* Lokasi Proyek */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Lokasi Proyek</label>
-              <p className="text-gray-900 font-medium">
-                {`${project.city || ''}, ${project.province || ''}`.replace(/^,\s*|,\s*$/g, '') || project.location || 'Not specified'}
-              </p>
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Properti</h3>
+              <p className="text-gray-700 font-bold">{project.propertyType || 'Not specified'}</p>
             </div>
+          </div>
 
-            {/* Jenis Proyek */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Jenis Proyek</label>
-              <p className="text-gray-900 font-medium">{project.projectType || 'Not specified'}</p>
-            </div>
-
-            {/* Ruang Lingkup */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Ruang Lingkup</label>
+          {/* Ruang Lingkup and Metode Pengadaan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Ruang Lingkup</h3>
               <div className="flex flex-wrap gap-2">
                 {Array.isArray(project.projectScope) ? (
                   project.projectScope.map((scope, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
                       {scope}
                     </span>
                   ))
                 ) : Array.isArray(project.scope) ? (
                   project.scope.map((scope, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
                       {scope}
                     </span>
                   ))
                 ) : (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
                     {project.projectScope || project.scope || 'General'}
                   </span>
                 )}
               </div>
             </div>
-
-            {/* Properti */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Properti</label>
-              <p className="text-gray-900 font-medium">{project.propertyType || 'Not specified'}</p>
-            </div>
-
-            {/* Metode Pengadaan */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Metode Pengadaan</label>
-              <p className="text-gray-900 font-medium">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Metode Pengadaan</h3>
+              <p className="text-gray-700 font-bold">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-4">
-            {/* Estimasi Anggaran */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Estimasi Anggaran</label>
-              <div className="flex items-center gap-2">
-                <FiDollarSign className="text-green-600" size={18} />
-                <p className="text-gray-900 font-semibold text-lg">
-                  {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
-                </p>
-              </div>
+          {/* Project Duration Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Tender</h3>
+              <p className="text-gray-900 font-bold">
+                {project.tenderDuration || project.bidCountdown || 'Not specified'}
+              </p>
             </div>
-
-            {/* Estimasi Durasi Proyek */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Estimasi Durasi Proyek</label>
-              <div className="flex items-center gap-2">
-                <FiClock className="text-blue-600" size={18} />
-                <p className="text-gray-900 font-medium">
-                  {project.estimatedDuration || project.duration || 'Not specified'}
-                </p>
-              </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Proyek</h3>
+              <p className="text-gray-900 font-bold">
+                {project.estimatedDuration || project.duration || 'Not specified'}
+              </p>
             </div>
-
-            {/* Durasi Tender */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Durasi Tender</label>
-              <div className="flex items-center gap-2">
-                <FiCalendar className="text-red-600" size={18} />
-                <p className="text-gray-900 font-medium">
-                  {project.tenderDuration || project.bidCountdown || 'Not specified'}
-                </p>
-              </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Estimasi Mulai</h3>
+              <p className="text-gray-900 font-bold">
+                {formatDate(project.estimatedStartDate) || 'Not specified'}
+              </p>
             </div>
-
-            {/* Estimasi Mulai Proyek */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Estimasi Mulai Proyek</label>
-              <div className="flex items-center gap-2">
-                <FiCalendar className="text-green-600" size={18} />
-                <p className="text-gray-900 font-medium">
-                  {formatDate(project.estimatedStartDate) || 'Not specified'}
-                </p>
-              </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Pemilik Proyek</h3>
+              <p className="text-gray-900 font-bold">
+                {project.clientName || project.client || project.ownerName || 'Not specified'}
+              </p>
             </div>
+          </div>
 
-            {/* Project Owner */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Pemilik Proyek</label>
-              <div className="flex items-center gap-2">
-                <FiUser className="text-purple-600" size={18} />
-                <p className="text-gray-900 font-medium">
-                  {project.clientName || project.client || project.ownerName || 'Not specified'}
-                </p>
-              </div>
-            </div>
-
-            {/* Special Notes */}
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Special Notes</label>
-              <p className="text-gray-900 font-medium">
+          {/* Catatan and Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-100 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Catatan</h3>
+              <p className="text-gray-700">
                 {project.specialNotes || project.notes || 'No special notes'}
               </p>
+            </div>
+            <div className="bg-gray-100 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Status</h3>
+              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
+                project.status === 'active' ? 'bg-green-100 text-green-700' :
+                project.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {project.status || 'Draft'}
+              </span>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderNegotiationTab = () => {
     const allNegotiations = getNegotiationActivities(project);
@@ -908,6 +871,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <div key={`${activity.vendorId}-${index}`} className={`bg-white rounded-xl border p-6 shadow-sm transition-all hover:shadow-md ${
                 activity.statusColor === 'green' ? 'border-green-200 bg-green-50' :
                 activity.statusColor === 'orange' ? 'border-orange-200 bg-orange-50' :
+                activity.statusColor === 'blue' ? 'border-blue-200 bg-blue-50' :
+                activity.statusColor === 'yellow' ? 'border-yellow-200 bg-yellow-50' :
+                activity.statusColor === 'purple' ? 'border-purple-200 bg-purple-50' :
                 'border-gray-200'
               }`}>
                 <div className="flex items-start gap-4">
@@ -915,12 +881,19 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     activity.statusColor === 'green' ? 'bg-green-500' :
                     activity.statusColor === 'orange' ? 'bg-orange-500' :
+                    activity.statusColor === 'blue' ? 'bg-blue-500' :
+                    activity.statusColor === 'yellow' ? 'bg-yellow-500' :
+                    activity.statusColor === 'purple' ? 'bg-purple-500' :
                     'bg-blue-500'
                   }`}>
                     {activity.status === 'accepted' ? (
                       <FiCheck className="text-white" size={20} />
                     ) : activity.status === 'counter_offer' ? (
                       <FiAlertTriangle className="text-white" size={20} />
+                    ) : activity.status === 'resubmitted' || activity.status === 'pending_review' ? (
+                      <FiFileText className="text-white" size={20} />
+                    ) : activity.status === 'waiting' ? (
+                      <FiClock className="text-white" size={20} />
                     ) : (
                       <FiMessageSquare className="text-white" size={20} />
                     )}
@@ -932,6 +905,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       <h4 className={`text-lg font-semibold ${
                         activity.statusColor === 'green' ? 'text-green-800' :
                         activity.statusColor === 'orange' ? 'text-orange-800' :
+                        activity.statusColor === 'blue' ? 'text-blue-800' :
+                        activity.statusColor === 'yellow' ? 'text-yellow-800' :
+                        activity.statusColor === 'purple' ? 'text-purple-800' :
                         'text-gray-800'
                       }`}>
                         {activity.vendorName}
@@ -940,10 +916,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           activity.statusColor === 'green' ? 'bg-green-100 text-green-700' :
                           activity.statusColor === 'orange' ? 'bg-orange-100 text-orange-700' :
+                          activity.statusColor === 'blue' ? 'bg-blue-100 text-blue-700' :
+                          activity.statusColor === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
+                          activity.statusColor === 'purple' ? 'bg-purple-100 text-purple-700' :
                           'bg-blue-100 text-blue-700'
                         }`}>
                           {activity.status === 'accepted' ? 'Completed' :
                            activity.status === 'counter_offer' ? 'Counter Offer' :
+                           activity.status === 'resubmitted' ? 'Resubmitted' :
+                           activity.status === 'pending_review' ? 'Pending Review' :
+                           activity.status === 'waiting' ? 'Waiting' :
+                           activity.status === 'negotiating' ? 'Negotiating' :
                            'Active'}
                         </span>
                         
@@ -1192,9 +1175,14 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       }))
       .filter(proposal => 
         proposal.status === 'negotiating' || 
+        proposal.status === 'negotiate' ||
         proposal.status === 'counter_offer' ||
         proposal.status === 'accepted' ||
-        (proposal.negotiation && ['pending', 'active', 'counter_offer', 'accepted'].includes(proposal.negotiation.status))
+        proposal.status === 'resubmitted' ||
+        proposal.status === 'negotiated' ||
+        proposal.status === 'pending_review' ||
+        proposal.status === 'waiting_for_vendor' ||
+        (proposal.negotiation && ['pending', 'active', 'counter_offer', 'accepted', 'resubmitted', 'negotiated'].includes(proposal.negotiation.status))
       )
       .map(proposal => {
         const negotiation = proposal.negotiation || {};
@@ -1213,6 +1201,22 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           status = 'counter_offer';
           statusColor = 'orange';
           message = `Counter offer from ${proposal.vendorName || 'vendor'}`;
+        } else if (proposal.status === 'resubmitted' || proposal.status === 'negotiated') {
+          status = 'resubmitted';
+          statusColor = 'blue';
+          message = `New proposal submitted by ${proposal.vendorName || 'vendor'}`;
+        } else if (proposal.status === 'pending_review') {
+          status = 'pending_review';
+          statusColor = 'blue';
+          message = `Proposal pending review from ${proposal.vendorName || 'vendor'}`;
+        } else if (proposal.status === 'waiting_for_vendor') {
+          status = 'waiting';
+          statusColor = 'yellow';
+          message = `Waiting for response from ${proposal.vendorName || 'vendor'}`;
+        } else if (proposal.status === 'negotiate' || proposal.status === 'negotiating') {
+          status = 'negotiating';
+          statusColor = 'purple';
+          message = `In negotiation with ${proposal.vendorName || 'vendor'}`;
         }
         
         return {
@@ -1801,9 +1805,10 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                 const proposalStatus = proposal.status || 'pending';
 
                 // Status detection logic for project owner actions
-                const canOwnerAct = ['pending', 'submitted'].includes(proposalStatus);
+                const canOwnerAct = ['pending', 'submitted', 'pending_review', 'resubmitted', 'negotiated', 'counter_offer'].includes(proposalStatus);
                 const isWaitingForVendor = proposalStatus === 'waiting_for_vendor';
                 const isNegotiateStatus = proposalStatus === 'negotiate';
+                const isVendorResponded = ['resubmitted', 'negotiated', 'counter_offer'].includes(proposalStatus);
                 const showActionButtons = canOwnerAct && !isWaitingForVendor && !isNegotiateStatus;
 
                 console.log(`📋 Proposal ${originalIndex} (${proposal.vendorName}):`, {
@@ -1811,6 +1816,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   canOwnerAct,
                   isWaitingForVendor,
                   isNegotiateStatus,
+                  isVendorResponded,
                   showActionButtons
                 });
 
@@ -1918,6 +1924,13 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                             </div>
                           ) : showActionButtons ? (
                             <>
+                              {/* Show notification for resubmitted proposals */}
+                              {isVendorResponded && (
+                                <div className="w-full mb-2 px-4 py-2 bg-green-50 border border-green-200 text-green-800 rounded-lg font-medium flex items-center gap-2">
+                                  <FiCheck size={16} />
+                                  <span>Vendor has submitted a new proposal!</span>
+                                </div>
+                              )}
                               <button
                                 onClick={() => {
                                   console.log('🔘 Accept button clicked', { originalIndex, proposalStatus, vendorName: proposal.vendorName });
@@ -1926,7 +1939,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiCheck size={16} />
-                                Accept
+                                {isVendorResponded ? 'Accept New Proposal' : 'Accept'}
                               </button>
                               <button
                                 onClick={() => {
@@ -1936,7 +1949,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiMessageSquare size={16} />
-                                Negotiate
+                                {isVendorResponded ? 'Renegotiate' : 'Negotiate'}
                               </button>
                               <button
                                 onClick={() => {
@@ -1946,7 +1959,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiX size={16} />
-                                Reject
+                                {isVendorResponded ? 'Reject New Proposal' : 'Reject'}
                               </button>
                             </>
                           ) : null}

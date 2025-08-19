@@ -744,148 +744,177 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
   };
 
   // Tab content renderers
-  const renderOverviewTab = () => (
-    <div className="space-y-6">
-      {/* Project Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-        <div className="flex items-start justify-between">
+  const renderOverviewTab = () => {
+    // Helper function to get BOQ tahapan data
+    const getTahapanFromBOQ = () => {
+      const boqData = project.boq || project.attachedBOQ || project.boqData || project.originalData?.boq || project.originalData?.attachedBOQ;
+      
+      if (boqData?.tahapanKerja && Array.isArray(boqData.tahapanKerja)) {
+        return boqData.tahapanKerja.map((tahapan, index) => ({
+          name: tahapan.name || `Tahapan ${index + 1}`,
+          description: tahapan.description || '',
+          jenisKerjaCount: tahapan.jenisKerja ? tahapan.jenisKerja.length : 0
+        }));
+      }
+      return [];
+    };
+
+    const tahapanList = getTahapanFromBOQ();
+
+    return (
+      <div className="max-w-7xl mx-auto">
+        {/* Single Box Container */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
+          {/* Project Title and Location */}
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-gray-900">{enhancedProject.projectTitle}</h1>
+            <span className="text-lg font-medium text-gray-600">
+              {enhancedProject.city}, {enhancedProject.province || ''}
+            </span>
+          </div>
+
+          {/* Progress Bar for Milestones */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{enhancedProject.projectTitle}</h2>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
-                {enhancedProject.projectType}
-              </span>
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">
-                {enhancedProject.propertyType}
-              </span>
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(project.status)}`}>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Progress Proyek</h2>
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Progress Keseluruhan</span>
+                <span className="text-sm font-semibold text-blue-600">{project.match || 0}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${project.match || 0}%` }}
+                ></div>
+              </div>
+              
+              {/* Tahapan Dots */}
+              <div className="flex justify-between items-center">
+                {tahapanList.map((tahapan, index) => (
+                  <div 
+                    key={index} 
+                    className="relative group cursor-pointer"
+                    title={`${tahapan.name}${tahapan.description ? ': ' + tahapan.description : ''}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index < tahapanList.length * ((project.match || 0) / 100)
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-300'
+                    }`}></div>
+                    
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                      <div className="font-medium">{tahapan.name}</div>
+                      {tahapan.description && (
+                        <div className="text-gray-300">{tahapan.description}</div>
+                      )}
+                      <div className="text-gray-400">{tahapan.jenisKerjaCount} jenis kerja</div>
+                      {/* Arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Budget */}
+          <div>
+            <h2 className="text-lg font-normal text-gray-900 mb-2">Anggaran</h2>
+            <p className="text-xl font-bold text-gray-900">
+              {project.budget || 'Not specified'}
+            </p>
+          </div>
+
+          {/* Jenis Proyek and Properti */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Jenis Proyek</h3>
+              <p className="text-gray-700 font-bold">{enhancedProject.projectType || 'Not specified'}</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Properti</h3>
+              <p className="text-gray-700 font-bold">{enhancedProject.propertyType || 'Not specified'}</p>
+            </div>
+          </div>
+
+          {/* Ruang Lingkup and Metode Pengadaan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Ruang Lingkup</h3>
+              <div className="flex flex-wrap gap-2">
+                {Array.isArray(project.projectScope) ? (
+                  project.projectScope.map((scope, index) => (
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
+                      {scope}
+                    </span>
+                  ))
+                ) : Array.isArray(project.scope) ? (
+                  project.scope.map((scope, index) => (
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
+                      {scope}
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
+                    {project.projectScope || project.scope || 'General'}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-normal text-gray-900 mb-2">Metode Pengadaan</h3>
+              <p className="text-gray-700 font-bold">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
+            </div>
+          </div>
+
+          {/* Project Duration Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Tender</h3>
+              <p className="text-gray-900 font-bold">
+                {project.tenderDuration || project.bidCountdown || 'Not specified'}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Proyek</h3>
+              <p className="text-gray-900 font-bold">
+                {enhancedProject.estimatedDuration || 'Not specified'}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Estimasi Mulai</h3>
+              <p className="text-gray-900 font-bold">
+                {formatDate(enhancedProject.estimatedStartDate) || 'Not specified'}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Pemilik Proyek</h3>
+              <p className="text-gray-900 font-bold">
+                {enhancedProject.clientName || 'Not specified'}
+              </p>
+            </div>
+          </div>
+
+          {/* Catatan and Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-gray-100 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Catatan</h3>
+              <p className="text-gray-700">
+                {project.specialNotes || project.notes || project.description || 'No special notes'}
+              </p>
+            </div>
+            <div className="bg-gray-100 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Status</h3>
+              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(project.status)}`}>
                 {project.status || 'Active'}
               </span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Key Information Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <FiDollarSign className="text-green-600" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Budget</p>
-              <p className="font-bold text-gray-900">{project.budget || 'Not specified'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FiMapPin className="text-blue-600" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-bold text-gray-900">{enhancedProject.city}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <FiCalendar className="text-purple-600" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Start Date</p>
-              <p className="font-bold text-gray-900">{formatDate(enhancedProject.estimatedStartDate)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <FiClock className="text-orange-600" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Duration</p>
-              <p className="font-bold text-gray-900">{enhancedProject.estimatedDuration}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Project Description */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Project Description</h3>
-            <p className="text-gray-600 leading-relaxed">
-              {project.description || 'No description available'}
-            </p>
-          </div>
-
-          {/* Project Requirements */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Requirements</h3>
-            <div className="space-y-3">
-              {project.requirements && project.requirements.length > 0 ? (
-                project.requirements.map((requirement, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-gray-600">{requirement}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 italic">No specific requirements listed</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Client Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Client Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {enhancedProject.clientName.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{enhancedProject.clientName}</p>
-                  <p className="text-sm text-gray-500">Verified Client</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Competition Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Competition</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500">Proposals Submitted</p>
-                <p className="text-2xl font-bold text-gray-900">{project.proposals?.length || 0}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Your Match Score</p>
-                <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {project.match || 0}% Match
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderBOQTab = () => {
     if (loading) {

@@ -1706,7 +1706,11 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           project.negotiationStatus === 'active' ||
           (project.proposals && project.proposals.some(proposal => 
             proposal.status === 'negotiating' || 
+            proposal.status === 'negotiate' ||
             proposal.status === 'counter_offer' ||
+            proposal.status === 'resubmitted' ||
+            proposal.status === 'negotiated' ||
+            proposal.status === 'pending_review' ||
             (proposal.negotiation && proposal.negotiation.status === 'pending')
           ))) {
         // Only show negotiate if negotiation hasn't been accepted yet
