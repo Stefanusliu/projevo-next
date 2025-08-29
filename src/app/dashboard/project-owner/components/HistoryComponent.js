@@ -412,99 +412,45 @@ export default function HistoryComponent() {
           filteredProjects.map((project) => (
             <div 
               key={project.id} 
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleViewDetails(project)}
+              className="relative bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-                    {project.isDummy && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Demo Data
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Vendor:</span> {project.vendorName}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Location:</span> {project.location}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Duration:</span> {project.duration}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Status:</span> {getStatusDescription(project.status)}
-                  </p>
-                  {project.createdAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Started:</span> {
-                        (project.createdAt.toDate ? 
-                          new Date(project.createdAt.toDate()) : 
-                          new Date(project.createdAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.completedAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Completed:</span> {
-                        (project.completedAt.toDate ? 
-                          new Date(project.completedAt.toDate()) : 
-                          new Date(project.completedAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.cancelledAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Cancelled:</span> {
-                        (project.cancelledAt.toDate ? 
-                          new Date(project.cancelledAt.toDate()) : 
-                          new Date(project.cancelledAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.terminatedAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Terminated:</span> {
-                        (project.terminatedAt.toDate ? 
-                          new Date(project.terminatedAt.toDate()) : 
-                          new Date(project.terminatedAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.expiredAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Expired:</span> {
-                        (project.expiredAt.toDate ? 
-                          new Date(project.expiredAt.toDate()) : 
-                          new Date(project.expiredAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {(project.cancelReason || project.terminationReason || project.expiredReason) && (
-                    <p className="text-slate-600 mb-1 text-sm">
-                      <span className="font-medium">Reason:</span> {project.cancelReason || project.terminationReason || project.expiredReason}
-                    </p>
-                  )}
+              {/* Top Left - ID */}
+              <p className="text-sm text-slate-600">{project.id}</p>
+              
+              {/* Title - Big 3xl */}
+              <h3 className="text-3xl font-bold text-slate-900">{project.title}</h3>
+              
+              {/* Location - Small */}
+              <p className="text-sm text-slate-600 mb-4">{project.location}</p>
+              
+              {/* Vendor Section */}
+              <div className="flex gap-8 mb-4">
+                <div>
+                  <p className="text-sm text-slate-600">Vendor</p>
+                  <p className="text-2xl font-bold text-slate-900">{project.vendorName}</p>
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                    {getStatusDescription(project.status)}
-                  </span>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Budget: {formatCurrency(project.budget)}</p>
-                    {project.finalCost > 0 && (
-                      <p className="text-lg font-bold text-gray-900">Final: {formatCurrency(project.finalCost)}</p>
-                    )}
-                  </div>
+                
+                <div>
+                  <p className="text-sm text-slate-600">Nilai Kontrak</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {project.finalCost > 0 ? formatCurrency(project.finalCost) : formatCurrency(project.budget)}
+                  </p>
                 </div>
               </div>
+              
+              {/* Status Section */}
+              <div className="mb-6">
+                <p className="text-sm text-slate-600">Status</p>
+                <p className="text-2xl font-bold text-slate-900">Selesai</p>
+              </div>
+
+              {/* Detail Button - Bottom Right */}
+              <button
+                onClick={() => handleViewDetails(project)}
+                className="absolute bottom-6 right-6 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Detail
+              </button>
             </div>
           ))
         )}

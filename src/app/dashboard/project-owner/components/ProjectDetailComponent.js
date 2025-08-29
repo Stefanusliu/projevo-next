@@ -1,16 +1,145 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useStorage } from '../../../hooks/useStorage';
+import { firestoreService } from '../../../hooks/useFirestore';
 
-export default function ProjectDetailComponent({ project, onBack }) {
+export default function ProjectDetailComponent({ project, onBack, userRole = 'project-owner', isVendorAccepted = true, onProjectUpdate }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [imageErrors, setImageErrors] = useState({});
+  const [documentationImages, setDocumentationImages] = useState([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  const { uploadFile, uploading, uploadProgress } = useStorage();
+
+  // Load documentation images from project data
+  useEffect(() => {
+    if (project?.documentationImages) {
+      setDocumentationImages(project.documentationImages);
+    }
+  }, [project]);
 
   // Dummy image fallback
   const dummyImage = "data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
 
   const handleImageError = (imageId) => {
     setImageErrors(prev => ({ ...prev, [imageId]: true }));
+  };
+
+  const handleUploadDocumentation = async () => {
+    try {
+      // Create file input element
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = false;
+
+      input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File size must be less than 5MB');
+          return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+
+        setUploadingImage(true);
+
+        try {
+          // Upload to Firebase Storage
+          const timestamp = new Date().getTime();
+          const fileName = `documentation_${timestamp}_${file.name}`;
+          const storagePath = `projects/${project.id}/documentation/${fileName}`;
+          
+          console.log('Uploading image to:', storagePath);
+          const downloadURL = await uploadFile(file, storagePath, { trackProgress: true });
+          
+          // Create new documentation entry
+          const newImage = {
+            id: timestamp,
+            url: downloadURL,
+            fileName: fileName,
+            uploadDate: new Date().toISOString(),
+            uploadedBy: userRole === 'vendor' ? 'vendor' : 'project-owner',
+            fileSize: file.size,
+            fileType: file.type
+          };
+
+          // Update project in Firestore
+          const updatedImages = [...documentationImages, newImage];
+          await firestoreService.updateDocument('projects', project.id, {
+            documentationImages: updatedImages
+          });
+
+          // Update local state
+          setDocumentationImages(updatedImages);
+          
+          // Update parent component if callback provided
+          if (onProjectUpdate) {
+            onProjectUpdate({
+              ...project,
+              documentationImages: updatedImages
+            });
+          }
+
+          console.log('✅ Image uploaded successfully:', downloadURL);
+          
+        } catch (error) {
+          console.error('❌ Error uploading image:', error);
+          alert('Failed to upload image. Please try again.');
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+
+      input.click();
+    } catch (error) {
+      console.error('❌ Error creating file input:', error);
+      alert('Failed to open file selector. Please try again.');
+    }
+  };
+
+  const handleEditDocumentation = (imageId) => {
+    // TODO: Implement edit functionality - could open modal for re-upload
+    console.log('Edit documentation image:', imageId);
+    alert('Edit functionality will be implemented in future update');
+  };
+
+  const handleDeleteDocumentation = async (imageId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus dokumentasi ini?')) {
+      try {
+        // Remove from local state immediately for better UX
+        const updatedImages = documentationImages.filter(img => img.id !== imageId);
+        setDocumentationImages(updatedImages);
+
+        // Update Firestore
+        await firestoreService.updateDocument('projects', project.id, {
+          documentationImages: updatedImages
+        });
+
+        // Update parent component if callback provided
+        if (onProjectUpdate) {
+          onProjectUpdate({
+            ...project,
+            documentationImages: updatedImages
+          });
+        }
+
+        console.log('✅ Image deleted successfully');
+      } catch (error) {
+        console.error('❌ Error deleting image:', error);
+        // Revert local state if database update failed
+        setDocumentationImages(documentationImages);
+        alert('Failed to delete image. Please try again.');
+      }
+    }
   };
 
   // Sample project data - replace with actual project data
@@ -100,6 +229,16 @@ export default function ProjectDetailComponent({ project, onBack }) {
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      )
+    },
+    { 
+      id: 'dokumentasi', 
+      label: 'Dokumentasi', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       )
     },
@@ -268,20 +407,27 @@ export default function ProjectDetailComponent({ project, onBack }) {
       <div className="bg-white/80 backdrop-blur-sm dark:bg-slate-800/90 border-b border-gray-200/50 dark:border-slate-700/50 sticky top-20 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex space-x-2 sm:space-x-8 overflow-x-auto pb-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3 sm:py-4 px-3 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 transform scale-105'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-                }`}
-              >
-                <span className="mr-1 sm:mr-2 flex items-center">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            ))}
+            {tabs.map((tab) => {
+              // Hide dokumentasi tab if vendor is not accepted
+              if (tab.id === 'dokumentasi' && !isVendorAccepted) {
+                return null;
+              }
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-3 sm:py-4 px-3 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400 transform scale-105'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="mr-1 sm:mr-2 flex items-center">{tab.icon}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -582,6 +728,135 @@ export default function ProjectDetailComponent({ project, onBack }) {
           </div>
         )}
 
+        {activeTab === 'dokumentasi' && (
+          <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dokumentasi Progress</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                  {userRole === 'vendor' ? 'Upload dan kelola dokumentasi progress pekerjaan' : 'Lihat dokumentasi progress pekerjaan dari vendor'}
+                </p>
+              </div>
+              {userRole === 'vendor' && isVendorAccepted && (
+                <button 
+                  onClick={handleUploadDocumentation}
+                  disabled={uploadingImage}
+                  className={`w-full sm:w-auto flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                    uploadingImage 
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {uploadingImage ? `Uploading... ${Math.round(uploadProgress)}%` : 'Upload Foto'}
+                </button>
+              )}
+            </div>
+
+            {!isVendorAccepted && userRole === 'project-owner' && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6 mb-6">
+                <div className="flex items-center space-x-3">
+                  <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">Vendor Belum Diterima</h4>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300">Dokumentasi akan tersedia setelah Anda menerima salah satu vendor untuk proyek ini.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isVendorAccepted && (
+              <div>
+                {documentationImages.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {documentationImages.map((image) => (
+                      <div key={image.id} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative">
+                        <Image
+                          src={imageErrors[`doc-${image.id}`] ? dummyImage : image.url}
+                          alt="Documentation"
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-cover"
+                          onError={() => handleImageError(`doc-${image.id}`)}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="flex space-x-2">
+                            <button className="px-3 py-2 bg-white text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
+                              View
+                            </button>
+                            {userRole === 'vendor' && (
+                              <>
+                                <button 
+                                  onClick={() => handleEditDocumentation(image.id)}
+                                  className="px-3 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteDocumentation(image.id)}
+                                  className="px-3 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Add New Documentation Card - Only for vendors */}
+                    {userRole === 'vendor' && isVendorAccepted && (
+                      <div 
+                        onClick={uploadingImage ? null : handleUploadDocumentation}
+                        className={`aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all duration-300 ${
+                          uploadingImage 
+                            ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-not-allowed'
+                            : 'bg-gray-50 dark:bg-gray-800/50 border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400'
+                        }`}
+                      >
+                        {uploadingImage ? (
+                          <div className="text-center">
+                            <div className="animate-spin text-3xl mb-2">⏳</div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Uploading...</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500">{Math.round(uploadProgress)}%</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-4xl text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors mb-2">
+                              📸
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-medium">Upload</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden w-64 h-64 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-6xl mb-4">🖼️</div>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium">Image Not Available</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                          {userRole === 'vendor' 
+                            ? 'Click upload to add documentation' 
+                            : 'Vendor belum mengupload dokumentasi'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'activity' && (
           <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
@@ -750,7 +1025,7 @@ export default function ProjectDetailComponent({ project, onBack }) {
       <div className="fixed top-20 left-0 right-0 h-1 bg-gray-200 dark:bg-slate-700 sm:hidden z-40">
         <div 
           className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-500"
-          style={{ width: `${(tabs.findIndex(tab => tab.id === activeTab) + 1) / tabs.length * 100}%` }}
+          style={{ width: `${(tabs.filter(tab => tab.id !== 'dokumentasi' || isVendorAccepted).findIndex(tab => tab.id === activeTab) + 1) / tabs.filter(tab => tab.id !== 'dokumentasi' || isVendorAccepted).length * 100}%` }}
         ></div>
       </div>
     </div>

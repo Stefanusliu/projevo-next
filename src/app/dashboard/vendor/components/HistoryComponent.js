@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useMemo } from "react";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HistoryComponent() {
   const { user } = useAuth();
@@ -12,56 +18,59 @@ export default function HistoryComponent() {
   const [loading, setLoading] = useState(true);
 
   // Dummy data for testing UI with all project statuses
-  const dummyProjects = useMemo(() => [
-    {
-      id: 'dummy_hist_1',
-      title: 'Modern Office Renovation',
-      clientName: 'PT Maju Bersama',
-      status: 'completed',
-      budget: 150000000,
-      createdAt: new Date('2024-07-15'),
-      completedAt: new Date('2024-08-10'),
-      isDummy: true
-    },
-    {
-      id: 'dummy_hist_2',
-      title: 'Residential House Construction',
-      clientName: 'Budi Santoso',
-      status: 'in-progress',
-      budget: 250000000,
-      createdAt: new Date('2024-08-01'),
-      isDummy: true
-    },
-    {
-      id: 'dummy_hist_3',
-      title: 'Restaurant Kitchen Setup',
-      clientName: 'Sari Resto Group',
-      status: 'cancelled',
-      budget: 75000000,
-      createdAt: new Date('2024-07-20'),
-      cancelledAt: new Date('2024-07-25'),
-      isDummy: true
-    },
-    {
-      id: 'dummy_hist_4',
-      title: 'Shopping Mall Interior',
-      clientName: 'Mall Central Jakarta',
-      status: 'on-hold',
-      budget: 500000000,
-      createdAt: new Date('2024-06-15'),
-      isDummy: true
-    },
-    {
-      id: 'dummy_hist_5',
-      title: 'Hotel Lobby Redesign',
-      clientName: 'Grand Hotel Indonesia',
-      status: 'completed',
-      budget: 180000000,
-      createdAt: new Date('2024-06-01'),
-      completedAt: new Date('2024-07-20'),
-      isDummy: true
-    }
-  ], []);
+  const dummyProjects = useMemo(
+    () => [
+      {
+        id: "dummy_hist_1",
+        title: "Modern Office Renovation",
+        clientName: "PT Maju Bersama",
+        status: "completed",
+        budget: 150000000,
+        createdAt: new Date("2024-07-15"),
+        completedAt: new Date("2024-08-10"),
+        isDummy: true,
+      },
+      {
+        id: "dummy_hist_2",
+        title: "Residential House Construction",
+        clientName: "Budi Santoso",
+        status: "in-progress",
+        budget: 250000000,
+        createdAt: new Date("2024-08-01"),
+        isDummy: true,
+      },
+      {
+        id: "dummy_hist_3",
+        title: "Restaurant Kitchen Setup",
+        clientName: "Sari Resto Group",
+        status: "cancelled",
+        budget: 75000000,
+        createdAt: new Date("2024-07-20"),
+        cancelledAt: new Date("2024-07-25"),
+        isDummy: true,
+      },
+      {
+        id: "dummy_hist_4",
+        title: "Shopping Mall Interior",
+        clientName: "Mall Central Jakarta",
+        status: "on-hold",
+        budget: 500000000,
+        createdAt: new Date("2024-06-15"),
+        isDummy: true,
+      },
+      {
+        id: "dummy_hist_5",
+        title: "Hotel Lobby Redesign",
+        clientName: "Grand Hotel Indonesia",
+        status: "completed",
+        budget: 180000000,
+        createdAt: new Date("2024-06-01"),
+        completedAt: new Date("2024-07-20"),
+        isDummy: true,
+      },
+    ],
+    []
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -76,11 +85,11 @@ export default function HistoryComponent() {
         //   where('vendorId', '==', user.uid),
         //   orderBy('createdAt', 'desc')
         // );
-        
+
         setProjects(dummyProjects);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching projects:', error);
+        console.error("Error fetching projects:", error);
         setProjects(dummyProjects);
         setLoading(false);
       }
@@ -91,43 +100,43 @@ export default function HistoryComponent() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'on-hold':
-        return 'bg-yellow-100 text-yellow-800';
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "on-hold":
+        return "bg-yellow-100 text-yellow-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusDescription = (status) => {
     switch (status) {
-      case 'completed':
-        return 'Completed';
-      case 'in-progress':
-        return 'In Progress';
-      case 'cancelled':
-        return 'Cancelled';
-      case 'on-hold':
-        return 'On Hold';
+      case "completed":
+        return "Completed";
+      case "in-progress":
+        return "In Progress";
+      case "cancelled":
+        return "Cancelled";
+      case "on-hold":
+        return "On Hold";
       default:
         return status;
     }
   };
 
-  const filteredProjects = projects.filter(project => {
+  const filteredProjects = projects.filter((project) => {
     if (selectedStatus === "all") return true;
     return project.status === selectedStatus;
   });
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -149,14 +158,23 @@ export default function HistoryComponent() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            <svg
+              className="h-5 w-5 text-blue-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div className="ml-3">
             <p className="text-sm text-blue-700">
-              <strong>Demo Data:</strong> This section shows sample project history data for UI testing purposes. 
-              In production, this would display your actual project history from the database.
+              <strong>Demo Data:</strong> This section shows sample project
+              history data for UI testing purposes. In production, this would
+              display your actual project history from the database.
             </p>
           </div>
         </div>
@@ -164,7 +182,7 @@ export default function HistoryComponent() {
 
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">Project History</h2>
-        
+
         {/* Status Filter */}
         <div className="flex space-x-2">
           <select
@@ -189,63 +207,50 @@ export default function HistoryComponent() {
           </div>
         ) : (
           filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-                    {project.isDummy && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Demo Data
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Client:</span> {project.clientName}
+            <div
+              key={project.id}
+              className="relative bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            >
+              {/* Top Left - ID */}
+              <p className="text-sm text-slate-600">{project.id}</p>
+
+              {/* Title - Big 3xl */}
+              <h3 className="text-3xl font-bold text-slate-900">
+                {project.title}
+              </h3>
+
+              {/* Location - Small */}
+              <p className="text-sm text-slate-600 mb-4">Jakarta Selatan</p>
+
+              {/* Klien Section (instead of Vendor) */}
+              <div className="flex gap-8 mb-4">
+                <div>
+                  <p className="text-sm text-slate-600">Klien</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {project.clientName}
                   </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Status:</span> {getStatusDescription(project.status)}
-                  </p>
-                  {project.createdAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Started:</span> {
-                        (project.createdAt.toDate ? 
-                          new Date(project.createdAt.toDate()) : 
-                          new Date(project.createdAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.completedAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Completed:</span> {
-                        (project.completedAt.toDate ? 
-                          new Date(project.completedAt.toDate()) : 
-                          new Date(project.completedAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.cancelledAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Cancelled:</span> {
-                        (project.cancelledAt.toDate ? 
-                          new Date(project.cancelledAt.toDate()) : 
-                          new Date(project.cancelledAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                    {getStatusDescription(project.status)}
-                  </span>
-                  <p className="text-lg font-bold text-gray-900 mt-2">
+
+                <div>
+                  <p className="text-sm text-slate-600">Nilai Kontrak</p>
+                  <p className="text-2xl font-bold text-slate-900">
                     {formatCurrency(project.budget)}
                   </p>
                 </div>
               </div>
+
+              {/* Status Section */}
+              <div className="mb-6">
+                <p className="text-sm text-slate-600">Status</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {getStatusDescription(project.status)}
+                </p>
+              </div>
+
+              {/* Detail Button - Bottom Right */}
+              <button className="absolute bottom-6 right-6 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                Detail
+              </button>
             </div>
           ))
         )}

@@ -47,3 +47,4 @@ storage.rules
 # Ignore old pages and otherpage backups
 backup/old-pages/
 backup/otherpage/
+.vercel

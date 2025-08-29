@@ -55,7 +55,7 @@ function ProjectOwnerDashboardContent() {
 
   // Search function to find contractors and project owners
   const performSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() || !user) {
       setSearchResults([]);
       setShowSearchResults(false);
       return;
@@ -78,7 +78,7 @@ function ProjectOwnerDashboardContent() {
         const userId = doc.id;
         
         // Skip current user
-        if (userId === user.uid) return;
+        if (user?.uid && userId === user.uid) return;
         
         // Skip administrators from search results
         if (userData.userType && userData.userType.toLowerCase().includes('admin')) {
@@ -163,7 +163,7 @@ function ProjectOwnerDashboardContent() {
     } finally {
       setIsSearching(false);
     }
-  }, [searchQuery, selectedLocation, user.uid]);
+  }, [searchQuery, selectedLocation, user?.uid]);
 
   // Handle search input changes
   useEffect(() => {

@@ -17,10 +17,13 @@ import {
   FiX,
   FiMessageSquare,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiCamera,
+  FiInfo
 } from 'react-icons/fi';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { firestoreService } from '../../../../hooks/useFirestore';
+import { useStorage } from '../../../../hooks/useStorage';
 import { normalizeProposals } from '../../../../utils/proposalsUtils';
 import BOQDisplay from '../../../components/BOQDisplay';
 
@@ -35,12 +38,55 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
   const [tempCounterOffers, setTempCounterOffers] = useState({});
   const [pendingCounterOffer, setPendingCounterOffer] = useState(false); // Track if vendor has submitted an offer awaiting response
   const [showFullPageBOQ, setShowFullPageBOQ] = useState(false);
+  
+  // Documentation upload states
+  const [documentationImages, setDocumentationImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const { uploadFile, progress } = useStorage();
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: FiEye },
-    { id: 'boq', label: 'BOQ', icon: FiFileText },
-    { id: 'proposal', label: 'My Proposal', icon: FiUser },
-  ];
+  // Check if this vendor has been accepted
+  const hasAcceptedProposal = () => {
+    const normalizedProposals = normalizeProposals(project?.proposals);
+    if (!normalizedProposals || !user?.uid) {
+      return false;
+    }
+    
+    const isAccepted = normalizedProposals.some(proposal => 
+      (proposal.vendorId === user.uid || proposal.userId === user.uid || proposal.submittedBy === user.uid) &&
+      (proposal.status === 'accepted' || 
+       proposal.negotiation?.status === 'accepted' ||
+       project.selectedVendorId === user.uid ||
+       project.status === 'Awarded' ||
+       project.negotiationAccepted)
+    );
+    
+    return isAccepted;
+  };
+
+  // Check if project is actually in progress (not just negotiating)
+  const isProjectInProgress = () => {
+    return hasAcceptedProposal() && 
+           (project.status === 'In Progress' || 
+            project.status === 'Active' || 
+            project.status === 'Started' ||
+            project.workStarted === true);
+  };
+
+  // Get dynamic tabs based on project status
+  const getDynamicTabs = () => {
+    const baseTabs = [
+      { id: 'overview', label: 'Overview', icon: FiEye },
+      { id: 'boq', label: 'BOQ', icon: FiFileText },
+      { id: 'proposal', label: 'Penawaran', icon: FiUser },
+    ];
+    
+    // Only show documentation tab when project is IN PROGRESS
+    if (isProjectInProgress()) {
+      baseTabs.push({ id: 'dokumentasi', label: 'Dokumentasi', icon: FiCamera });
+    }
+    
+    return baseTabs;
+  };
 
   // Helper function to get negotiation status for vendor
   const getVendorNegotiationStatus = () => {
@@ -165,6 +211,15 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
 
     loadNegotiationData();
   }, [project?.proposals, user?.uid, activeTab]);
+
+  // Load documentation images
+  useEffect(() => {
+    if (project?.documentationImages) {
+      setDocumentationImages(project.documentationImages);
+    } else {
+      setDocumentationImages([]);
+    }
+  }, [project?.documentationImages]);
 
   // Handle counter offer functions
   const startNegotiation = () => {
@@ -743,6 +798,74 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     estimatedStartDate: project.estimatedStartDate || project.startDate || 'Start Date Not Specified',
   };
 
+  // Handle documentation image upload
+  const handleUploadDocumentation = async (files) => {
+    if (!isProjectInProgress()) {
+      alert('Documentation upload is only available when the project is in progress.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`File ${file.name} is not an image`);
+        }
+
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        }
+
+        // Upload to Firebase Storage
+        const fileName = `${Date.now()}-${file.name}`;
+        const storagePath = `projects/${project.id}/documentation/${fileName}`;
+        
+        console.log('📤 Uploading documentation image:', {
+          fileName,
+          storagePath,
+          projectId: project.id,
+          vendorId: user.uid
+        });
+
+        const downloadURL = await uploadFile(file, storagePath);
+        
+        return {
+          url: downloadURL,
+          name: fileName,
+          originalName: file.name,
+          uploadedAt: new Date(),
+          uploadedBy: user.uid,
+          uploaderName: user.displayName || user.email || 'Vendor',
+          size: file.size,
+          type: file.type
+        };
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      
+      // Update project document with new images
+      const updatedImages = [...(project.documentationImages || []), ...uploadedImages];
+      
+      await firestoreService.update('projects', project.id, {
+        documentationImages: updatedImages,
+        updatedAt: new Date()
+      });
+
+      // Update local state
+      setDocumentationImages(updatedImages);
+      
+      console.log('✅ Documentation images uploaded successfully:', uploadedImages.length);
+      alert(`Successfully uploaded ${uploadedImages.length} image(s)!`);
+
+    } catch (error) {
+      console.error('❌ Error uploading documentation:', error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Tab content renderers
   const renderOverviewTab = () => {
     // Helper function to get BOQ tahapan data
@@ -898,17 +1021,21 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
 
           {/* Catatan and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-100 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Catatan</h3>
-              <p className="text-gray-700">
-                {project.specialNotes || project.notes || project.description || 'No special notes'}
-              </p>
+            <div>
+              <h2 className="text-sm font-normal text-gray-900 mb-2">Catatan</h2>
+              <div className="bg-gray-100 rounded-lg px-4 py-8">
+                <p className="text-3xl text-gray-700">
+                  {project.specialNotes || project.notes || project.description || 'No special notes'}
+                </p>
+              </div>
             </div>
-            <div className="bg-gray-100 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Status</h3>
-              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(project.status)}`}>
-                {project.status || 'Active'}
-              </span>
+            <div>
+              <h2 className="text-sm font-normal text-gray-900 mb-2">Status</h2>
+              <div className="bg-gray-100 rounded-lg px-4 py-8">
+                <p className="text-3xl text-gray-700">
+                  {project.status || 'Active'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -921,13 +1048,34 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
       return (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading negotiated prices...</span>
+          <span className="ml-3 text-gray-600">Loading BOQ data...</span>
         </div>
       );
     }
 
+    // Check if this vendor is accepted to show the accepted BOQ
+    const isVendorAccepted = hasAcceptedProposal();
+    const proposalIndex = getVendorProposalIndex();
+    const normalizedProposals = normalizeProposals(project?.proposals);
+    const vendorProposal = proposalIndex >= 0 ? normalizedProposals[proposalIndex] : null;
+    
     return (
       <div className="space-y-4">
+        {/* Project Status Info */}
+        {isVendorAccepted && (
+          <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <FiCheck className="w-5 h-5 text-green-600 mt-0.5" />
+              <div>
+                <h5 className="font-medium text-green-800 mb-1">Project Accepted - Work Started</h5>
+                <p className="text-sm text-green-700">
+                  You have been selected for this project. The BOQ below shows the agreed terms for your work.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Negotiation Status Info */}
         {Object.keys(negotiations).length > 0 && (
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
@@ -946,7 +1094,9 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         {/* BOQ Actions */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Bill of Quantities (BOQ)</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {isVendorAccepted ? 'Accepted Work Scope (BOQ)' : 'Bill of Quantities (BOQ)'}
+            </h3>
             <button
               onClick={() => setShowFullPageBOQ(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -972,8 +1122,20 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
               }} 
               isVendorView={true} 
               showNegotiatedPrices={Object.keys(negotiations).length > 0}
+              acceptedVendor={isVendorAccepted}
             />
           </div>
+          
+          {isVendorAccepted && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <FiInfo className="w-4 h-4" />
+                <span>
+                  This is your accepted work scope. Use the Documentation tab to upload progress photos and updates.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1081,7 +1243,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">My Proposal Status</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Status Penawaran</h2>
               <div className="flex items-center gap-3">
                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${getProposalStatusColor(currentStatus)}`}>
                   {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
@@ -1465,6 +1627,109 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     );
   };
 
+  const renderDokumentasiTab = () => {
+    if (!isProjectInProgress()) {
+      return (
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <FiCamera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Project Not Started Yet</h3>
+          <p className="text-gray-600">
+            Documentation upload will be available once the project is in progress.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Upload Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Upload Progress Documentation</h3>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => e.target.files && handleUploadDocumentation(e.target.files)}
+                className="hidden"
+                id="documentation-upload"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="documentation-upload"
+                className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+                  uploading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <FiCamera className="inline mr-2" />
+                {uploading ? 'Uploading...' : 'Upload Images'}
+              </label>
+            </div>
+          </div>
+          
+          {uploading && (
+            <div className="mb-4">
+              <div className="bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">Uploading... {Math.round(progress)}%</p>
+            </div>
+          )}
+          
+          <p className="text-sm text-gray-600">
+            Upload images to document your work progress. Supported formats: JPG, PNG, GIF. Maximum size: 10MB per image.
+          </p>
+        </div>
+
+        {/* Images Grid */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Documentation Images ({documentationImages.length})
+          </h3>
+          
+          {documentationImages.length === 0 ? (
+            <div className="text-center py-12">
+              <FiCamera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No Images Yet</h4>
+              <p className="text-gray-600 mb-4">
+                Start documenting your work progress by uploading images.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {documentationImages.map((image, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg overflow-hidden">
+                  <div className="aspect-square relative">
+                    <img
+                      src={image.url}
+                      alt={image.originalName || `Documentation ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03NSA2MFY3NUg2MFY4NUg3NVYxMDBIODVWODVIMTAwVjc1SDg1VjYwSDc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+                        e.target.onerror = null;
+                      }}
+                    />
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs text-gray-600 text-center">
+                      {image.uploadedAt ? new Date(image.uploadedAt.toDate ? image.uploadedAt.toDate() : image.uploadedAt).toLocaleDateString() : 'Unknown date'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderFullPageBOQ = () => {
     return (
       <div className="fixed inset-0 z-50 bg-gray-50 overflow-hidden">
@@ -1547,6 +1812,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         return renderBOQTab();
       case 'proposal':
         return renderProposalTab();
+      case 'dokumentasi':
+        return renderDokumentasiTab();
       default:
         return renderOverviewTab();
     }
@@ -1689,7 +1956,7 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
-            {tabs.map((tab) => {
+            {getDynamicTabs().map((tab) => {
               const Icon = tab.icon;
               return (
                 <button

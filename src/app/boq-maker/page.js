@@ -58,6 +58,21 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
     const volume = parseFloat(item.volume || item.quantity) || 1;
     const pricePerUnit = volume > 0 ? finalPrice / volume : finalPrice;
     
+    // Get the original/previous price - prioritize hasOriginalPrice from the item
+    const originalPrice = item.hasOriginalPrice ? parseFloat(item.originalPrice || 0) : 0;
+    const currentPrice = parseFloat(item.currentPrice || item.vendorPrice || item.subtotal || 0);
+    
+    console.log(`💰 Converting item ${index}:`, {
+      description: item.item || item.description,
+      originalPrice: originalPrice,
+      currentPrice: currentPrice,
+      finalPrice: finalPrice,
+      hasOriginalPrice: item.hasOriginalPrice,
+      priceChange: item.priceChange,
+      rawOriginalPrice: item.originalPrice,
+      rawHasOriginalPrice: item.hasOriginalPrice
+    });
+    
     groupedData[tahapanName][jenisName].push({
       name: uraianName,
       specs: [{
@@ -65,9 +80,12 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
         satuan: item.unit || item.satuan || 'unit',
         volume: volume,
         pricePerPcs: pricePerUnit,
-        originalPrice: parseFloat(item.originalPrice || 0),
+        originalPrice: originalPrice, // Use the properly calculated previous price
+        currentPrice: currentPrice, // Current vendor price from item
         vendorPrice: finalPrice,
-        subtotal: finalPrice
+        subtotal: finalPrice,
+        hasOriginalPrice: item.hasOriginalPrice || false, // Flag from the enhanced data
+        priceChange: parseFloat(item.priceChange || 0) // Price difference from enhanced data
       }]
     });
   });
@@ -89,7 +107,9 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
           pricePerPcs: specItem.pricePerPcs,
           originalPrice: specItem.originalPrice || 0,
           vendorPrice: specItem.vendorPrice || 0,
-          subtotal: specItem.subtotal || 0
+          subtotal: specItem.subtotal || 0,
+          hasOriginalPrice: specItem.hasOriginalPrice || false, // Make sure this flag is preserved
+          priceChange: specItem.priceChange || 0 // Make sure price change is preserved
         }));
 
         return {
@@ -177,6 +197,11 @@ function BOQMakerContent() {
   const [showNegotiationDetails, setShowNegotiationDetails] = useState(false);
   const [vendorName, setVendorName] = useState('');
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isOwnerView, setIsOwnerView] = useState(false);
+  const [showPriceComparison, setShowPriceComparison] = useState(false);
+  const [originalBOQData, setOriginalBOQData] = useState([]);
+  const [userType, setUserType] = useState('');
+  const [returnUrl, setReturnUrl] = useState('');
 
   // Function to load temporary BOQ data from Firestore
   const loadTempBOQData = useCallback(async (tempId, isReadOnly) => {
@@ -372,6 +397,18 @@ function BOQMakerContent() {
     const sessionKey = searchParams.get('sessionKey');
     const mode = searchParams.get('mode');
     const isReadOnly = searchParams.get('readOnly') === 'true';
+    const ownerView = searchParams.get('ownerView') === 'true';
+    const userTypeParam = searchParams.get('userType');
+    const returnUrlParam = searchParams.get('returnUrl');
+    
+    // Set owner view state
+    if (ownerView) {
+      setIsOwnerView(true);
+      setIsReadOnly(true); // Force read-only for owner view
+      setEditMode(false); // Force view mode for project owners
+    }
+    if (userTypeParam) setUserType(userTypeParam);
+    if (returnUrlParam) setReturnUrl(returnUrlParam);
     
     if ((tempId || localKey || sessionKey) && (mode === 'view' || mode === 'resubmission')) {
       console.log('🔍 Loading BOQ data in view/resubmission mode:', {
@@ -444,6 +481,32 @@ function BOQMakerContent() {
       console.log('✅ Session BOQ data loaded from localStorage:', sessionData);
       
       if (sessionData.boqPricing && Array.isArray(sessionData.boqPricing)) {
+        // Set price comparison flags if available
+        console.log('🔍 Checking session data for price comparison:', {
+          showPriceComparison: sessionData.showPriceComparison,
+          hasNegotiation: !!sessionData.negotiation,
+          boqPricingCount: sessionData.boqPricing.length
+        });
+        
+        // Debug first few items to see their structure
+        console.log('🔍 First few BOQ items structure:', sessionData.boqPricing.slice(0, 3).map((item, index) => ({
+          index,
+          item: item.item || item.description,
+          vendorPrice: item.vendorPrice,
+          originalPrice: item.originalPrice,
+          hasOriginalPrice: item.hasOriginalPrice,
+          priceChange: item.priceChange
+        })));
+        
+        if (sessionData.showPriceComparison) {
+          console.log('✅ Enabling price comparison mode');
+          setShowPriceComparison(true);
+          setOriginalBOQData(sessionData.originalBOQData || []);
+        } else {
+          console.log('❌ Price comparison disabled - no negotiations found');
+          setShowPriceComparison(false);
+        }
+        
         // Convert boqPricing array to tahapanKerja structure with negotiation data
         const convertedTahapanKerja = convertBoqPricingToTahapanKerja(
           sessionData.boqPricing, 
@@ -460,6 +523,7 @@ function BOQMakerContent() {
         setCurrentView('editor');
         console.log('✅ Session BOQ data loaded successfully for viewing');
         console.log('💰 Display amount:', displayAmount);
+        console.log('📊 Price comparison enabled:', sessionData.showPriceComparison);
         
         // Clean up session data after successful load
         setTimeout(() => {
@@ -1897,43 +1961,55 @@ function BOQMakerContent() {
                   <p className="text-blue-100">Create detailed Bill of Quantities with local storage</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={() => setCurrentView('list')}
-                    className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
-                  >
-                    ← Home
-                  </button>
-                  {editMode && (
+                  {isOwnerView ? (
                     <button
-                      onClick={saveBOQ}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
+                      onClick={() => window.location.href = returnUrl || '/dashboard/project-owner'}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm flex items-center"
                     >
-                      {currentBOQId ? 'Update' : 'Save'} BOQ
+                      <MdArrowBack className="w-4 h-4 mr-2" />
+                      Back to Project
                     </button>
-                  )}
-                  {!editMode && (
-                    <button
-                      onClick={() => setEditMode(true)}
-                      className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border text-xs"
-                    >
-                      Edit Mode
-                    </button>
-                  )}
-                  {editMode && (
-                    <button
-                      onClick={exportToCSV}
-                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
-                    >
-                      Export CSV
-                    </button>
-                  )}
-                  {!editMode && (
-                    <button
-                      onClick={exportToCSV}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm"
-                    >
-                      Export CSV
-                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setCurrentView('list')}
+                        className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
+                      >
+                        ← Home
+                      </button>
+                      {editMode && (
+                        <button
+                          onClick={saveBOQ}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
+                        >
+                          {currentBOQId ? 'Update' : 'Save'} BOQ
+                        </button>
+                      )}
+                      {!editMode && (
+                        <button
+                          onClick={() => setEditMode(true)}
+                          className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border text-xs"
+                        >
+                          Edit Mode
+                        </button>
+                      )}
+                      {editMode && (
+                        <button
+                          onClick={exportToCSV}
+                          className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
+                        >
+                          Export CSV
+                        </button>
+                      )}
+                      {!editMode && (
+                        <button
+                          onClick={exportToCSV}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm"
+                        >
+                          Export CSV
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -2029,28 +2105,33 @@ function BOQMakerContent() {
                     <table className="w-full table-fixed">
                       <thead className="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '15%' : '18%'}}>
                             Tahapan Kerja
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '15%' : '18%'}}>
                             Jenis Pekerjaan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '18%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '15%' : '18%'}}>
                             Uraian
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '16%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '13%' : '16%'}}>
                             Spesifikasi
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '8%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '7%' : '8%'}}>
                             Volume
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '8%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '7%' : '8%'}}>
                             Satuan
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '14%'}}>
-                            Harga Satuan
+                          {showPriceComparison && (
+                            <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: '12%'}}>
+                              Harga Sebelum
+                            </th>
+                          )}
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '12%' : '14%'}}>
+                            Harga Sekarang
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800" style={{width: '16%'}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800" style={{width: showPriceComparison ? '14%' : '16%'}}>
                             Total
                           </th>
                         </tr>
@@ -2421,7 +2502,22 @@ function BOQMakerContent() {
                               )}
                             </td>
 
-                            {/* Harga per Pcs */}
+                            {/* Harga Sebelum - Only show when price comparison is enabled */}
+                            {showPriceComparison && (
+                              <td className="px-4 py-2 border-r border-gray-200 align-middle">
+                                {row.spec && (row.spec.hasOriginalPrice || row.spec.originalPrice > 0) ? (
+                                  <div className="text-sm text-gray-600 text-center">
+                                    <div className="font-medium">
+                                      Rp {parseFloat(row.spec.originalPrice || 0).toLocaleString('id-ID')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400 text-center">-</div>
+                                )}
+                              </td>
+                            )}
+
+                            {/* Harga Sekarang */}
                             <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                 onClick={(e) => {
                                   const input = e.currentTarget.querySelector('input');
@@ -2429,44 +2525,33 @@ function BOQMakerContent() {
                                 }}>
                               {row.spec ? (
                                 <div className="space-y-1">
-                                  {/* Show original and negotiated prices for comparison in resubmission mode */}
-                                  {resubmissionMode && row.spec.originalPrice !== undefined && (
-                                    <div className="text-xs text-gray-500 space-y-0.5">
-                                      <div className="italic">
-                                        Harga Sebelumnya: Rp {parseFloat(row.spec.originalPrice || 0).toLocaleString('id-ID')}
-                                      </div>
-                                      {row.spec.negotiatedPrice && row.spec.negotiatedPrice !== row.spec.originalPrice && (
-                                        <div className="italic text-blue-600">
-                                          Hasil Negosiasi: Rp {parseFloat(row.spec.negotiatedPrice || 0).toLocaleString('id-ID')}
-                                        </div>
-                                      )}
+                                  {editMode ? (
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                          updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
+                                        }
+                                      }}
+                                      onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
+                                      onKeyPress={(e) => {
+                                        if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      disabled={!editMode}
+                                      tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
+                                      className="w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500"
+                                      placeholder={resubmissionMode ? "Harga baru" : "Enter new price"}
+                                    />
+                                  ) : (
+                                    <div className="text-sm text-gray-800 font-medium text-center">
+                                      Rp {parseFloat(row.spec.pricePerPcs || 0).toLocaleString('id-ID')}
                                     </div>
                                   )}
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
-                                    onChange={(e) => {
-                                      const value = e.target.value;
-                                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                        updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
-                                      }
-                                    }}
-                                    onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
-                                    onKeyPress={(e) => {
-                                      if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
-                                        e.preventDefault();
-                                      }
-                                    }}
-                                    disabled={!editMode}
-                                    tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
-                                    className={
-                                      editMode 
-                                        ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500" 
-                                        : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-right"
-                                    }
-                                    placeholder={resubmissionMode ? "Harga baru" : "Enter new price"}
-                                  />
                                 </div>
                               ) : (
                                 <div className="w-full h-6"></div>
@@ -2490,7 +2575,7 @@ function BOQMakerContent() {
                       
                       {/* Summary rows inside table */}
                       <tr className="border-t-2 border-gray-300 bg-white">
-                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-gray-800">
+                        <td colSpan={showPriceComparison ? "8" : "7"} className="px-4 py-3 text-right font-medium text-gray-800">
                           Subtotal:
                         </td>
                         <td className="px-4 py-3 font-medium text-black">
@@ -2498,7 +2583,7 @@ function BOQMakerContent() {
                         </td>
                       </tr>
                       <tr className="bg-white">
-                        <td colSpan="7" className="px-4 py-3 text-right font-medium text-gray-800">
+                        <td colSpan={showPriceComparison ? "8" : "7"} className="px-4 py-3 text-right font-medium text-gray-800">
                           PPN (11%):
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-600">
@@ -2506,7 +2591,7 @@ function BOQMakerContent() {
                         </td>
                       </tr>
                       <tr className="border-t border-gray-300 bg-white">
-                        <td colSpan="7" className="px-4 py-4 text-right font-bold text-black text-lg">
+                        <td colSpan={showPriceComparison ? "8" : "7"} className="px-4 py-4 text-right font-bold text-black text-lg">
                           Total:
                         </td>
                         <td className="px-4 py-4 font-bold text-black text-lg">

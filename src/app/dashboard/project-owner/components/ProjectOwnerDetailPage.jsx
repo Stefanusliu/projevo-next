@@ -24,10 +24,12 @@ import {
   FiAlertTriangle,
   FiInfo,
   FiBarChart,
-  FiBell
+  FiBell,
+  FiCamera
 } from 'react-icons/fi';
 import BOQDisplay from '../../../components/BOQDisplay';
 import { firestoreService } from '../../../../hooks/useFirestore';
+import { useStorage } from '../../../../hooks/useStorage';
 import { normalizeProposals, getProposalsLength } from '../../../../utils/proposalsUtils';
 import MidtransPaymentModal from '../../../../components/payments/MidtransPaymentModal';
 
@@ -85,23 +87,125 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const [newNegotiationCount, setNewNegotiationCount] = useState(0);
   const [lastViewedNegotiations, setLastViewedNegotiations] = useState(null);
 
+  // Documentation states
+  const [documentationImages, setDocumentationImages] = useState([]);
+  const [imageErrors, setImageErrors] = useState({});
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  const { uploadFile, uploading, uploadProgress } = useStorage();
+
+  // Load documentation images from project data
+  useEffect(() => {
+    if (project?.documentationImages) {
+      setDocumentationImages(project.documentationImages);
+    }
+  }, [project]);
+
   // Function to navigate to BOQ maker page in read-only mode
   const handleViewBOQInMaker = async (proposal) => {
     try {
       console.log('🔄 Navigating to BOQ Maker with proposal data:', proposal);
       
+      // Check if there are negotiations and get the last negotiated prices
+      const hasNegotiations = proposal.negotiation && proposal.negotiation.counterOffer;
+      const isResubmission = proposal.isResubmission === true;
+      const hasOriginalPrices = proposal.boqPricing && proposal.boqPricing.some(item => 
+        item.originalPrice !== undefined || item.previousNegotiatedPrice !== undefined
+      );
+      
+      // Show price comparison for negotiations OR resubmissions with original prices
+      const shouldShowPriceComparison = hasNegotiations || isResubmission || hasOriginalPrices;
+      
+      console.log('🔍 Checking negotiations and resubmissions:', { 
+        hasNegotiations, 
+        isResubmission, 
+        hasOriginalPrices,
+        shouldShowPriceComparison,
+        negotiation: proposal.negotiation 
+      });
+      
+      // Get original BOQ data from project for comparison (fallback only)
+      const originalBOQData = project.originalBOQ || project.boqData || [];
+      
+      console.log('📊 Show price comparison:', shouldShowPriceComparison);
+      
+      // Enhance BOQ pricing data with previous negotiated prices for comparison
+      const enhancedBoqPricing = (proposal.boqPricing || []).map((item, index) => {
+        let previousPrice = 0;
+        let hasPreviousPrice = false;
+        
+        if (shouldShowPriceComparison) {
+          // For resubmissions, check for originalPrice or previousNegotiatedPrice
+          if (isResubmission && (item.originalPrice !== undefined || item.previousNegotiatedPrice !== undefined)) {
+            previousPrice = parseFloat(item.originalPrice || item.previousNegotiatedPrice || 0);
+            hasPreviousPrice = true;
+            console.log(`💰 Resubmission Item ${index} - Previous price from originalPrice: ${previousPrice}`);
+          } else if (hasNegotiations) {
+            // For traditional negotiations, the current vendorPrice is already the negotiated price
+            // We need to get the original price from the original BOQ or from stored data
+            
+            // Try to get original price from various sources
+            let originalPrice = 0;
+            
+            // First try: Look for stored original prices in the item itself
+            if (item.originalVendorPrice !== undefined) {
+              originalPrice = parseFloat(item.originalVendorPrice || 0);
+            } else if (item.initialVendorPrice !== undefined) {
+              originalPrice = parseFloat(item.initialVendorPrice || 0);
+            } else if (item.baseVendorPrice !== undefined) {
+              originalPrice = parseFloat(item.baseVendorPrice || 0);
+            } else {
+              // Fallback: Look in original BOQ data
+              const originalItem = originalBOQData.find(orig => 
+                (orig.item === item.item || orig.name === item.name || orig.description === item.description) &&
+                (orig.tahapanName === item.tahapanName || orig.tahapanKerja === item.tahapanKerja)
+              ) || originalBOQData[index];
+              
+              if (originalItem) {
+                originalPrice = parseFloat(originalItem.vendorPrice || originalItem.unitPrice || originalItem.pricePerPcs || 0);
+              } else {
+                // Last fallback: If we can't find original price, use the current price as both
+                // This ensures we still show the comparison column even if prices are the same
+                originalPrice = parseFloat(item.vendorPrice || item.subtotal || item.unitPrice || item.pricePerPcs || 0);
+              }
+            }
+            
+            previousPrice = originalPrice;
+            hasPreviousPrice = true; // Always true when there are negotiations
+            
+            console.log(`💰 Negotiation Item ${index} - Previous price: ${previousPrice}, Current: ${parseFloat(item.vendorPrice || 0)}, Has previous: ${hasPreviousPrice}`);
+          }
+        }
+        
+        return {
+          ...item,
+          // Add previous negotiated price for comparison (only if there are negotiations/resubmissions)
+          originalPrice: previousPrice,
+          // Keep current vendor price (this should be the latest negotiated price)
+          currentPrice: parseFloat(item.vendorPrice || item.subtotal || item.unitPrice || item.pricePerPcs || 0),
+          // Add comparison metadata
+          hasOriginalPrice: hasPreviousPrice,
+          priceChange: hasPreviousPrice ? 
+            parseFloat(item.vendorPrice || item.subtotal || 0) - previousPrice : 0
+        };
+      });
+      
       // Prepare BOQ data for the maker page - use the existing boqPricing data
       const boqViewData = {
         readOnly: true,
+        ownerView: true, // Indicates this is a project owner viewing vendor's BOQ
+        userType: 'project-owner', // For BOQ maker to know user context
         vendorName: proposal.vendorName || 'Unknown Vendor',
         projectTitle: project.projectTitle,
         projectId: project.id,
         proposalId: proposal.id,
-        boqPricing: proposal.boqPricing || [],
+        boqPricing: enhancedBoqPricing, // Use enhanced data with price comparison
+        originalBOQData: originalBOQData, // Include original BOQ for reference
         totalAmount: proposal.totalAmount,
         submittedAt: proposal.submittedAt || proposal.createdAt,
         vendorId: proposal.vendorId,
         type: 'proposal_view',
+        showPriceComparison: shouldShowPriceComparison, // Keep price comparison enabled
         // Include negotiation data if available
         negotiation: proposal.negotiation || null,
         finalAmount: proposal.negotiation?.counterOffer ? 
@@ -115,13 +219,16 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         localStorage.setItem(sessionKey, JSON.stringify(boqViewData));
         console.log('✅ BOQ data stored in localStorage with key:', sessionKey);
         
-        // Navigate to BOQ maker page with the session key
+        // Navigate to BOQ maker page with enhanced query parameters
         const queryParams = new URLSearchParams({
           mode: 'view',
           readOnly: 'true',
+          ownerView: 'true', // Tell BOQ maker this is owner viewing vendor BOQ
+          userType: 'project-owner', // User context for proper navigation
           sessionKey: sessionKey,
           vendorName: proposal.vendorName || 'Unknown Vendor',
-          projectTitle: project.projectTitle || 'Unknown Project'
+          projectTitle: project.projectTitle || 'Unknown Project',
+          returnUrl: '/dashboard/project-owner' // Where to return when clicking back
         });
         
         router.push(`/boq-maker?${queryParams.toString()}`);
@@ -137,6 +244,33 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     }
   };
 
+  // Documentation helper functions
+  const handleImageError = (imageId) => {
+    setImageErrors(prev => ({ ...prev, [imageId]: true }));
+  };
+
+  const handleUploadDocumentation = async () => {
+    // Note: This is for project owner view, vendors would upload via their dashboard
+    alert('Upload dokumentasi hanya dapat dilakukan melalui dashboard vendor');
+  };
+
+  const handleEditDocumentation = (imageId) => {
+    alert('Edit dokumentasi hanya dapat dilakukan oleh vendor');
+  };
+
+  const handleDeleteDocumentation = async (imageId) => {
+    alert('Delete dokumentasi hanya dapat dilakukan oleh vendor');
+  };
+
+  // Dummy image fallback
+  const dummyImage = "data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
+
+
+  // Check if any proposal has been accepted (vendor accepted negotiation)
+  const hasAcceptedProposal = project.proposals && project.proposals.some(proposal => 
+    proposal.status === 'accepted' || 
+    (proposal.negotiation && proposal.negotiation.status === 'accepted')
+  );
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: FiEye },
@@ -150,6 +284,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       hasNotification: newNegotiationCount > 0,
       notificationCount: newNegotiationCount
     },
+    ...(hasAcceptedProposal || project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted ? [
+      { id: 'dokumentasi', label: 'Dokumentasi', icon: FiCamera }
+    ] : [])
   ];
 
   const formatCurrency = (amount) => {
@@ -675,24 +812,23 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         {/* Single Box Container */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
           {/* Project Title and Location */}
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-gray-900">{project.projectTitle || project.title}</h1>
-            <span className="text-lg font-medium text-gray-600">
+          <div className="">
+            <h1 className="text-4xl font-bold text-gray-900">{project.projectTitle || project.title}</h1>
+            <span className="text-sm font-medium text-gray-600">
               {`${project.city || ''}, ${project.province || ''}`.replace(/^,\s*|,\s*$/g, '') || project.location || 'Location not specified'}
             </span>
           </div>
 
           {/* Progress Bar for Milestones */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Progress Proyek</h2>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Progress Keseluruhan</span>
+                <span className="text-sm font-medium text-gray-700">Progress Proyek</span>
                 <span className="text-sm font-semibold text-blue-600">{calculateProgressPercentage(getMilestones(project))}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out" 
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 text-2xl rounded-full transition-all duration-500 ease-out" 
                   style={{ width: `${calculateProgressPercentage(getMilestones(project))}%` }}
                 ></div>
               </div>
@@ -729,100 +865,88 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
           {/* Budget */}
           <div>
-            <h2 className="text-lg font-normal text-gray-900 mb-2">Anggaran</h2>
-            <p className="text-xl font-bold text-gray-900">
+            <h2 className="text-sm font-normal text-gray-900">Anggaran</h2>
+            <p className="text-3xl font-bold text-gray-900">
               {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
             </p>
           </div>
 
           {/* Jenis Proyek and Properti */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-normal text-gray-900 mb-2">Jenis Proyek</h3>
-              <p className="text-gray-700 font-bold">{project.projectType || 'Not specified'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className='w-[100px]'>
+              <h3 className="text-sm font-normal text-gray-900">Jenis Proyek</h3>
+              <p className="text-3xl text-gray-700 font-bold">{project.projectType || 'Not specified'}</p>
             </div>
             <div>
-              <h3 className="text-lg font-normal text-gray-900 mb-2">Properti</h3>
-              <p className="text-gray-700 font-bold">{project.propertyType || 'Not specified'}</p>
+              <h3 className="text-sm font-normal text-gray-900">Properti</h3>
+              <p className="text-3xl text-gray-700 font-bold">{project.propertyType || 'Not specified'}</p>
             </div>
           </div>
 
           {/* Ruang Lingkup and Metode Pengadaan */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2">
             <div>
-              <h3 className="text-lg font-normal text-gray-900 mb-2">Ruang Lingkup</h3>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(project.projectScope) ? (
-                  project.projectScope.map((scope, index) => (
-                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
-                      {scope}
-                    </span>
-                  ))
-                ) : Array.isArray(project.scope) ? (
-                  project.scope.map((scope, index) => (
-                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
-                      {scope}
-                    </span>
-                  ))
-                ) : (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
-                    {project.projectScope || project.scope || 'General'}
-                  </span>
-                )}
-              </div>
+              <h2 className="text-sm font-normal text-gray-900">Ruang Lingkup</h2>
+              <p className="text-3xl font-bold text-gray-900">
+                {Array.isArray(project.projectScope) ? 
+                  project.projectScope.join(', ') : 
+                  Array.isArray(project.scope) ? 
+                    project.scope.join(', ') : 
+                    (project.projectScope || project.scope || 'General')
+                }
+              </p>
             </div>
             <div>
-              <h3 className="text-lg font-normal text-gray-900 mb-2">Metode Pengadaan</h3>
-              <p className="text-gray-700 font-bold">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
+              <h2 className="text-sm font-normal text-gray-900">Metode Pengadaan</h2>
+              <p className="text-3xl font-bold text-gray-900">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
             </div>
           </div>
 
           {/* Project Duration Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
             <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Tender</h3>
-              <p className="text-gray-900 font-bold">
+              <h2 className="text-sm font-normal text-gray-900">Durasi Tender</h2>
+              <p className="text-3xl font-bold text-gray-900">
                 {project.tenderDuration || project.bidCountdown || 'Not specified'}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-2">Durasi Proyek</h3>
-              <p className="text-gray-900 font-bold">
+              <h2 className="text-sm font-normal text-gray-900">Durasi Proyek</h2>
+              <p className="text-3xl font-bold text-gray-900">
                 {project.estimatedDuration || project.duration || 'Not specified'}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-2">Estimasi Mulai</h3>
-              <p className="text-gray-900 font-bold">
+              <h2 className="text-sm font-normal text-gray-900">Estimasi Mulai</h2>
+              <p className="text-3xl font-bold text-gray-900">
                 {formatDate(project.estimatedStartDate) || 'Not specified'}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-2">Pemilik Proyek</h3>
-              <p className="text-gray-900 font-bold">
+              <h2 className="text-sm font-normal text-gray-900">Pemilik Proyek</h2>
+              <p className="text-3xl font-bold text-gray-900">
                 {project.clientName || project.client || project.ownerName || 'Not specified'}
               </p>
             </div>
           </div>
 
           {/* Catatan and Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-100 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Catatan</h3>
-              <p className="text-gray-700">
-                {project.specialNotes || project.notes || 'No special notes'}
-              </p>
+          <div className="flex gap-8">
+            <div style={{ width: '80%' }}>
+              <h2 className="text-sm font-normal text-gray-900 mb-2">Catatan</h2>
+              <div className="bg-gray-100 rounded-lg px-4 py-8">
+                <p className="text-3xl text-gray-700">
+                  {project.specialNotes || project.notes || 'No special notes'}
+                </p>
+              </div>
             </div>
-            <div className="bg-gray-100 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Status</h3>
-              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${
-                project.status === 'active' ? 'bg-green-100 text-green-700' :
-                project.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                {project.status || 'Draft'}
-              </span>
+            <div style={{ width: '20%' }}>
+              <h2 className="text-sm font-normal text-gray-900 mb-2">Status</h2>
+              <div className="bg-gray-100 rounded-lg  px-4 py-8">
+                <p className="text-3xl text-gray-700">
+                  {project.status || 'Draft'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1042,7 +1166,11 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
                       {/* View Details Button */}
                       <button
-                        onClick={() => setActiveTab('proposals')}
+                        onClick={() => {
+                          // Get the full proposal object from the original proposals array
+                          const fullProposal = project.proposals[activity.originalIndex];
+                          handleViewBOQInMaker(fullProposal);
+                        }}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
                       >
                         <FiEye size={16} />
@@ -2230,6 +2358,69 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     );
   };
 
+  const renderDokumentasiTab = () => {
+    const isVendorAccepted = hasAcceptedProposal || project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted;
+    
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Dokumentasi Progress</h3>
+            <p className="text-gray-600 text-sm">
+              Dokumentasi progress pekerjaan dari vendor yang telah diterima
+            </p>
+          </div>
+        </div>
+
+        {!isVendorAccepted && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+            <div className="flex items-center space-x-3">
+              <FiAlertTriangle className="w-6 h-6 text-yellow-600" />
+              <div>
+                <h4 className="font-semibold text-yellow-800">Vendor Belum Diterima</h4>
+                <p className="text-sm text-yellow-700 mt-1">Dokumentasi akan tersedia setelah Anda menerima salah satu vendor untuk proyek ini.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isVendorAccepted && (
+          <div>
+            {documentationImages.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {documentationImages.map((image) => (
+                  <div key={image.id} className="aspect-square bg-gray-100 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative">
+                    <img
+                      src={imageErrors[`doc-${image.id}`] ? dummyImage : image.url}
+                      alt="Documentation"
+                      className="w-full h-full object-cover"
+                      onError={() => handleImageError(`doc-${image.id}`)}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
+                        View
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden w-64 h-64 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">🖼️</div>
+                    <p className="text-gray-600 font-medium">Image Not Available</p>
+                    <p className="text-sm text-gray-500 mt-2">Vendor belum mengupload dokumentasi</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     if (showVendorProfile) {
       return renderVendorProfileView();
@@ -2246,6 +2437,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         return renderProposalsTab();
       case 'negotiation':
         return renderNegotiationTab();
+      case 'dokumentasi':
+        return renderDokumentasiTab();
       default:
         return renderOverviewTab();
     }

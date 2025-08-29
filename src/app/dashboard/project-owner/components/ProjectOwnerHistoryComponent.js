@@ -252,94 +252,58 @@ export default function HistoryComponent() {
           </div>
         ) : (
           filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-                    {project.isDummy && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Demo Data
-                      </span>
-                    )}
+            <div
+              key={project.id}
+              className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow min-h-[200px] relative"
+            >
+              <div className="grid grid-cols-12 gap-4 h-full">
+                {/* Left Section */}
+                <div className="col-span-6 space-y-1">
+                  {/* Custom ID Project */}
+                  <p className="text-xs text-gray-500">{project.id}</p>
+
+                  {/* Title Project */}
+                  <h3 className="text-3xl font-bold text-gray-900 leading-tight">
+                    {project.title}
+                  </h3>
+
+                  {/* Location */}
+                  <p className="text-sm text-gray-600">{project.location}</p>
+
+                  {/* Vendor */}
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500">Vendor</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {project.vendorName}
+                    </p>
                   </div>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Vendor:</span> {project.vendorName}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Location:</span> {project.location}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Duration:</span> {project.duration}
-                  </p>
-                  <p className="text-slate-600 mb-2">
-                    <span className="font-medium">Status:</span> {getStatusDescription(project.status)}
-                  </p>
-                  {project.createdAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Started:</span> {
-                        (project.createdAt.toDate ? 
-                          new Date(project.createdAt.toDate()) : 
-                          new Date(project.createdAt)
-                        ).toLocaleDateString('id-ID')
-                      }
+
+                  {/* Status */}
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500">Status</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      Selesai
                     </p>
-                  )}
-                  {project.completedAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Completed:</span> {
-                        (project.completedAt.toDate ? 
-                          new Date(project.completedAt.toDate()) : 
-                          new Date(project.completedAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.cancelledAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Cancelled:</span> {
-                        (project.cancelledAt.toDate ? 
-                          new Date(project.cancelledAt.toDate()) : 
-                          new Date(project.cancelledAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.terminatedAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Terminated:</span> {
-                        (project.terminatedAt.toDate ? 
-                          new Date(project.terminatedAt.toDate()) : 
-                          new Date(project.terminatedAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {project.expiredAt && (
-                    <p className="text-slate-600 mb-1">
-                      <span className="font-medium">Expired:</span> {
-                        (project.expiredAt.toDate ? 
-                          new Date(project.expiredAt.toDate()) : 
-                          new Date(project.expiredAt)
-                        ).toLocaleDateString('id-ID')
-                      }
-                    </p>
-                  )}
-                  {(project.cancelReason || project.terminationReason || project.expiredReason) && (
-                    <p className="text-slate-600 mb-1 text-sm">
-                      <span className="font-medium">Reason:</span> {project.cancelReason || project.terminationReason || project.expiredReason}
-                    </p>
-                  )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                    {getStatusDescription(project.status)}
-                  </span>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Budget: {formatCurrency(project.budget)}</p>
-                    {project.finalCost > 0 && (
-                      <p className="text-lg font-bold text-gray-900">Final: {formatCurrency(project.finalCost)}</p>
-                    )}
+
+                {/* Right Section */}
+                <div className="col-span-6 h-full">
+                  <div className="flex flex-col h-full justify-between">
+                    {/* Nilai Kontrak */}
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-500">Nilai Kontrak</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {formatCurrency(project.budget)}
+                      </p>
+                    </div>
+
+                    {/* Bottom Right - Detail Button */}
+                    <div className="absolute bottom-3 right-3">
+                      <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                        Detail
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

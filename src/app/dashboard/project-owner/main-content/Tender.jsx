@@ -31,7 +31,7 @@ const Tender = () => {
   const [showPropertyFilter, setShowPropertyFilter] = useState(false);
   const [sortBy, setSortBy] = useState('Paling Relevan');
   const [showSortFilter, setShowSortFilter] = useState(false);
-  const [showOfferModal, setShowOfferModal] = useState(false);
+  // const [showOfferModal, setShowOfferModal] = useState(false); // Not needed for project owners
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [bookmarkedProjects, setBookmarkedProjects] = useState([]);
@@ -567,10 +567,11 @@ const Tender = () => {
     setShowSortFilter(false);
   };
 
-  const handleCreateOffer = (project) => {
-    setSelectedProject(project);
-    setShowOfferModal(true);
-  };
+  // Not needed for project owners - they view tenders, don't create offers
+  // const handleCreateOffer = (project) => {
+  //   setSelectedProject(project);
+  //   setShowOfferModal(true);
+  // };
 
   const handleViewDetails = (project) => {
     setSelectedProject(project);
@@ -588,7 +589,7 @@ const Tender = () => {
   };
 
   const closeModals = () => {
-    setShowOfferModal(false);
+    // setShowOfferModal(false); // Not needed for project owners
     setShowDetailsModal(false);
     setSelectedProject(null);
   };
@@ -1077,17 +1078,11 @@ const Tender = () => {
                 {/* Actions */}
                 <div className="flex space-x-3">
                   <button 
-                    onClick={() => handleCreateOffer(project)}
+                    onClick={() => handleViewDetails(project)}
                     className="flex-1 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     style={{ backgroundColor: '#2373FF' }}
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
                     onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
-                  >
-                    Buat Penawaran
-                  </button>
-                  <button 
-                    onClick={() => handleViewDetails(project)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     View Details
                   </button>
@@ -1098,151 +1093,8 @@ const Tender = () => {
           </div>
         )}
 
-        {/* Create Offer Modal */}
-        {showOfferModal && selectedProject && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
-              <div className="p-6">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Buat Penawaran
-                  </h2>
-                  <button
-                    onClick={closeModals}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Project Info */}
-                <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {selectedProject.projectTitle}
-                  </h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span 
-                      className="px-2.5 py-1 text-xs font-medium rounded-full text-white"
-                      style={{ backgroundColor: '#2373FF' }}
-                    >
-                      {selectedProject.projectType}
-                    </span>
-                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                      {selectedProject.propertyType}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Budget: {selectedProject.budget} | Duration: {selectedProject.duration}
-                  </p>
-                </div>
-
-                {/* Offer Form */}
-                <form className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Penawaran Harga
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Masukkan penawaran harga Anda"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
-                      style={{ '--focus-ring-color': '#2373FF' }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#2373FF';
-                        e.target.style.outline = '2px solid #2373FF';
-                        e.target.style.outlineOffset = '2px';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '';
-                        e.target.style.outline = '';
-                        e.target.style.outlineOffset = '';
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estimasi Waktu Pengerjaan
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: 3 bulan"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white"
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#2373FF';
-                        e.target.style.outline = '2px solid #2373FF';
-                        e.target.style.outlineOffset = '2px';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '';
-                        e.target.style.outline = '';
-                        e.target.style.outlineOffset = '';
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Deskripsi Penawaran
-                    </label>
-                    <textarea
-                      rows={4}
-                      placeholder="Jelaskan detail penawaran, metodologi, dan keunggulan Anda..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-gray-900 bg-white resize-none"
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#2373FF';
-                        e.target.style.outline = '2px solid #2373FF';
-                        e.target.style.outlineOffset = '2px';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '';
-                        e.target.style.outline = '';
-                        e.target.style.outlineOffset = '';
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload Portfolio/Dokumen Pendukung
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-white">
-                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p className="text-sm text-gray-600">
-                        Drag & drop files here, or click to select
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Modal Actions */}
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={closeModals}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                      style={{ backgroundColor: '#2373FF' }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
-                    >
-                      Kirim Penawaran
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Create Offer Modal - Not needed for project owners */}
+        {/* Project owners view tenders but don't create offers themselves */}
 
         {/* Removed Enhanced Project Detail Modal - now using in-page view */}
         </>
