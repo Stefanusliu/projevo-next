@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  FiArrowLeft, 
-  FiMapPin, 
-  FiCalendar, 
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  FiArrowLeft,
+  FiMapPin,
+  FiCalendar,
   FiClock,
   FiDollarSign,
   FiUser,
@@ -25,22 +25,29 @@ import {
   FiInfo,
   FiBarChart,
   FiBell,
-  FiCamera
-} from 'react-icons/fi';
-import BOQDisplay from '../../../components/BOQDisplay';
-import { firestoreService } from '../../../../hooks/useFirestore';
-import { useStorage } from '../../../../hooks/useStorage';
-import { normalizeProposals, getProposalsLength } from '../../../../utils/proposalsUtils';
-import MidtransPaymentModal from '../../../../components/payments/MidtransPaymentModal';
+  FiCamera,
+} from "react-icons/fi";
+import BOQDisplay from "../../../components/BOQDisplay";
+import { firestoreService } from "../../../../hooks/useFirestore";
+import { useStorage } from "../../../../hooks/useStorage";
+import {
+  normalizeProposals,
+  getProposalsLength,
+} from "../../../../utils/proposalsUtils";
+import MidtransPaymentModal from "../../../../components/payments/MidtransPaymentModal";
 
 const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Early return if project is not valid
-  if (!project || typeof project !== 'object') {
+  if (!project || typeof project !== "object") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project Not Found</h2>
-          <p className="text-gray-600 mb-4">The project data could not be loaded.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Project Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            The project data could not be loaded.
+          </p>
           <button
             onClick={onBack}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -53,37 +60,42 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   }
 
   // Log project structure for debugging
-  console.log('📊 Project Owner Detail Page - Project data:', {
+  console.log("📊 Project Owner Detail Page - Project data:", {
     id: project.id,
     ownerId: project.ownerId,
     ownerName: project.ownerName,
     client: project.client,
-    proposalsCount: project.proposals ? (Array.isArray(project.proposals) ? project.proposals.length : Object.keys(project.proposals).length) : 0,
-    hasFirestoreService: !!firestoreService
+    proposalsCount: project.proposals
+      ? Array.isArray(project.proposals)
+        ? project.proposals.length
+        : Object.keys(project.proposals).length
+      : 0,
+    hasFirestoreService: !!firestoreService,
   });
 
   // Validate required project fields
   if (!project.id) {
-    console.warn('⚠️ Project missing ID field');
+    console.warn("⚠️ Project missing ID field");
   }
 
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [showVendorProfile, setShowVendorProfile] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
-  
+
   // Proposal filters state
-  const [priceFilter, setPriceFilter] = useState('all'); // 'all', 'low-to-high', 'high-to-low'
-  const [locationFilter, setLocationFilter] = useState('all'); // 'all' or specific location
-  const [trustScoreFilter, setTrustScoreFilter] = useState('all'); // 'all', 'high', 'medium', 'low'
-  
+  const [priceFilter, setPriceFilter] = useState("all"); // 'all', 'low-to-high', 'high-to-low'
+  const [locationFilter, setLocationFilter] = useState("all"); // 'all' or specific location
+  const [trustScoreFilter, setTrustScoreFilter] = useState("all"); // 'all', 'high', 'medium', 'low'
+
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
+  const [selectedProposalForPayment, setSelectedProposalForPayment] =
+    useState(null);
   const [selectedProposalIndex, setSelectedProposalIndex] = useState(null);
-  
+
   // Negotiation tab states
-  const [negotiationFilter, setNegotiationFilter] = useState('all'); // 'all', 'newest', 'price-low', 'price-high', 'active', 'completed'
+  const [negotiationFilter, setNegotiationFilter] = useState("all"); // 'all', 'newest', 'price-low', 'price-high', 'active', 'completed'
   const [newNegotiationCount, setNewNegotiationCount] = useState(0);
   const [lastViewedNegotiations, setLastViewedNegotiations] = useState(null);
 
@@ -91,7 +103,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const [documentationImages, setDocumentationImages] = useState([]);
   const [imageErrors, setImageErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
   const { uploadFile, uploading, uploadProgress } = useStorage();
 
   // Load documentation images from project data
@@ -104,98 +116,142 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Function to navigate to BOQ maker page in read-only mode
   const handleViewBOQInMaker = async (proposal) => {
     try {
-      console.log('🔄 Navigating to BOQ Maker with proposal data:', proposal);
-      
+      console.log("🔄 Navigating to BOQ Maker with proposal data:", proposal);
+
       // Check if there are negotiations and get the last negotiated prices
-      const hasNegotiations = proposal.negotiation && proposal.negotiation.counterOffer;
+      const hasNegotiations =
+        proposal.negotiation && proposal.negotiation.counterOffer;
       const isResubmission = proposal.isResubmission === true;
-      const hasOriginalPrices = proposal.boqPricing && proposal.boqPricing.some(item => 
-        item.originalPrice !== undefined || item.previousNegotiatedPrice !== undefined
-      );
-      
+      const hasOriginalPrices =
+        proposal.boqPricing &&
+        proposal.boqPricing.some(
+          (item) =>
+            item.originalPrice !== undefined ||
+            item.previousNegotiatedPrice !== undefined
+        );
+
       // Show price comparison for negotiations OR resubmissions with original prices
-      const shouldShowPriceComparison = hasNegotiations || isResubmission || hasOriginalPrices;
-      
-      console.log('🔍 Checking negotiations and resubmissions:', { 
-        hasNegotiations, 
-        isResubmission, 
+      const shouldShowPriceComparison =
+        hasNegotiations || isResubmission || hasOriginalPrices;
+
+      console.log("🔍 Checking negotiations and resubmissions:", {
+        hasNegotiations,
+        isResubmission,
         hasOriginalPrices,
         shouldShowPriceComparison,
-        negotiation: proposal.negotiation 
+        negotiation: proposal.negotiation,
       });
-      
+
       // Get original BOQ data from project for comparison (fallback only)
       const originalBOQData = project.originalBOQ || project.boqData || [];
-      
-      console.log('📊 Show price comparison:', shouldShowPriceComparison);
-      
+
+      console.log("📊 Show price comparison:", shouldShowPriceComparison);
+
       // Enhance BOQ pricing data with previous negotiated prices for comparison
-      const enhancedBoqPricing = (proposal.boqPricing || []).map((item, index) => {
-        let previousPrice = 0;
-        let hasPreviousPrice = false;
-        
-        if (shouldShowPriceComparison) {
-          // For resubmissions, check for originalPrice or previousNegotiatedPrice
-          if (isResubmission && (item.originalPrice !== undefined || item.previousNegotiatedPrice !== undefined)) {
-            previousPrice = parseFloat(item.originalPrice || item.previousNegotiatedPrice || 0);
-            hasPreviousPrice = true;
-            console.log(`💰 Resubmission Item ${index} - Previous price from originalPrice: ${previousPrice}`);
-          } else if (hasNegotiations) {
-            // For traditional negotiations, the current vendorPrice is already the negotiated price
-            // We need to get the original price from the original BOQ or from stored data
-            
-            // Try to get original price from various sources
-            let originalPrice = 0;
-            
-            // First try: Look for stored original prices in the item itself
-            if (item.originalVendorPrice !== undefined) {
-              originalPrice = parseFloat(item.originalVendorPrice || 0);
-            } else if (item.initialVendorPrice !== undefined) {
-              originalPrice = parseFloat(item.initialVendorPrice || 0);
-            } else if (item.baseVendorPrice !== undefined) {
-              originalPrice = parseFloat(item.baseVendorPrice || 0);
-            } else {
-              // Fallback: Look in original BOQ data
-              const originalItem = originalBOQData.find(orig => 
-                (orig.item === item.item || orig.name === item.name || orig.description === item.description) &&
-                (orig.tahapanName === item.tahapanName || orig.tahapanKerja === item.tahapanKerja)
-              ) || originalBOQData[index];
-              
-              if (originalItem) {
-                originalPrice = parseFloat(originalItem.vendorPrice || originalItem.unitPrice || originalItem.pricePerPcs || 0);
+      const enhancedBoqPricing = (proposal.boqPricing || []).map(
+        (item, index) => {
+          let previousPrice = 0;
+          let hasPreviousPrice = false;
+
+          if (shouldShowPriceComparison) {
+            // For resubmissions, check for originalPrice or previousNegotiatedPrice
+            if (
+              isResubmission &&
+              (item.originalPrice !== undefined ||
+                item.previousNegotiatedPrice !== undefined)
+            ) {
+              previousPrice = parseFloat(
+                item.originalPrice || item.previousNegotiatedPrice || 0
+              );
+              hasPreviousPrice = true;
+              console.log(
+                `💰 Resubmission Item ${index} - Previous price from originalPrice: ${previousPrice}`
+              );
+            } else if (hasNegotiations) {
+              // For traditional negotiations, the current vendorPrice is already the negotiated price
+              // We need to get the original price from the original BOQ or from stored data
+
+              // Try to get original price from various sources
+              let originalPrice = 0;
+
+              // First try: Look for stored original prices in the item itself
+              if (item.originalVendorPrice !== undefined) {
+                originalPrice = parseFloat(item.originalVendorPrice || 0);
+              } else if (item.initialVendorPrice !== undefined) {
+                originalPrice = parseFloat(item.initialVendorPrice || 0);
+              } else if (item.baseVendorPrice !== undefined) {
+                originalPrice = parseFloat(item.baseVendorPrice || 0);
               } else {
-                // Last fallback: If we can't find original price, use the current price as both
-                // This ensures we still show the comparison column even if prices are the same
-                originalPrice = parseFloat(item.vendorPrice || item.subtotal || item.unitPrice || item.pricePerPcs || 0);
+                // Fallback: Look in original BOQ data
+                const originalItem =
+                  originalBOQData.find(
+                    (orig) =>
+                      (orig.item === item.item ||
+                        orig.name === item.name ||
+                        orig.description === item.description) &&
+                      (orig.tahapanName === item.tahapanName ||
+                        orig.tahapanKerja === item.tahapanKerja)
+                  ) || originalBOQData[index];
+
+                if (originalItem) {
+                  originalPrice = parseFloat(
+                    originalItem.vendorPrice ||
+                      originalItem.unitPrice ||
+                      originalItem.pricePerPcs ||
+                      0
+                  );
+                } else {
+                  // Last fallback: If we can't find original price, use the current price as both
+                  // This ensures we still show the comparison column even if prices are the same
+                  originalPrice = parseFloat(
+                    item.vendorPrice ||
+                      item.subtotal ||
+                      item.unitPrice ||
+                      item.pricePerPcs ||
+                      0
+                  );
+                }
               }
+
+              previousPrice = originalPrice;
+              hasPreviousPrice = true; // Always true when there are negotiations
+
+              console.log(
+                `💰 Negotiation Item ${index} - Previous price: ${previousPrice}, Current: ${parseFloat(
+                  item.vendorPrice || 0
+                )}, Has previous: ${hasPreviousPrice}`
+              );
             }
-            
-            previousPrice = originalPrice;
-            hasPreviousPrice = true; // Always true when there are negotiations
-            
-            console.log(`💰 Negotiation Item ${index} - Previous price: ${previousPrice}, Current: ${parseFloat(item.vendorPrice || 0)}, Has previous: ${hasPreviousPrice}`);
           }
+
+          return {
+            ...item,
+            // Add previous negotiated price for comparison (only if there are negotiations/resubmissions)
+            originalPrice: previousPrice,
+            // Keep current vendor price (this should be the latest negotiated price)
+            currentPrice: parseFloat(
+              item.vendorPrice ||
+                item.subtotal ||
+                item.unitPrice ||
+                item.pricePerPcs ||
+                0
+            ),
+            // Add comparison metadata
+            hasOriginalPrice: hasPreviousPrice,
+            priceChange: hasPreviousPrice
+              ? parseFloat(item.vendorPrice || item.subtotal || 0) -
+                previousPrice
+              : 0,
+          };
         }
-        
-        return {
-          ...item,
-          // Add previous negotiated price for comparison (only if there are negotiations/resubmissions)
-          originalPrice: previousPrice,
-          // Keep current vendor price (this should be the latest negotiated price)
-          currentPrice: parseFloat(item.vendorPrice || item.subtotal || item.unitPrice || item.pricePerPcs || 0),
-          // Add comparison metadata
-          hasOriginalPrice: hasPreviousPrice,
-          priceChange: hasPreviousPrice ? 
-            parseFloat(item.vendorPrice || item.subtotal || 0) - previousPrice : 0
-        };
-      });
-      
+      );
+
       // Prepare BOQ data for the maker page - use the existing boqPricing data
       const boqViewData = {
         readOnly: true,
         ownerView: true, // Indicates this is a project owner viewing vendor's BOQ
-        userType: 'project-owner', // For BOQ maker to know user context
-        vendorName: proposal.vendorName || 'Unknown Vendor',
+        userType: "project-owner", // For BOQ maker to know user context
+        vendorName: proposal.vendorName || "Unknown Vendor",
         projectTitle: project.projectTitle,
         projectId: project.id,
         proposalId: proposal.id,
@@ -204,136 +260,154 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         totalAmount: proposal.totalAmount,
         submittedAt: proposal.submittedAt || proposal.createdAt,
         vendorId: proposal.vendorId,
-        type: 'proposal_view',
+        type: "proposal_view",
         showPriceComparison: shouldShowPriceComparison, // Keep price comparison enabled
         // Include negotiation data if available
         negotiation: proposal.negotiation || null,
-        finalAmount: proposal.negotiation?.counterOffer ? 
-          proposal.negotiation.counterOffer.reduce((sum, item) => sum + (item.vendorPrice || 0), 0) : 
-          proposal.totalAmount
+        finalAmount: proposal.negotiation?.counterOffer
+          ? proposal.negotiation.counterOffer.reduce(
+              (sum, item) => sum + (item.vendorPrice || 0),
+              0
+            )
+          : proposal.totalAmount,
       };
-      
+
       // Store in localStorage with a simple key for this session
       const sessionKey = `boq_view_${proposal.id}_${Date.now()}`;
       try {
         localStorage.setItem(sessionKey, JSON.stringify(boqViewData));
-        console.log('✅ BOQ data stored in localStorage with key:', sessionKey);
-        
+        console.log("✅ BOQ data stored in localStorage with key:", sessionKey);
+
         // Navigate to BOQ maker page with enhanced query parameters
         const queryParams = new URLSearchParams({
-          mode: 'view',
-          readOnly: 'true',
-          ownerView: 'true', // Tell BOQ maker this is owner viewing vendor BOQ
-          userType: 'project-owner', // User context for proper navigation
+          mode: "view",
+          readOnly: "true",
+          ownerView: "true", // Tell BOQ maker this is owner viewing vendor BOQ
+          userType: "project-owner", // User context for proper navigation
           sessionKey: sessionKey,
-          vendorName: proposal.vendorName || 'Unknown Vendor',
-          projectTitle: project.projectTitle || 'Unknown Project',
-          returnUrl: '/dashboard/project-owner' // Where to return when clicking back
+          vendorName: proposal.vendorName || "Unknown Vendor",
+          projectTitle: project.projectTitle || "Unknown Project",
+          returnUrl: "/dashboard/project-owner", // Where to return when clicking back
         });
-        
+
         router.push(`/boq-maker?${queryParams.toString()}`);
-        
       } catch (storageError) {
-        console.error('❌ Failed to store BOQ data in localStorage:', storageError);
-        alert('Unable to open BOQ viewer. Please try again.');
+        console.error(
+          "❌ Failed to store BOQ data in localStorage:",
+          storageError
+        );
+        alert("Unable to open BOQ viewer. Please try again.");
       }
-      
     } catch (error) {
-      console.error('❌ Error navigating to BOQ Maker:', error);
-      alert('Unable to open BOQ in maker. Please try again.');
+      console.error("❌ Error navigating to BOQ Maker:", error);
+      alert("Unable to open BOQ in maker. Please try again.");
     }
   };
 
   // Documentation helper functions
   const handleImageError = (imageId) => {
-    setImageErrors(prev => ({ ...prev, [imageId]: true }));
+    setImageErrors((prev) => ({ ...prev, [imageId]: true }));
   };
 
   const handleUploadDocumentation = async () => {
     // Note: This is for project owner view, vendors would upload via their dashboard
-    alert('Upload dokumentasi hanya dapat dilakukan melalui dashboard vendor');
+    alert("Upload dokumentasi hanya dapat dilakukan melalui dashboard vendor");
   };
 
   const handleEditDocumentation = (imageId) => {
-    alert('Edit dokumentasi hanya dapat dilakukan oleh vendor');
+    alert("Edit dokumentasi hanya dapat dilakukan oleh vendor");
   };
 
   const handleDeleteDocumentation = async (imageId) => {
-    alert('Delete dokumentasi hanya dapat dilakukan oleh vendor');
+    alert("Delete dokumentasi hanya dapat dilakukan oleh vendor");
   };
 
   // Dummy image fallback
-  const dummyImage = "data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
-
+  const dummyImage =
+    "data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
 
   // Check if any proposal has been accepted (vendor accepted negotiation)
-  const hasAcceptedProposal = project.proposals && project.proposals.some(proposal => 
-    proposal.status === 'accepted' || 
-    (proposal.negotiation && proposal.negotiation.status === 'accepted')
-  );
+  const hasAcceptedProposal =
+    project.proposals &&
+    project.proposals.some(
+      (proposal) =>
+        proposal.status === "accepted" ||
+        (proposal.negotiation && proposal.negotiation.status === "accepted")
+    );
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: FiEye },
-    { id: 'tahapan', label: 'Tahapan', icon: FiFileText },
-    { id: 'boq', label: 'BOQ', icon: FiBarChart },
-    { id: 'proposals', label: `Proposals (${getProposalsLength(project.proposals)})`, icon: FiUser },
-    { 
-      id: 'negotiation', 
-      label: 'Negotiation', 
+    { id: "overview", label: "Overview", icon: FiEye },
+    { id: "tahapan", label: "Tahapan", icon: FiFileText },
+    { id: "boq", label: "BOQ", icon: FiBarChart },
+    {
+      id: "proposals",
+      label: `Penawaran (${getProposalsLength(project.proposals)})`,
+      icon: FiUser,
+    },
+    {
+      id: "negotiation",
+      label: "Negotiation",
       icon: FiMessageSquare,
       hasNotification: newNegotiationCount > 0,
-      notificationCount: newNegotiationCount
+      notificationCount: newNegotiationCount,
     },
-    ...(hasAcceptedProposal || project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted ? [
-      { id: 'dokumentasi', label: 'Dokumentasi', icon: FiCamera }
-    ] : [])
+    ...(hasAcceptedProposal ||
+    project.selectedVendorId ||
+    project.status === "Awarded" ||
+    project.negotiationAccepted
+      ? [{ id: "dokumentasi", label: "Dokumentasi", icon: FiCamera }]
+      : []),
   ];
 
   const formatCurrency = (amount) => {
-    if (!amount) return 'Not specified';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    if (!amount) return "Not specified";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatBudget = (amount) => {
-    if (!amount) return 'Not specified';
+    if (!amount) return "Not specified";
     // Remove any non-numeric characters except dots and commas
-    const numericAmount = typeof amount === 'string' 
-      ? parseFloat(amount.replace(/[^\d.-]/g, ''))
-      : parseFloat(amount);
-    
-    if (isNaN(numericAmount)) return 'Not specified';
-    
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    const numericAmount =
+      typeof amount === "string"
+        ? parseFloat(amount.replace(/[^\d.-]/g, ""))
+        : parseFloat(amount);
+
+    if (isNaN(numericAmount)) return "Not specified";
+
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(numericAmount);
   };
 
   const formatDate = (date) => {
-    if (!date) return 'Not specified';
-    if (typeof date === 'string') return date;
-    if (date.toDate) return date.toDate().toLocaleDateString('id-ID');
-    return new Date(date).toLocaleDateString('id-ID');
+    if (!date) return "Not specified";
+    if (typeof date === "string") return date;
+    if (date.toDate) return date.toDate().toLocaleDateString("id-ID");
+    return new Date(date).toLocaleDateString("id-ID");
   };
 
   const formatTimestamp = (timestamp) => {
     try {
       // Handle different timestamp formats
       let date;
-      if (timestamp && typeof timestamp.toDate === 'function') {
+      if (timestamp && typeof timestamp.toDate === "function") {
         // Firestore Timestamp
         date = timestamp.toDate();
       } else if (timestamp instanceof Date) {
         // JavaScript Date object
         date = timestamp;
-      } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+      } else if (
+        typeof timestamp === "string" ||
+        typeof timestamp === "number"
+      ) {
         // String or number timestamp
         date = new Date(timestamp);
       } else {
@@ -341,49 +415,49 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         date = new Date();
       }
 
-      return date.toLocaleDateString('id-ID', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleDateString("id-ID", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (error) {
-      console.warn('Error formatting timestamp:', error);
-      return 'Recently';
+      console.warn("Error formatting timestamp:", error);
+      return "Recently";
     }
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'active':
-      case 'open':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'locked':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'closed':
-        return 'bg-gray-100 text-gray-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+      case "active":
+      case "open":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "locked":
+        return "bg-yellow-100 text-yellow-800";
+      case "closed":
+        return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   // Helper function to calculate tender deadline
   const calculateTenderDeadline = (createdAt, tenderDuration) => {
     if (!createdAt || !tenderDuration) return null;
-    
+
     try {
       let createdDate;
       if (createdAt instanceof Date) {
         createdDate = createdAt;
       } else if (createdAt?.toDate) {
         createdDate = createdAt.toDate();
-      } else if (typeof createdAt === 'string') {
+      } else if (typeof createdAt === "string") {
         createdDate = new Date(createdAt);
-      } else if (typeof createdAt === 'object' && createdAt.seconds) {
+      } else if (typeof createdAt === "object" && createdAt.seconds) {
         createdDate = new Date(createdAt.seconds * 1000);
       } else {
         return null;
@@ -398,7 +472,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       deadline.setDate(deadline.getDate() + parseInt(tenderDuration));
       return deadline;
     } catch (error) {
-      console.error('Error calculating tender deadline:', error);
+      console.error("Error calculating tender deadline:", error);
       return null;
     }
   };
@@ -407,28 +481,35 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const getTimeToDeadlineInHours = (project) => {
     // First try to calculate deadline from createdAt + tenderDuration if it's a tender project
     let deadline = null;
-    
-    if (project.procurementMethod === 'Tender' && project.createdAt && project.tenderDuration) {
-      deadline = calculateTenderDeadline(project.createdAt, project.tenderDuration);
+
+    if (
+      project.procurementMethod === "Tender" &&
+      project.createdAt &&
+      project.tenderDuration
+    ) {
+      deadline = calculateTenderDeadline(
+        project.createdAt,
+        project.tenderDuration
+      );
     }
-    
+
     // Fallback to pre-existing deadline fields
     if (!deadline) {
       deadline = project.tenderDeadline || project.deadline;
     }
-    
+
     if (!deadline) return null;
-    
+
     try {
       let deadlineDate;
-      
+
       if (deadline instanceof Date) {
         deadlineDate = deadline;
       } else if (deadline?.toDate) {
         deadlineDate = deadline.toDate();
-      } else if (typeof deadline === 'string') {
+      } else if (typeof deadline === "string") {
         deadlineDate = new Date(deadline);
-      } else if (typeof deadline === 'object' && deadline.seconds) {
+      } else if (typeof deadline === "object" && deadline.seconds) {
         deadlineDate = new Date(deadline.seconds * 1000);
       } else {
         return null;
@@ -442,57 +523,75 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       const diffTime = deadlineDate.getTime() - now.getTime();
       return diffTime / (1000 * 60 * 60); // Convert to hours
     } catch (error) {
-      console.error('Error calculating time to deadline:', error);
+      console.error("Error calculating time to deadline:", error);
       return null;
     }
   };
 
   // Function to get project status
   const getProjectStatus = (project) => {
-    console.log('Getting status for project:', project.id, {
+    console.log("Getting status for project:", project.id, {
       status: project.status,
       moderationStatus: project.moderationStatus,
       procurementMethod: project.procurementMethod,
       createdAt: project.createdAt,
       tenderDuration: project.tenderDuration,
-      deadline: project.deadline
+      deadline: project.deadline,
     });
 
     // Draft Mode Statuses
-    if (project.status === 'Draft' || project.moderationStatus === 'draft') {
-      return 'In Progress'; // Owner still creates the project draft
+    if (project.status === "Draft" || project.moderationStatus === "draft") {
+      return "In Progress"; // Owner still creates the project draft
     }
-    
-    if (project.moderationStatus === 'pending' || project.status === 'Under Review' || project.status === 'Review') {
-      return 'Review'; // Owner clicks "Submit Draft"
+
+    if (
+      project.moderationStatus === "pending" ||
+      project.status === "Under Review" ||
+      project.status === "Review"
+    ) {
+      return "Review"; // Owner clicks "Submit Draft"
     }
-    
-    if (project.moderationStatus === 'rejected' || project.status === 'Revise' || project.moderationStatus === 'revision_required') {
-      return 'Revise'; // Admin require project owner to edit/revise the project details
+
+    if (
+      project.moderationStatus === "rejected" ||
+      project.status === "Revise" ||
+      project.moderationStatus === "revision_required"
+    ) {
+      return "Revise"; // Admin require project owner to edit/revise the project details
     }
-    
-    if (project.moderationStatus === 'approved' && project.procurementMethod !== 'Tender') {
-      return 'Approve'; // Admin approve the project and it's live in Project Market Place
+
+    if (
+      project.moderationStatus === "approved" &&
+      project.procurementMethod !== "Tender"
+    ) {
+      return "Approve"; // Admin approve the project and it's live in Project Market Place
     }
-    
+
     // Tender Mode Statuses
-    if (project.moderationStatus === 'approved' && project.procurementMethod === 'Tender') {
+    if (
+      project.moderationStatus === "approved" &&
+      project.procurementMethod === "Tender"
+    ) {
       // Check if tender is locked (less than 24 hours to deadline)
       const timeLeft = getTimeToDeadlineInHours(project);
-      
+
       // Check if any proposal has been accepted (vendor accepted negotiation)
-      const hasAcceptedProposal = project.proposals && project.proposals.some(proposal => 
-        proposal.status === 'accepted' || 
-        (proposal.negotiation && proposal.negotiation.status === 'accepted')
-      );
-      
+      const hasAcceptedProposal =
+        project.proposals &&
+        project.proposals.some(
+          (proposal) =>
+            proposal.status === "accepted" ||
+            (proposal.negotiation && proposal.negotiation.status === "accepted")
+        );
+
       // Get the selected vendor from accepted proposal
-      const selectedVendor = project.proposals?.find(proposal => 
-        proposal.status === 'accepted' || 
-        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      const selectedVendor = project.proposals?.find(
+        (proposal) =>
+          proposal.status === "accepted" ||
+          (proposal.negotiation && proposal.negotiation.status === "accepted")
       );
-      
-      console.log('Tender time analysis:', {
+
+      console.log("Tender time analysis:", {
         timeLeft,
         hasNegotiationOffer: project.hasNegotiationOffer,
         selectedVendorId: project.selectedVendorId,
@@ -500,108 +599,128 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         paymentCompleted: project.paymentCompleted,
         initialPaymentCompleted: project.initialPaymentCompleted,
         hasAcceptedProposal,
-        selectedVendor: selectedVendor ? {
-          id: selectedVendor.vendorId,
-          status: selectedVendor.status,
-          negotiationStatus: selectedVendor.negotiation?.status
-        } : null
+        selectedVendor: selectedVendor
+          ? {
+              id: selectedVendor.vendorId,
+              status: selectedVendor.status,
+              negotiationStatus: selectedVendor.negotiation?.status,
+            }
+          : null,
       });
-      
+
       // Check if vendor was awarded/selected (negotiation was accepted)
-      if (project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted || hasAcceptedProposal) {
+      if (
+        project.selectedVendorId ||
+        project.status === "Awarded" ||
+        project.negotiationAccepted ||
+        hasAcceptedProposal
+      ) {
         // Set the selected vendor ID if not already set
         if (!project.selectedVendorId && selectedVendor) {
           project.selectedVendorId = selectedVendor.vendorId;
         }
-        
+
         // If initial payment is completed, project is ongoing
         if (project.initialPaymentCompleted) {
-          return 'On Going'; // Project started, work in progress
+          return "On Going"; // Project started, work in progress
         }
         // If vendor is selected but payment not completed, show payment needed
-        return 'Awarded'; // Show awarded status with payment needed
+        return "Awarded"; // Show awarded status with payment needed
       }
-      
+
       // Check for active negotiation status (vendor hasn't accepted yet)
-      if (project.hasNegotiationOffer || 
-          project.status === 'Negotiate' || 
-          project.status === 'negotiation' ||
-          project.negotiationStatus === 'active' ||
-          (project.proposals && project.proposals.some(proposal => 
-            proposal.status === 'negotiating' || 
-            proposal.status === 'counter_offer' ||
-            (proposal.negotiation && proposal.negotiation.status === 'pending')
-          ))) {
+      if (
+        project.hasNegotiationOffer ||
+        project.status === "Negotiate" ||
+        project.status === "negotiation" ||
+        project.negotiationStatus === "active" ||
+        (project.proposals &&
+          project.proposals.some(
+            (proposal) =>
+              proposal.status === "negotiating" ||
+              proposal.status === "counter_offer" ||
+              (proposal.negotiation &&
+                proposal.negotiation.status === "pending")
+          ))
+      ) {
         // Only show negotiate if negotiation hasn't been accepted yet
         if (!project.negotiationAccepted && !hasAcceptedProposal) {
-          return 'Negotiate';
+          return "Negotiate";
         }
         // If negotiation was accepted, fall through to check other conditions
       }
-      
+
       if (timeLeft !== null) {
         if (timeLeft <= 24 && timeLeft > 0) {
-          return 'Locked'; // Locked if less than 24 hours to deadline
+          return "Locked"; // Locked if less than 24 hours to deadline
         }
         if (timeLeft <= 0) {
-          return 'Failed'; // No winner chosen until deadline
+          return "Failed"; // No winner chosen until deadline
         }
       }
-      
-      return 'Open'; // Default for approved tender projects
+
+      return "Open"; // Default for approved tender projects
     }
-    
+
     // Default fallback
-    console.log('Using fallback status for project:', project.id, project.status);
-    return project.status || 'In Progress';
+    console.log(
+      "Using fallback status for project:",
+      project.id,
+      project.status
+    );
+    return project.status || "In Progress";
   };
 
   const getProposalStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'negotiating':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'negotiate':
-        return 'bg-blue-100 text-blue-800';
-      case 'resubmitted':
-      case 'negotiated':
-      case 'counter_offer':
-        return 'bg-purple-100 text-purple-800';
-      case 'locked':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'pending':
-      case 'submitted':
-      case 'pending_review':
-        return 'bg-blue-100 text-blue-800';
+      case "accepted":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "negotiating":
+        return "bg-yellow-100 text-yellow-800";
+      case "negotiate":
+        return "bg-blue-100 text-blue-800";
+      case "resubmitted":
+      case "negotiated":
+      case "counter_offer":
+        return "bg-purple-100 text-purple-800";
+      case "locked":
+        return "bg-yellow-100 text-yellow-800";
+      case "pending":
+      case "submitted":
+      case "pending_review":
+        return "bg-blue-100 text-blue-800";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   const handleAcceptProposal = async (proposalIndex, proposal) => {
     try {
-      console.log('🔄 Starting vendor selection...', { proposalIndex, vendorName: proposal.vendorName });
-      
+      console.log("🔄 Starting vendor selection...", {
+        proposalIndex,
+        vendorName: proposal.vendorName,
+      });
+
       // Check if this is the first time selecting a vendor for this project
-      const isFirstVendorSelection = !project.selectedVendorId && !project.status?.includes('vendor_selected');
-      
+      const isFirstVendorSelection =
+        !project.selectedVendorId &&
+        !project.status?.includes("vendor_selected");
+
       if (isFirstVendorSelection) {
         // Trigger payment modal for 50% down payment
-        console.log('💳 First vendor selection - triggering payment modal');
+        console.log("💳 First vendor selection - triggering payment modal");
         setSelectedProposalForPayment(proposal);
         setSelectedProposalIndex(proposalIndex);
         setShowPaymentModal(true);
       } else {
         // If vendor was already selected previously, proceed with normal acceptance
-        console.log('✅ Subsequent vendor selection - no payment required');
+        console.log("✅ Subsequent vendor selection - no payment required");
         await completeProposalAcceptance(proposalIndex, proposal);
       }
-      
     } catch (error) {
-      console.error('❌ Error in vendor selection process:', error);
+      console.error("❌ Error in vendor selection process:", error);
       alert(`Failed to select vendor: ${error.message}`);
     }
   };
@@ -609,20 +728,23 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Handle payment success and complete vendor selection
   const handlePaymentSuccess = async (paymentResult) => {
     try {
-      console.log('✅ Payment successful, vendor selection will be completed by webhook');
-      
+      console.log(
+        "✅ Payment successful, vendor selection will be completed by webhook"
+      );
+
       // Clear payment modal state
       setShowPaymentModal(false);
       setSelectedProposalForPayment(null);
       setSelectedProposalIndex(null);
-      
+
       // Refresh the page or reload project data to see updated status
       // The webhook should have already updated the project status
       window.location.reload();
-      
     } catch (error) {
-      console.error('❌ Error handling payment success:', error);
-      alert('Payment was successful, but there was an error updating the interface. Please refresh the page.');
+      console.error("❌ Error handling payment success:", error);
+      alert(
+        "Payment was successful, but there was an error updating the interface. Please refresh the page."
+      );
     }
   };
 
@@ -630,7 +752,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const completeProposalAcceptance = async (proposalIndex, proposal) => {
     try {
       const now = new Date();
-      
+
       // Prepare updated proposals array
       const currentProposals = normalizeProposals(project.proposals);
       if (!currentProposals || !currentProposals[proposalIndex]) {
@@ -640,152 +762,164 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       const updatedProposalsForAccept = [...currentProposals];
       updatedProposalsForAccept[proposalIndex] = {
         ...updatedProposalsForAccept[proposalIndex],
-        status: 'accepted',
+        status: "accepted",
         acceptedAt: now,
         acceptedBy: project.ownerId,
-        updatedAt: now
+        updatedAt: now,
       };
 
       const updates = {
         proposals: updatedProposalsForAccept,
         updatedAt: now,
-        lastModifiedBy: project.ownerId || 'project_owner'
+        lastModifiedBy: project.ownerId || "project_owner",
       };
 
-      console.log('📤 Updating project with proposal acceptance:', {
+      console.log("📤 Updating project with proposal acceptance:", {
         projectId: project.id,
         proposalIndex,
-        vendorName: proposal.vendorName
+        vendorName: proposal.vendorName,
       });
 
-      await firestoreService.update('projects', project.id, updates);
-      
+      await firestoreService.update("projects", project.id, updates);
+
       // Update local project state if callback is provided
       if (onProjectUpdate) {
         const updatedProject = {
           ...project,
           proposals: updatedProposalsForAccept,
           updatedAt: now,
-          lastModifiedBy: project.ownerId || 'project_owner'
+          lastModifiedBy: project.ownerId || "project_owner",
         };
         onProjectUpdate(updatedProject);
       }
-      
-      console.log('✅ Proposal acceptance saved successfully');
+
+      console.log("✅ Proposal acceptance saved successfully");
       alert(`Successfully accepted proposal from ${proposal.vendorName}!`);
-      
     } catch (error) {
-      console.error('❌ Error saving proposal acceptance:', error);
+      console.error("❌ Error saving proposal acceptance:", error);
       alert(`Failed to accept proposal: ${error.message}`);
     }
   };
 
   const handleRejectProposal = async (proposalIndex, proposal) => {
     try {
-      console.log('🔄 Starting proposal rejection...', { proposalIndex, vendorName: proposal.vendorName });
-      
+      console.log("🔄 Starting proposal rejection...", {
+        proposalIndex,
+        vendorName: proposal.vendorName,
+      });
+
       const now = new Date();
-      
+
       // Prepare updated proposals array
       const currentProposalsForReject = normalizeProposals(project.proposals);
-      if (!currentProposalsForReject || !currentProposalsForReject[proposalIndex]) {
+      if (
+        !currentProposalsForReject ||
+        !currentProposalsForReject[proposalIndex]
+      ) {
         throw new Error(`Proposal at index ${proposalIndex} not found`);
       }
 
       const updatedProposalsForReject = [...currentProposalsForReject];
       updatedProposalsForReject[proposalIndex] = {
         ...updatedProposalsForReject[proposalIndex],
-        status: 'rejected',
+        status: "rejected",
         rejectedAt: now,
         rejectedBy: project.ownerId,
-        updatedAt: now
+        updatedAt: now,
       };
 
       const updates = {
         proposals: updatedProposalsForReject,
         updatedAt: now,
-        lastModifiedBy: project.ownerId || 'project_owner'
+        lastModifiedBy: project.ownerId || "project_owner",
       };
 
-      console.log('📤 Updating project with proposal rejection:', {
+      console.log("📤 Updating project with proposal rejection:", {
         projectId: project.id,
         proposalIndex,
-        vendorName: proposal.vendorName
+        vendorName: proposal.vendorName,
       });
 
-      await firestoreService.update('projects', project.id, updates);
-      
+      await firestoreService.update("projects", project.id, updates);
+
       // Update local project state if callback is provided
       if (onProjectUpdate) {
         const updatedProject = {
           ...project,
           proposals: updatedProposalsForReject,
           updatedAt: now,
-          lastModifiedBy: project.ownerId || 'project_owner'
+          lastModifiedBy: project.ownerId || "project_owner",
         };
         onProjectUpdate(updatedProject);
       }
-      
-      console.log('✅ Proposal rejection saved successfully');
+
+      console.log("✅ Proposal rejection saved successfully");
       alert(`Successfully rejected proposal from ${proposal.vendorName}.`);
-      
     } catch (error) {
-      console.error('❌ Error saving proposal rejection:', error);
+      console.error("❌ Error saving proposal rejection:", error);
       alert(`Failed to reject proposal: ${error.message}`);
     }
   };
 
   const handleStartNegotiation = async (proposalIndex, proposal) => {
     try {
-      console.log('🔄 Starting negotiation for proposal:', proposalIndex);
-      
+      console.log("🔄 Starting negotiation for proposal:", proposalIndex);
+
       const now = new Date();
-      
+
       // Prepare updated proposals array
-      const currentProposalsForNegotiation = normalizeProposals(project.proposals);
-      if (!currentProposalsForNegotiation || !currentProposalsForNegotiation[proposalIndex]) {
+      const currentProposalsForNegotiation = normalizeProposals(
+        project.proposals
+      );
+      if (
+        !currentProposalsForNegotiation ||
+        !currentProposalsForNegotiation[proposalIndex]
+      ) {
         throw new Error(`Proposal at index ${proposalIndex} not found`);
       }
 
-      const updatedProposalsForNegotiation = [...currentProposalsForNegotiation];
+      const updatedProposalsForNegotiation = [
+        ...currentProposalsForNegotiation,
+      ];
       updatedProposalsForNegotiation[proposalIndex] = {
         ...updatedProposalsForNegotiation[proposalIndex],
-        status: 'negotiating',
+        status: "negotiating",
         negotiationStartedAt: now,
-        negotiationStartedBy: 'project_owner',
-        updatedAt: now
+        negotiationStartedBy: "project_owner",
+        updatedAt: now,
       };
 
       const updates = {
         proposals: updatedProposalsForNegotiation,
         updatedAt: now,
-        lastModifiedBy: project.ownerId || 'project_owner'
+        lastModifiedBy: project.ownerId || "project_owner",
       };
 
-      console.log('📤 Updating project with negotiation start:', {
+      console.log("📤 Updating project with negotiation start:", {
         projectId: project.id,
         proposalIndex,
-        vendorName: proposal.vendorName
+        vendorName: proposal.vendorName,
       });
-      
-      await firestoreService.update('projects', project.id, updates);
-      
+
+      await firestoreService.update("projects", project.id, updates);
+
       // Update local project state if callback is provided
       if (onProjectUpdate) {
         const updatedProject = {
           ...project,
           proposals: updatedProposalsForNegotiation,
           updatedAt: now,
-          lastModifiedBy: project.ownerId || 'project_owner'
+          lastModifiedBy: project.ownerId || "project_owner",
         };
         onProjectUpdate(updatedProject);
       }
-      
-      console.log('✅ Negotiation started and saved successfully');
-      alert(`Negotiation started with ${proposal.vendorName}. The vendor will be notified to submit a new BOQ.`);
-      
+
+      console.log("✅ Negotiation started and saved successfully");
+      alert(
+        `Negotiation started with ${proposal.vendorName}. The vendor will be notified to submit a new BOQ.`
+      );
     } catch (error) {
-      console.error('❌ Error starting negotiation:', error);
+      console.error("❌ Error starting negotiation:", error);
       alert(`Failed to start negotiation: ${error.message}`);
     }
   };
@@ -793,13 +927,18 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const renderOverviewTab = () => {
     // Helper function to get BOQ tahapan data
     const getTahapanFromBOQ = () => {
-      const boqData = project.boq || project.attachedBOQ || project.boqData || project.originalData?.boq || project.originalData?.attachedBOQ;
-      
+      const boqData =
+        project.boq ||
+        project.attachedBOQ ||
+        project.boqData ||
+        project.originalData?.boq ||
+        project.originalData?.attachedBOQ;
+
       if (boqData?.tahapanKerja && Array.isArray(boqData.tahapanKerja)) {
         return boqData.tahapanKerja.map((tahapan, index) => ({
           name: tahapan.name || `Tahapan ${index + 1}`,
-          description: tahapan.description || '',
-          jenisKerjaCount: tahapan.jenisKerja ? tahapan.jenisKerja.length : 0
+          description: tahapan.description || "",
+          jenisKerjaCount: tahapan.jenisKerja ? tahapan.jenisKerja.length : 0,
         }));
       }
       return [];
@@ -813,9 +952,16 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
           {/* Project Title and Location */}
           <div className="">
-            <h1 className="text-4xl font-bold text-gray-900">{project.projectTitle || project.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900">
+              {project.projectTitle || project.title}
+            </h1>
             <span className="text-sm font-medium text-gray-600">
-              {`${project.city || ''}, ${project.province || ''}`.replace(/^,\s*|,\s*$/g, '') || project.location || 'Location not specified'}
+              {`${project.city || ""}, ${project.province || ""}`.replace(
+                /^,\s*|,\s*$/g,
+                ""
+              ) ||
+                project.location ||
+                "Location not specified"}
             </span>
           </div>
 
@@ -823,37 +969,56 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           <div>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Progress Proyek</span>
-                <span className="text-sm font-semibold text-blue-600">{calculateProgressPercentage(getMilestones(project))}%</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Progress Proyek
+                </span>
+                <span className="text-sm font-semibold text-blue-600">
+                  {calculateProgressPercentage(getMilestones(project))}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 text-2xl rounded-full transition-all duration-500 ease-out" 
-                  style={{ width: `${calculateProgressPercentage(getMilestones(project))}%` }}
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 text-2xl rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${calculateProgressPercentage(
+                      getMilestones(project)
+                    )}%`,
+                  }}
                 ></div>
               </div>
-              
+
               {/* Tahapan Dots */}
               <div className="flex justify-between items-center">
                 {tahapanList.map((tahapan, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative group cursor-pointer"
-                    title={`${tahapan.name}${tahapan.description ? ': ' + tahapan.description : ''}`}
+                    title={`${tahapan.name}${
+                      tahapan.description ? ": " + tahapan.description : ""
+                    }`}
                   >
-                    <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index < tahapanList.length * (calculateProgressPercentage(getMilestones(project)) / 100)
-                        ? 'bg-blue-600' 
-                        : 'bg-gray-300'
-                    }`}></div>
-                    
+                    <div
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        index <
+                        tahapanList.length *
+                          (calculateProgressPercentage(getMilestones(project)) /
+                            100)
+                          ? "bg-blue-600"
+                          : "bg-gray-300"
+                      }`}
+                    ></div>
+
                     {/* Tooltip */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
                       <div className="font-medium">{tahapan.name}</div>
                       {tahapan.description && (
-                        <div className="text-gray-300">{tahapan.description}</div>
+                        <div className="text-gray-300">
+                          {tahapan.description}
+                        </div>
                       )}
-                      <div className="text-gray-400">{tahapan.jenisKerjaCount} jenis kerja</div>
+                      <div className="text-gray-400">
+                        {tahapan.jenisKerjaCount} jenis kerja
+                      </div>
                       {/* Arrow */}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
@@ -867,84 +1032,118 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           <div>
             <h2 className="text-sm font-normal text-gray-900">Anggaran</h2>
             <p className="text-3xl font-bold text-gray-900">
-              {formatBudget(project.marketplace?.budget || project.estimatedBudget || project.budget)}
+              {formatBudget(
+                project.marketplace?.budget ||
+                  project.estimatedBudget ||
+                  project.budget
+              )}
             </p>
           </div>
 
           {/* Jenis Proyek and Properti */}
           <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className='w-[100px]'>
-              <h3 className="text-sm font-normal text-gray-900">Jenis Proyek</h3>
-              <p className="text-3xl text-gray-700 font-bold">{project.projectType || 'Not specified'}</p>
+            <div className="w-[100px]">
+              <h3 className="text-sm font-normal text-gray-900">
+                Jenis Proyek
+              </h3>
+              <p className="text-3xl text-gray-700 font-bold">
+                {project.projectType || "Not specified"}
+              </p>
             </div>
             <div>
               <h3 className="text-sm font-normal text-gray-900">Properti</h3>
-              <p className="text-3xl text-gray-700 font-bold">{project.propertyType || 'Not specified'}</p>
+              <p className="text-3xl text-gray-700 font-bold">
+                {project.propertyType || "Not specified"}
+              </p>
             </div>
           </div>
 
           {/* Ruang Lingkup and Metode Pengadaan */}
           <div className="grid grid-cols-1 md:grid-cols-2">
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Ruang Lingkup</h2>
+              <h2 className="text-sm font-normal text-gray-900">
+                Ruang Lingkup
+              </h2>
               <p className="text-3xl font-bold text-gray-900">
-                {Array.isArray(project.projectScope) ? 
-                  project.projectScope.join(', ') : 
-                  Array.isArray(project.scope) ? 
-                    project.scope.join(', ') : 
-                    (project.projectScope || project.scope || 'General')
-                }
+                {Array.isArray(project.projectScope)
+                  ? project.projectScope.join(", ")
+                  : Array.isArray(project.scope)
+                  ? project.scope.join(", ")
+                  : project.projectScope || project.scope || "General"}
               </p>
             </div>
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Metode Pengadaan</h2>
-              <p className="text-3xl font-bold text-gray-900">{project.procurementMethod || project.bidMethod || 'Not specified'}</p>
+              <h2 className="text-sm font-normal text-gray-900">
+                Metode Pengadaan
+              </h2>
+              <p className="text-3xl font-bold text-gray-900">
+                {project.procurementMethod ||
+                  project.bidMethod ||
+                  "Not specified"}
+              </p>
             </div>
           </div>
 
           {/* Project Duration Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Durasi Tender</h2>
+              <h2 className="text-sm font-normal text-gray-900">
+                Durasi Tender
+              </h2>
               <p className="text-3xl font-bold text-gray-900">
-                {project.tenderDuration || project.bidCountdown || 'Not specified'}
+                {project.tenderDuration ||
+                  project.bidCountdown ||
+                  "Not specified"}
               </p>
             </div>
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Durasi Proyek</h2>
+              <h2 className="text-sm font-normal text-gray-900">
+                Durasi Proyek
+              </h2>
               <p className="text-3xl font-bold text-gray-900">
-                {project.estimatedDuration || project.duration || 'Not specified'}
+                {project.estimatedDuration ||
+                  project.duration ||
+                  "Not specified"}
               </p>
             </div>
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Estimasi Mulai</h2>
+              <h2 className="text-sm font-normal text-gray-900">
+                Estimasi Mulai
+              </h2>
               <p className="text-3xl font-bold text-gray-900">
-                {formatDate(project.estimatedStartDate) || 'Not specified'}
+                {formatDate(project.estimatedStartDate) || "Not specified"}
               </p>
             </div>
             <div>
-              <h2 className="text-sm font-normal text-gray-900">Pemilik Proyek</h2>
+              <h2 className="text-sm font-normal text-gray-900">
+                Pemilik Proyek
+              </h2>
               <p className="text-3xl font-bold text-gray-900">
-                {project.clientName || project.client || project.ownerName || 'Not specified'}
+                {project.clientName ||
+                  project.client ||
+                  project.ownerName ||
+                  "Not specified"}
               </p>
             </div>
           </div>
 
           {/* Catatan and Status */}
           <div className="flex gap-8">
-            <div style={{ width: '80%' }}>
-              <h2 className="text-sm font-normal text-gray-900 mb-2">Catatan</h2>
+            <div style={{ width: "80%" }}>
+              <h2 className="text-sm font-normal text-gray-900 mb-2">
+                Catatan
+              </h2>
               <div className="bg-gray-100 rounded-lg px-4 py-8">
                 <p className="text-3xl text-gray-700">
-                  {project.specialNotes || project.notes || 'No special notes'}
+                  {project.specialNotes || project.notes || "No special notes"}
                 </p>
               </div>
             </div>
-            <div style={{ width: '20%' }}>
+            <div style={{ width: "20%" }}>
               <h2 className="text-sm font-normal text-gray-900 mb-2">Status</h2>
               <div className="bg-gray-100 rounded-lg  px-4 py-8">
                 <p className="text-3xl text-gray-700">
-                  {project.status || 'Draft'}
+                  {project.status || "Draft"}
                 </p>
               </div>
             </div>
@@ -957,7 +1156,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const renderNegotiationTab = () => {
     const allNegotiations = getNegotiationActivities(project);
     const filteredNegotiations = getFilteredNegotiations(allNegotiations);
-    
+
     return (
       <div className="max-w-7xl mx-auto">
         {/* Top Right Dropdown */}
@@ -970,7 +1169,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   {newNegotiationCount}
                 </span>
               )}
-              
+
               {/* Filter Dropdown */}
               <select
                 value={negotiationFilter}
@@ -992,31 +1191,47 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         {filteredNegotiations.length > 0 ? (
           <div className="space-y-4">
             {filteredNegotiations.map((activity, index) => (
-              <div key={`${activity.vendorId}-${index}`} className={`bg-white rounded-xl border p-6 shadow-sm transition-all hover:shadow-md ${
-                activity.statusColor === 'green' ? 'border-green-200 bg-green-50' :
-                activity.statusColor === 'orange' ? 'border-orange-200 bg-orange-50' :
-                activity.statusColor === 'blue' ? 'border-blue-200 bg-blue-50' :
-                activity.statusColor === 'yellow' ? 'border-yellow-200 bg-yellow-50' :
-                activity.statusColor === 'purple' ? 'border-purple-200 bg-purple-50' :
-                'border-gray-200'
-              }`}>
+              <div
+                key={`${activity.vendorId}-${index}`}
+                className={`bg-white rounded-xl border p-6 shadow-sm transition-all hover:shadow-md ${
+                  activity.statusColor === "green"
+                    ? "border-green-200 bg-green-50"
+                    : activity.statusColor === "orange"
+                    ? "border-orange-200 bg-orange-50"
+                    : activity.statusColor === "blue"
+                    ? "border-blue-200 bg-blue-50"
+                    : activity.statusColor === "yellow"
+                    ? "border-yellow-200 bg-yellow-50"
+                    : activity.statusColor === "purple"
+                    ? "border-purple-200 bg-purple-50"
+                    : "border-gray-200"
+                }`}
+              >
                 <div className="flex items-start gap-4">
                   {/* Status Icon */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    activity.statusColor === 'green' ? 'bg-green-500' :
-                    activity.statusColor === 'orange' ? 'bg-orange-500' :
-                    activity.statusColor === 'blue' ? 'bg-blue-500' :
-                    activity.statusColor === 'yellow' ? 'bg-yellow-500' :
-                    activity.statusColor === 'purple' ? 'bg-purple-500' :
-                    'bg-blue-500'
-                  }`}>
-                    {activity.status === 'accepted' ? (
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      activity.statusColor === "green"
+                        ? "bg-green-500"
+                        : activity.statusColor === "orange"
+                        ? "bg-orange-500"
+                        : activity.statusColor === "blue"
+                        ? "bg-blue-500"
+                        : activity.statusColor === "yellow"
+                        ? "bg-yellow-500"
+                        : activity.statusColor === "purple"
+                        ? "bg-purple-500"
+                        : "bg-blue-500"
+                    }`}
+                  >
+                    {activity.status === "accepted" ? (
                       <FiCheck className="text-white" size={20} />
-                    ) : activity.status === 'counter_offer' ? (
+                    ) : activity.status === "counter_offer" ? (
                       <FiAlertTriangle className="text-white" size={20} />
-                    ) : activity.status === 'resubmitted' || activity.status === 'pending_review' ? (
+                    ) : activity.status === "resubmitted" ||
+                      activity.status === "pending_review" ? (
                       <FiFileText className="text-white" size={20} />
-                    ) : activity.status === 'waiting' ? (
+                    ) : activity.status === "waiting" ? (
                       <FiClock className="text-white" size={20} />
                     ) : (
                       <FiMessageSquare className="text-white" size={20} />
@@ -1026,39 +1241,63 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                   <div className="flex-1">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className={`text-lg font-semibold ${
-                        activity.statusColor === 'green' ? 'text-green-800' :
-                        activity.statusColor === 'orange' ? 'text-orange-800' :
-                        activity.statusColor === 'blue' ? 'text-blue-800' :
-                        activity.statusColor === 'yellow' ? 'text-yellow-800' :
-                        activity.statusColor === 'purple' ? 'text-purple-800' :
-                        'text-gray-800'
-                      }`}>
+                      <h4
+                        className={`text-lg font-semibold ${
+                          activity.statusColor === "green"
+                            ? "text-green-800"
+                            : activity.statusColor === "orange"
+                            ? "text-orange-800"
+                            : activity.statusColor === "blue"
+                            ? "text-blue-800"
+                            : activity.statusColor === "yellow"
+                            ? "text-yellow-800"
+                            : activity.statusColor === "purple"
+                            ? "text-purple-800"
+                            : "text-gray-800"
+                        }`}
+                      >
                         {activity.vendorName}
                       </h4>
                       <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          activity.statusColor === 'green' ? 'bg-green-100 text-green-700' :
-                          activity.statusColor === 'orange' ? 'bg-orange-100 text-orange-700' :
-                          activity.statusColor === 'blue' ? 'bg-blue-100 text-blue-700' :
-                          activity.statusColor === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
-                          activity.statusColor === 'purple' ? 'bg-purple-100 text-purple-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
-                          {activity.status === 'accepted' ? 'Completed' :
-                           activity.status === 'counter_offer' ? 'Counter Offer' :
-                           activity.status === 'resubmitted' ? 'Resubmitted' :
-                           activity.status === 'pending_review' ? 'Pending Review' :
-                           activity.status === 'waiting' ? 'Waiting' :
-                           activity.status === 'negotiating' ? 'Negotiating' :
-                           'Active'}
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            activity.statusColor === "green"
+                              ? "bg-green-100 text-green-700"
+                              : activity.statusColor === "orange"
+                              ? "bg-orange-100 text-orange-700"
+                              : activity.statusColor === "blue"
+                              ? "bg-blue-100 text-blue-700"
+                              : activity.statusColor === "yellow"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : activity.statusColor === "purple"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          {activity.status === "accepted"
+                            ? "Completed"
+                            : activity.status === "counter_offer"
+                            ? "Counter Offer"
+                            : activity.status === "resubmitted"
+                            ? "Resubmitted"
+                            : activity.status === "pending_review"
+                            ? "Pending Review"
+                            : activity.status === "waiting"
+                            ? "Waiting"
+                            : activity.status === "negotiating"
+                            ? "Negotiating"
+                            : "Active"}
                         </span>
-                        
+
                         {/* New Badge for recent activities */}
                         {(() => {
-                          const activityTime = activity.lastActivity || activity.startedAt;
-                          const activityTimestamp = activityTime?.toDate ? activityTime.toDate().getTime() : new Date(activityTime).getTime();
-                          const hoursSinceActivity = (Date.now() - activityTimestamp) / (1000 * 60 * 60);
+                          const activityTime =
+                            activity.lastActivity || activity.startedAt;
+                          const activityTimestamp = activityTime?.toDate
+                            ? activityTime.toDate().getTime()
+                            : new Date(activityTime).getTime();
+                          const hoursSinceActivity =
+                            (Date.now() - activityTimestamp) / (1000 * 60 * 60);
                           return hoursSinceActivity < 24;
                         })() && (
                           <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
@@ -1067,64 +1306,88 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Message */}
-                    <p className={`text-sm mb-4 ${
-                      activity.statusColor === 'green' ? 'text-green-700' :
-                      activity.statusColor === 'orange' ? 'text-orange-700' :
-                      'text-gray-700'
-                    }`}>
+                    <p
+                      className={`text-sm mb-4 ${
+                        activity.statusColor === "green"
+                          ? "text-green-700"
+                          : activity.statusColor === "orange"
+                          ? "text-orange-700"
+                          : "text-gray-700"
+                      }`}
+                    >
                       {activity.message}
                     </p>
-                    
+
                     {/* Price Information Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white bg-opacity-60 rounded-lg mb-4">
                       <div>
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {activity.status === 'accepted' ? 'Final Price' : 'Current Price'}
+                          {activity.status === "accepted"
+                            ? "Final Price"
+                            : "Current Price"}
                         </span>
-                        <p className={`text-lg font-bold ${
-                          activity.statusColor === 'green' ? 'text-green-800' :
-                          activity.statusColor === 'orange' ? 'text-orange-800' :
-                          'text-gray-800'
-                        }`}>
-                          {formatCurrency(activity.status === 'accepted' ? activity.finalPrice : activity.currentPrice)}
+                        <p
+                          className={`text-lg font-bold ${
+                            activity.statusColor === "green"
+                              ? "text-green-800"
+                              : activity.statusColor === "orange"
+                              ? "text-orange-800"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          {formatCurrency(
+                            activity.status === "accepted"
+                              ? activity.finalPrice
+                              : activity.currentPrice
+                          )}
                         </p>
                       </div>
-                      
-                      {activity.originalPrice && activity.currentPrice !== activity.originalPrice && (
-                        <div>
-                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            Original Price
-                          </span>
-                          <p className="text-lg font-bold text-gray-600 line-through">
-                            {formatCurrency(activity.originalPrice)}
-                          </p>
-                          <p className="text-xs text-green-600 font-medium">
-                            {activity.originalPrice > activity.currentPrice ? 'Reduced' : 'Increased'}
-                          </p>
-                        </div>
-                      )}
-                      
+
+                      {activity.originalPrice &&
+                        activity.currentPrice !== activity.originalPrice && (
+                          <div>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                              Original Price
+                            </span>
+                            <p className="text-lg font-bold text-gray-600 line-through">
+                              {formatCurrency(activity.originalPrice)}
+                            </p>
+                            <p className="text-xs text-green-600 font-medium">
+                              {activity.originalPrice > activity.currentPrice
+                                ? "Reduced"
+                                : "Increased"}
+                            </p>
+                          </div>
+                        )}
+
                       <div>
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {activity.status === 'accepted' ? 'Completed' : 'Started'}
+                          {activity.status === "accepted"
+                            ? "Completed"
+                            : "Started"}
                         </span>
                         <p className="text-sm font-medium text-gray-700">
-                          {formatDate(activity.status === 'accepted' ? activity.acceptedAt : activity.startedAt)}
+                          {formatDate(
+                            activity.status === "accepted"
+                              ? activity.acceptedAt
+                              : activity.startedAt
+                          )}
                         </p>
                       </div>
-                      
-                      {activity.lastActivity && activity.status !== 'accepted' && (
-                        <div>
-                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            Last Activity
-                          </span>
-                          <p className="text-sm font-medium text-gray-700">
-                            {formatDate(activity.lastActivity)}
-                          </p>
-                        </div>
-                      )}
+
+                      {activity.lastActivity &&
+                        activity.status !== "accepted" && (
+                          <div>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                              Last Activity
+                            </span>
+                            <p className="text-sm font-medium text-gray-700">
+                              {formatDate(activity.lastActivity)}
+                            </p>
+                          </div>
+                        )}
                     </div>
 
                     {/* Action Buttons */}
@@ -1132,7 +1395,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       {/* WhatsApp Button */}
                       {activity.vendorPhone && (
                         <a
-                          href={`https://wa.me/62${activity.vendorPhone.replace(/\D/g, '').replace(/^62/, '')}`}
+                          href={`https://wa.me/62${activity.vendorPhone
+                            .replace(/\D/g, "")
+                            .replace(/^62/, "")}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
@@ -1141,7 +1406,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           WhatsApp
                         </a>
                       )}
-                      
+
                       {/* Phone Button */}
                       {activity.vendorPhone && (
                         <a
@@ -1152,7 +1417,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           Phone
                         </a>
                       )}
-                      
+
                       {/* Email Button */}
                       {activity.vendorEmail && (
                         <a
@@ -1168,7 +1433,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       <button
                         onClick={() => {
                           // Get the full proposal object from the original proposals array
-                          const fullProposal = project.proposals[activity.originalIndex];
+                          const fullProposal =
+                            project.proposals[activity.originalIndex];
                           handleViewBOQInMaker(fullProposal);
                         }}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
@@ -1189,24 +1455,25 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <FiMessageSquare className="text-gray-400" size={32} />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {allNegotiations.length === 0 ? 'No Active Negotiations' : 'No Negotiations Match Filter'}
+              {allNegotiations.length === 0
+                ? "No Active Negotiations"
+                : "No Negotiations Match Filter"}
             </h3>
             <p className="text-gray-500 mb-4">
-              {allNegotiations.length === 0 
-                ? 'There are currently no vendor negotiations for this project.'
-                : 'Try adjusting your filter to see more negotiation activities.'
-              }
+              {allNegotiations.length === 0
+                ? "There are currently no vendor negotiations for this project."
+                : "Try adjusting your filter to see more negotiation activities."}
             </p>
             {allNegotiations.length === 0 ? (
               <button
-                onClick={() => setActiveTab('proposals')}
+                onClick={() => setActiveTab("proposals")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 View Proposals
               </button>
             ) : (
               <button
-                onClick={() => setNegotiationFilter('all')}
+                onClick={() => setNegotiationFilter("all")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 Show All Negotiations
@@ -1227,7 +1494,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Helper function to calculate progress percentage
   const calculateProgressPercentage = (milestones) => {
     if (!milestones || milestones.length === 0) return 0;
-    const completedCount = milestones.filter(milestone => milestone.completed).length;
+    const completedCount = milestones.filter(
+      (milestone) => milestone.completed
+    ).length;
     return Math.round((completedCount / milestones.length) * 100);
   };
 
@@ -1235,8 +1504,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const isProjectStarted = (project) => {
     const status = project.status;
     const moderationStatus = project.moderationStatus;
-    
-    console.log('🔍 Checking if project started:', {
+
+    console.log("🔍 Checking if project started:", {
       projectId: project.id,
       status: status,
       moderationStatus: moderationStatus,
@@ -1244,48 +1513,57 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       paymentCompleted: project.paymentCompleted,
       selectedVendorId: project.selectedVendorId,
       negotiationAccepted: project.negotiationAccepted,
-      proposals: project.proposals ? project.proposals.map(p => ({
-        status: p.status,
-        negotiationStatus: p.negotiation?.status,
-        vendorId: p.vendorId
-      })) : [],
-      hasProposals: project.proposals ? project.proposals.length : 0
+      proposals: project.proposals
+        ? project.proposals.map((p) => ({
+            status: p.status,
+            negotiationStatus: p.negotiation?.status,
+            vendorId: p.vendorId,
+          }))
+        : [],
+      hasProposals: project.proposals ? project.proposals.length : 0,
     });
-    
+
     // Project is considered started ONLY when:
     // 1. Initial payment has been made, OR
-    // 2. Project is in "On Going" status (but NOT "Active"), OR  
+    // 2. Project is in "On Going" status (but NOT "Active"), OR
     // 3. A vendor has been formally selected AND negotiation is completed (not just started)
-    
+
     if (project.initialPaymentCompleted || project.paymentCompleted) {
-      console.log('✅ Project started: Payment completed');
+      console.log("✅ Project started: Payment completed");
       return true;
     }
-    
-    if (status === 'On Going') {
-      console.log('✅ Project started: Status indicates ongoing work');
+
+    if (status === "On Going") {
+      console.log("✅ Project started: Status indicates ongoing work");
       return true;
     }
-    
+
     // Check if any proposal has been FULLY accepted (vendor completed negotiation)
     if (project.proposals && Array.isArray(project.proposals)) {
-      const hasAcceptedProposal = project.proposals.some(proposal => 
-        proposal.status === 'accepted' || 
-        (proposal.negotiation && proposal.negotiation.status === 'accepted')
+      const hasAcceptedProposal = project.proposals.some(
+        (proposal) =>
+          proposal.status === "accepted" ||
+          (proposal.negotiation && proposal.negotiation.status === "accepted")
       );
       if (hasAcceptedProposal) {
-        console.log('✅ Project started: Proposal fully accepted');
+        console.log("✅ Project started: Proposal fully accepted");
         return true;
       }
     }
-    
+
     // Check if vendor has been awarded AND negotiation is completed
-    if (project.selectedVendorId && project.status === 'Awarded' && project.negotiationAccepted) {
-      console.log('✅ Project started: Vendor awarded and negotiation completed');
+    if (
+      project.selectedVendorId &&
+      project.status === "Awarded" &&
+      project.negotiationAccepted
+    ) {
+      console.log(
+        "✅ Project started: Vendor awarded and negotiation completed"
+      );
       return true;
     }
-    
-    console.log('❌ Project NOT started: Still in setup/negotiation phase');
+
+    console.log("❌ Project NOT started: Still in setup/negotiation phase");
     return false;
   };
 
@@ -1299,56 +1577,90 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     const negotiationActivities = project.proposals
       .map((proposal, index) => ({
         ...proposal,
-        originalIndex: index
+        originalIndex: index,
       }))
-      .filter(proposal => 
-        proposal.status === 'negotiating' || 
-        proposal.status === 'negotiate' ||
-        proposal.status === 'counter_offer' ||
-        proposal.status === 'accepted' ||
-        proposal.status === 'resubmitted' ||
-        proposal.status === 'negotiated' ||
-        proposal.status === 'pending_review' ||
-        proposal.status === 'waiting_for_vendor' ||
-        (proposal.negotiation && ['pending', 'active', 'counter_offer', 'accepted', 'resubmitted', 'negotiated'].includes(proposal.negotiation.status))
+      .filter(
+        (proposal) =>
+          proposal.status === "negotiating" ||
+          proposal.status === "negotiate" ||
+          proposal.status === "counter_offer" ||
+          proposal.status === "accepted" ||
+          proposal.status === "resubmitted" ||
+          proposal.status === "negotiated" ||
+          proposal.status === "pending_review" ||
+          proposal.status === "waiting_for_vendor" ||
+          (proposal.negotiation &&
+            [
+              "pending",
+              "active",
+              "counter_offer",
+              "accepted",
+              "resubmitted",
+              "negotiated",
+            ].includes(proposal.negotiation.status))
       )
-      .map(proposal => {
+      .map((proposal) => {
         const negotiation = proposal.negotiation || {};
-        const startedAt = proposal.negotiationStartedAt || negotiation.startedAt;
-        const lastActivity = negotiation.lastActivity || proposal.lastActivity || startedAt;
-        
-        let status = 'active';
-        let statusColor = 'purple';
-        let message = `Active negotiation with ${proposal.vendorName || 'vendor'}`;
-        
-        if (proposal.status === 'accepted' || negotiation.status === 'accepted') {
-          status = 'accepted';
-          statusColor = 'green';
-          message = `Negotiation completed with ${proposal.vendorName || 'vendor'}`;
-        } else if (proposal.status === 'counter_offer' || negotiation.status === 'counter_offer') {
-          status = 'counter_offer';
-          statusColor = 'orange';
-          message = `Counter offer from ${proposal.vendorName || 'vendor'}`;
-        } else if (proposal.status === 'resubmitted' || proposal.status === 'negotiated') {
-          status = 'resubmitted';
-          statusColor = 'blue';
-          message = `New proposal submitted by ${proposal.vendorName || 'vendor'}`;
-        } else if (proposal.status === 'pending_review') {
-          status = 'pending_review';
-          statusColor = 'blue';
-          message = `Proposal pending review from ${proposal.vendorName || 'vendor'}`;
-        } else if (proposal.status === 'waiting_for_vendor') {
-          status = 'waiting';
-          statusColor = 'yellow';
-          message = `Waiting for response from ${proposal.vendorName || 'vendor'}`;
-        } else if (proposal.status === 'negotiate' || proposal.status === 'negotiating') {
-          status = 'negotiating';
-          statusColor = 'purple';
-          message = `In negotiation with ${proposal.vendorName || 'vendor'}`;
+        const startedAt =
+          proposal.negotiationStartedAt || negotiation.startedAt;
+        const lastActivity =
+          negotiation.lastActivity || proposal.lastActivity || startedAt;
+
+        let status = "active";
+        let statusColor = "purple";
+        let message = `Active negotiation with ${
+          proposal.vendorName || "vendor"
+        }`;
+
+        if (
+          proposal.status === "accepted" ||
+          negotiation.status === "accepted"
+        ) {
+          status = "accepted";
+          statusColor = "green";
+          message = `Negotiation completed with ${
+            proposal.vendorName || "vendor"
+          }`;
+        } else if (
+          proposal.status === "counter_offer" ||
+          negotiation.status === "counter_offer"
+        ) {
+          status = "counter_offer";
+          statusColor = "orange";
+          message = `Counter offer from ${proposal.vendorName || "vendor"}`;
+        } else if (
+          proposal.status === "resubmitted" ||
+          proposal.status === "negotiated"
+        ) {
+          status = "resubmitted";
+          statusColor = "blue";
+          message = `New proposal submitted by ${
+            proposal.vendorName || "vendor"
+          }`;
+        } else if (proposal.status === "pending_review") {
+          status = "pending_review";
+          statusColor = "blue";
+          message = `Proposal pending review from ${
+            proposal.vendorName || "vendor"
+          }`;
+        } else if (proposal.status === "waiting_for_vendor") {
+          status = "waiting";
+          statusColor = "yellow";
+          message = `Waiting for response from ${
+            proposal.vendorName || "vendor"
+          }`;
+        } else if (
+          proposal.status === "negotiate" ||
+          proposal.status === "negotiating"
+        ) {
+          status = "negotiating";
+          statusColor = "purple";
+          message = `In negotiation with ${proposal.vendorName || "vendor"}`;
         }
-        
+
         return {
-          vendorName: proposal.vendorName || proposal.vendor?.name || 'Unknown Vendor',
+          vendorName:
+            proposal.vendorName || proposal.vendor?.name || "Unknown Vendor",
           vendorId: proposal.vendorId,
           vendorPhone: proposal.vendorPhone,
           vendorEmail: proposal.vendorEmail,
@@ -1357,21 +1669,28 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           message: message,
           startedAt: startedAt,
           lastActivity: lastActivity,
-          currentPrice: negotiation.currentPrice || proposal.currentPrice || proposal.totalAmount || proposal.totalPrice,
-          originalPrice: proposal.originalPrice || proposal.totalAmount || proposal.totalPrice,
+          currentPrice:
+            negotiation.currentPrice ||
+            proposal.currentPrice ||
+            proposal.totalAmount ||
+            proposal.totalPrice,
+          originalPrice:
+            proposal.originalPrice ||
+            proposal.totalAmount ||
+            proposal.totalPrice,
           finalPrice: negotiation.finalPrice || proposal.finalPrice,
           acceptedAt: negotiation.acceptedAt || proposal.acceptedAt,
-          originalIndex: proposal.originalIndex
+          originalIndex: proposal.originalIndex,
         };
       })
       .sort((a, b) => {
         // Sort by latest activity first
         const aTime = a.lastActivity || a.startedAt || new Date(0);
         const bTime = b.lastActivity || b.startedAt || new Date(0);
-        
+
         const aDate = aTime?.toDate ? aTime.toDate() : new Date(aTime);
         const bDate = bTime?.toDate ? bTime.toDate() : new Date(bTime);
-        
+
         return bDate.getTime() - aDate.getTime();
       });
 
@@ -1381,7 +1700,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Helper function to filter negotiations based on filter type
   const getFilteredNegotiations = (negotiations) => {
     switch (negotiationFilter) {
-      case 'newest':
+      case "newest":
         return [...negotiations].sort((a, b) => {
           const aTime = a.lastActivity || a.startedAt || new Date(0);
           const bTime = b.lastActivity || b.startedAt || new Date(0);
@@ -1389,14 +1708,20 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           const bDate = bTime?.toDate ? bTime.toDate() : new Date(bTime);
           return bDate.getTime() - aDate.getTime();
         });
-      case 'price-low':
-        return [...negotiations].sort((a, b) => (a.currentPrice || 0) - (b.currentPrice || 0));
-      case 'price-high':
-        return [...negotiations].sort((a, b) => (b.currentPrice || 0) - (a.currentPrice || 0));
-      case 'active':
-        return negotiations.filter(n => n.status === 'active' || n.status === 'counter_offer');
-      case 'completed':
-        return negotiations.filter(n => n.status === 'accepted');
+      case "price-low":
+        return [...negotiations].sort(
+          (a, b) => (a.currentPrice || 0) - (b.currentPrice || 0)
+        );
+      case "price-high":
+        return [...negotiations].sort(
+          (a, b) => (b.currentPrice || 0) - (a.currentPrice || 0)
+        );
+      case "active":
+        return negotiations.filter(
+          (n) => n.status === "active" || n.status === "counter_offer"
+        );
+      case "completed":
+        return negotiations.filter((n) => n.status === "accepted");
       default:
         return negotiations;
     }
@@ -1407,13 +1732,15 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     const currentNegotiations = getNegotiationActivities(project);
     const currentTimestamp = Date.now();
     const lastViewed = lastViewedNegotiations || currentTimestamp;
-    
-    const newCount = currentNegotiations.filter(negotiation => {
+
+    const newCount = currentNegotiations.filter((negotiation) => {
       const activityTime = negotiation.lastActivity || negotiation.startedAt;
-      const activityTimestamp = activityTime?.toDate ? activityTime.toDate().getTime() : new Date(activityTime).getTime();
+      const activityTimestamp = activityTime?.toDate
+        ? activityTime.toDate().getTime()
+        : new Date(activityTime).getTime();
       return activityTimestamp > lastViewed;
     }).length;
-    
+
     setNewNegotiationCount(newCount);
   };
 
@@ -1432,7 +1759,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
   // useEffect to mark negotiations as viewed when negotiation tab becomes active
   useEffect(() => {
-    if (activeTab === 'negotiation') {
+    if (activeTab === "negotiation") {
       markNegotiationsAsViewed();
     }
   }, [activeTab]);
@@ -1441,96 +1768,116 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const getMilestones = (project) => {
     // If project has attached BOQ, create milestones from tahapan kerja
     if (project.attachedBOQ && project.attachedBOQ.tahapanKerja) {
-      console.log('BOQ tahapanKerja found:', project.attachedBOQ.tahapanKerja);
+      console.log("BOQ tahapanKerja found:", project.attachedBOQ.tahapanKerja);
       return project.attachedBOQ.tahapanKerja.map((tahapan, index) => {
-        const milestoneName = tahapan.name || tahapan.nama || `Tahapan ${index + 1}`;
-        console.log(`Milestone ${index + 1}:`, milestoneName, 'from tahapan:', tahapan);
+        const milestoneName =
+          tahapan.name || tahapan.nama || `Tahapan ${index + 1}`;
+        console.log(
+          `Milestone ${index + 1}:`,
+          milestoneName,
+          "from tahapan:",
+          tahapan
+        );
         return {
           name: milestoneName,
           completed: false,
-          date: ''
+          date: "",
         };
       });
     }
-    
+
     // Fallback to existing milestones or default ones
     if (project.milestones && project.milestones.length > 0) {
       return project.milestones;
     }
-    
+
     // Default milestones based on project type
     const defaultMilestones = {
-      'Desain': [
-        { name: 'Concept Design', completed: true, date: '2024-01-15' },
-        { name: 'Design Development', completed: true, date: '2024-02-20' },
-        { name: 'Final Design', completed: false, date: '' },
-        { name: 'Design Approval', completed: false, date: '' }
+      Desain: [
+        { name: "Concept Design", completed: true, date: "2024-01-15" },
+        { name: "Design Development", completed: true, date: "2024-02-20" },
+        { name: "Final Design", completed: false, date: "" },
+        { name: "Design Approval", completed: false, date: "" },
       ],
-      'Bangun': [
-        { name: 'Site Preparation', completed: true, date: '2024-01-10' },
-        { name: 'Foundation', completed: true, date: '2024-02-15' },
-        { name: 'Structure', completed: false, date: '' },
-        { name: 'Finishing', completed: false, date: '' }
+      Bangun: [
+        { name: "Site Preparation", completed: true, date: "2024-01-10" },
+        { name: "Foundation", completed: true, date: "2024-02-15" },
+        { name: "Structure", completed: false, date: "" },
+        { name: "Finishing", completed: false, date: "" },
       ],
-      'Renovasi': [
-        { name: 'Demolition', completed: true, date: '2024-01-20' },
-        { name: 'Reconstruction', completed: false, date: '' },
-        { name: 'Finishing', completed: false, date: '' },
-        { name: 'Final Inspection', completed: false, date: '' }
-      ]
+      Renovasi: [
+        { name: "Demolition", completed: true, date: "2024-01-20" },
+        { name: "Reconstruction", completed: false, date: "" },
+        { name: "Finishing", completed: false, date: "" },
+        { name: "Final Inspection", completed: false, date: "" },
+      ],
     };
-    
-    return defaultMilestones[project.projectType] || [
-      { name: 'Planning', completed: true, date: '2024-01-05' },
-      { name: 'Execution', completed: false, date: '' },
-      { name: 'Review', completed: false, date: '' },
-      { name: 'Completion', completed: false, date: '' }
-    ];
+
+    return (
+      defaultMilestones[project.projectType] || [
+        { name: "Planning", completed: true, date: "2024-01-05" },
+        { name: "Execution", completed: false, date: "" },
+        { name: "Review", completed: false, date: "" },
+        { name: "Completion", completed: false, date: "" },
+      ]
+    );
   };
 
   const renderTahapanTab = () => {
     // Check for BOQ data in multiple possible locations
-    const boqData = project.boq || 
-                   project.attachedBOQ || 
-                   project.boqData || 
-                   project.originalData?.boq || 
-                   project.originalData?.attachedBOQ;
+    const boqData =
+      project.boq ||
+      project.attachedBOQ ||
+      project.boqData ||
+      project.originalData?.boq ||
+      project.originalData?.attachedBOQ;
 
     // Extract tahapan kerja for stages display
     const getTahapanKerja = () => {
-      console.log('🔍 Analyzing BOQ data structure:', boqData);
-      
+      console.log("🔍 Analyzing BOQ data structure:", boqData);
+
       if (boqData?.tahapanKerja && Array.isArray(boqData.tahapanKerja)) {
-        console.log('✅ Found tahapanKerja array:', boqData.tahapanKerja);
-        
+        console.log("✅ Found tahapanKerja array:", boqData.tahapanKerja);
+
         return boqData.tahapanKerja.map((tahapan, tahapanIndex) => {
           console.log(`📋 Processing tahapan ${tahapanIndex}:`, tahapan);
-          
+
           const items = [];
-          
+
           // Process jenisKerja array
           if (tahapan.jenisKerja && Array.isArray(tahapan.jenisKerja)) {
             tahapan.jenisKerja.forEach((jenis, jenisIndex) => {
               console.log(`  🔧 Processing jenisKerja ${jenisIndex}:`, jenis);
-              
+
               // Process uraian array within each jenisKerja
               if (jenis.uraian && Array.isArray(jenis.uraian)) {
                 jenis.uraian.forEach((uraian, uraianIndex) => {
-                  console.log(`    📝 Processing uraian ${uraianIndex}:`, uraian);
-                  
+                  console.log(
+                    `    📝 Processing uraian ${uraianIndex}:`,
+                    uraian
+                  );
+
                   // Process spec array within each uraian
                   if (uraian.spec && Array.isArray(uraian.spec)) {
                     uraian.spec.forEach((spec, specIndex) => {
-                      console.log(`      🔍 Processing spec ${specIndex}:`, spec);
-                      
+                      console.log(
+                        `      🔍 Processing spec ${specIndex}:`,
+                        spec
+                      );
+
                       items.push({
                         tahapanName: `Tahapan ${tahapanIndex + 1}`,
                         jenisName: jenis.name || `Jenis ${jenisIndex + 1}`,
                         uraianName: uraian.name || `Uraian ${uraianIndex + 1}`,
-                        item: spec.description || spec.name || `Item ${specIndex + 1}`,
+                        item:
+                          spec.description ||
+                          spec.name ||
+                          `Item ${specIndex + 1}`,
                         volume: spec.volume || 0,
-                        unit: spec.satuan || 'unit',
-                        id: spec.id || `${tahapanIndex}-${jenisIndex}-${uraianIndex}-${specIndex}`
+                        unit: spec.satuan || "unit",
+                        id:
+                          spec.id ||
+                          `${tahapanIndex}-${jenisIndex}-${uraianIndex}-${specIndex}`,
                       });
                     });
                   }
@@ -1538,35 +1885,40 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               }
             });
           }
-          
-          console.log(`✅ Tahapan ${tahapanIndex + 1} processed with ${items.length} items:`, items);
-          
+
+          console.log(
+            `✅ Tahapan ${tahapanIndex + 1} processed with ${
+              items.length
+            } items:`,
+            items
+          );
+
           return {
             name: `Tahapan ${tahapanIndex + 1}`,
             items: items,
-            id: tahapan.id || tahapanIndex
+            id: tahapan.id || tahapanIndex,
           };
         });
       }
-      
+
       if (boqData?.items && Array.isArray(boqData.items)) {
-        console.log('✅ Found items array, grouping by tahapan');
+        console.log("✅ Found items array, grouping by tahapan");
         // Group items by tahapan
         const tahapanMap = new Map();
-        boqData.items.forEach(item => {
-          const tahapanName = item.tahapanName || 'Tahapan Umum';
+        boqData.items.forEach((item) => {
+          const tahapanName = item.tahapanName || "Tahapan Umum";
           if (!tahapanMap.has(tahapanName)) {
             tahapanMap.set(tahapanName, {
               name: tahapanName,
-              items: []
+              items: [],
             });
           }
           tahapanMap.get(tahapanName).items.push(item);
         });
         return Array.from(tahapanMap.values());
       }
-      
-      console.log('❌ No valid BOQ data structure found');
+
+      console.log("❌ No valid BOQ data structure found");
       return [];
     };
 
@@ -1576,25 +1928,32 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       <div className="space-y-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Tahapan Pekerjaan</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Tahapan Pekerjaan
+            </h3>
             <span className="text-sm text-gray-500">
               {tahapanList.length} tahapan kerja
             </span>
           </div>
-          
+
           {tahapanList.length > 0 ? (
             <div className="space-y-6">
               {tahapanList.map((tahapan, tahapanIndex) => (
-                <div key={tahapanIndex} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <div
+                  key={tahapanIndex}
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
                       {tahapanIndex + 1}
                     </div>
                     <h4 className="text-xl font-bold text-blue-900">
-                      {tahapan.name || tahapan.nama || `Tahapan ${tahapanIndex + 1}`}
+                      {tahapan.name ||
+                        tahapan.nama ||
+                        `Tahapan ${tahapanIndex + 1}`}
                     </h4>
                   </div>
-                  
+
                   {tahapan.description && (
                     <p className="text-blue-800 mb-4 italic">
                       {tahapan.description}
@@ -1606,7 +1965,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           ) : (
             <div className="text-center py-12">
               <FiFileText className="mx-auto text-gray-400 mb-3" size={48} />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tahapan Kerja</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Tidak Ada Tahapan Kerja
+              </h3>
               <p className="text-gray-500">
                 Tahapan pekerjaan belum tersedia untuk proyek ini.
               </p>
@@ -1620,12 +1981,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   const renderProposalsTab = () => {
     // Normalize proposals data to handle both array and object formats
     const proposals = normalizeProposals(project?.proposals);
-    
+
     const formatCurrencyProposal = (amount) => {
-      if (!amount) return 'Not specified';
-      return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
+      if (!amount) return "Not specified";
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(amount);
@@ -1635,7 +1996,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     const getUniqueLocations = (proposals) => {
       if (!proposals || !Array.isArray(proposals)) return [];
       const locations = proposals
-        .map(proposal => {
+        .map((proposal) => {
           if (proposal.vendorCity && proposal.vendorProvince) {
             return `${proposal.vendorCity}, ${proposal.vendorProvince}`;
           } else if (proposal.vendorCity) {
@@ -1643,7 +2004,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           } else if (proposal.vendorProvince) {
             return proposal.vendorProvince;
           } else {
-            return proposal.vendorLocation || proposal.location || 'Unknown Location';
+            return (
+              proposal.vendorLocation || proposal.location || "Unknown Location"
+            );
           }
         })
         .filter((location, index, arr) => arr.indexOf(location) === index)
@@ -1654,30 +2017,36 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     // Filter and sort proposals based on current filters
     const getFilteredAndSortedProposals = (proposals) => {
       if (!proposals || !Array.isArray(proposals)) return [];
-      
+
       let filteredProposals = [...proposals];
 
       // Apply location filter
-      if (locationFilter !== 'all') {
-        filteredProposals = filteredProposals.filter(proposal => {
-          const proposalLocation = proposal.vendorCity && proposal.vendorProvince
-            ? `${proposal.vendorCity}, ${proposal.vendorProvince}`
-            : proposal.vendorCity || proposal.vendorProvince || proposal.vendorLocation || proposal.location || 'Unknown Location';
+      if (locationFilter !== "all") {
+        filteredProposals = filteredProposals.filter((proposal) => {
+          const proposalLocation =
+            proposal.vendorCity && proposal.vendorProvince
+              ? `${proposal.vendorCity}, ${proposal.vendorProvince}`
+              : proposal.vendorCity ||
+                proposal.vendorProvince ||
+                proposal.vendorLocation ||
+                proposal.location ||
+                "Unknown Location";
           return proposalLocation === locationFilter;
         });
       }
 
       // Apply trust score filter
-      if (trustScoreFilter !== 'all') {
-        filteredProposals = filteredProposals.filter(proposal => {
-          const trustScore = proposal.trustScore || proposal.vendorTrustScore || 0;
-          
+      if (trustScoreFilter !== "all") {
+        filteredProposals = filteredProposals.filter((proposal) => {
+          const trustScore =
+            proposal.trustScore || proposal.vendorTrustScore || 0;
+
           switch (trustScoreFilter) {
-            case 'high':
+            case "high":
               return trustScore >= 80;
-            case 'medium':
+            case "medium":
               return trustScore >= 50 && trustScore < 80;
-            case 'low':
+            case "low":
               return trustScore < 50;
             default:
               return true;
@@ -1686,25 +2055,25 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       }
 
       // Apply price sorting
-      if (priceFilter === 'low-to-high') {
+      if (priceFilter === "low-to-high") {
         filteredProposals.sort((a, b) => {
           const priceA = a.totalAmount || 0;
           const priceB = b.totalAmount || 0;
           return priceA - priceB;
         });
-      } else if (priceFilter === 'high-to-low') {
+      } else if (priceFilter === "high-to-low") {
         filteredProposals.sort((a, b) => {
           const priceA = a.totalAmount || 0;
           const priceB = b.totalAmount || 0;
           return priceB - priceA;
         });
-      } else if (priceFilter === 'trust-high-to-low') {
+      } else if (priceFilter === "trust-high-to-low") {
         filteredProposals.sort((a, b) => {
           const trustScoreA = a.trustScore || a.vendorTrustScore || 0;
           const trustScoreB = b.trustScore || b.vendorTrustScore || 0;
           return trustScoreB - trustScoreA;
         });
-      } else if (priceFilter === 'trust-low-to-high') {
+      } else if (priceFilter === "trust-low-to-high") {
         filteredProposals.sort((a, b) => {
           const trustScoreA = a.trustScore || a.vendorTrustScore || 0;
           const trustScoreB = b.trustScore || b.vendorTrustScore || 0;
@@ -1718,12 +2087,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     const uniqueLocations = getUniqueLocations(proposals);
     const filteredProposals = getFilteredAndSortedProposals(proposals);
 
-    const handleViewPortfolio = (vendorId, vendorName, proposal, proposalIndex) => {
-      setSelectedVendor({ 
-        id: vendorId, 
+    const handleViewPortfolio = (
+      vendorId,
+      vendorName,
+      proposal,
+      proposalIndex
+    ) => {
+      setSelectedVendor({
+        id: vendorId,
         name: vendorName,
         proposal: proposal,
-        proposalIndex: proposalIndex
+        proposalIndex: proposalIndex,
       });
       setShowVendorProfile(true);
     };
@@ -1732,33 +2106,30 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     const TrustScoreCircle = ({ score = 0, size = 40 }) => {
       // Normalize score to 0-100 range
       const normalizedScore = Math.max(0, Math.min(100, score));
-      
+
       // Determine color based on score ranges
       const getColor = (score) => {
-        if (score >= 0 && score <= 25) return '#EF4444'; // Red
-        if (score >= 30 && score <= 45) return '#F97316'; // Orange
-        if (score >= 50 && score <= 55) return '#84CC16'; // Light green
-        if (score >= 60 && score <= 75) return '#22C55E'; // Green
-        if (score >= 80 && score <= 85) return '#10B981'; // Green to blueish
-        if (score >= 90 && score <= 100) return '#3B82F6'; // Blue
-        return '#6B7280'; // Default gray
+        if (score >= 0 && score <= 25) return "#EF4444"; // Red
+        if (score >= 30 && score <= 45) return "#F97316"; // Orange
+        if (score >= 50 && score <= 55) return "#84CC16"; // Light green
+        if (score >= 60 && score <= 75) return "#22C55E"; // Green
+        if (score >= 80 && score <= 85) return "#10B981"; // Green to blueish
+        if (score >= 90 && score <= 100) return "#3B82F6"; // Blue
+        return "#6B7280"; // Default gray
       };
 
       const color = getColor(normalizedScore);
       const radius = (size - 8) / 2;
       const circumference = 2 * Math.PI * radius;
       const strokeDasharray = circumference;
-      const strokeDashoffset = circumference - (normalizedScore / 100) * circumference;
+      const strokeDashoffset =
+        circumference - (normalizedScore / 100) * circumference;
 
       return (
         <div className="flex flex-col items-center">
           <div className="relative" style={{ width: size, height: size }}>
             {/* Background circle */}
-            <svg
-              className="transform -rotate-90"
-              width={size}
-              height={size}
-            >
+            <svg className="transform -rotate-90" width={size} height={size}>
               <circle
                 cx={size / 2}
                 cy={size / 2}
@@ -1782,7 +2153,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               />
             </svg>
             {/* Center text */}
-            <div 
+            <div
               className="absolute inset-0 flex items-center justify-center"
               style={{ fontSize: size * 0.25 }}
             >
@@ -1817,7 +2188,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <FiFilter className="text-gray-600" size={18} />
-                <h4 className="text-sm font-medium text-gray-900">Filter Proposals</h4>
+                <h4 className="text-sm font-medium text-gray-900">
+                  Filter Proposals
+                </h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Price Filter */}
@@ -1833,8 +2206,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                     <option value="all">Default Order</option>
                     <option value="low-to-high">Price: Low to High</option>
                     <option value="high-to-low">Price: High to Low</option>
-                    <option value="trust-high-to-low">Trust Score: High to Low</option>
-                    <option value="trust-low-to-high">Trust Score: Low to High</option>
+                    <option value="trust-high-to-low">
+                      Trust Score: High to Low
+                    </option>
+                    <option value="trust-low-to-high">
+                      Trust Score: Low to High
+                    </option>
                   </select>
                 </div>
 
@@ -1878,14 +2255,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               {/* Filter Results Summary */}
               <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
                 <span>
-                  Showing {filteredProposals.length} of {proposals.length} proposals
+                  Showing {filteredProposals.length} of {proposals.length}{" "}
+                  proposals
                 </span>
-                {(priceFilter !== 'all' || locationFilter !== 'all' || trustScoreFilter !== 'all') && (
+                {(priceFilter !== "all" ||
+                  locationFilter !== "all" ||
+                  trustScoreFilter !== "all") && (
                   <button
                     onClick={() => {
-                      setPriceFilter('all');
-                      setLocationFilter('all');
-                      setTrustScoreFilter('all');
+                      setPriceFilter("all");
+                      setLocationFilter("all");
+                      setTrustScoreFilter("all");
                     }}
                     className="text-blue-600 hover:text-blue-800 underline"
                   >
@@ -1899,7 +2279,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           {!Array.isArray(proposals) || proposals.length === 0 ? (
             <div className="text-center py-12">
               <FiUser className="mx-auto text-gray-400 mb-3" size={48} />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Proposals Yet</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Proposals Yet
+              </h3>
               <p className="text-gray-500 mb-4">
                 No vendors have submitted proposals for this project yet.
               </p>
@@ -1910,15 +2292,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           ) : filteredProposals.length === 0 ? (
             <div className="text-center py-12">
               <FiFilter className="mx-auto text-gray-400 mb-3" size={48} />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Matching Proposals</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Matching Proposals
+              </h3>
               <p className="text-gray-500 mb-4">
                 No proposals match your current filter criteria.
               </p>
               <button
                 onClick={() => {
-                  setPriceFilter('all');
-                  setLocationFilter('all');
-                  setTrustScoreFilter('all');
+                  setPriceFilter("all");
+                  setLocationFilter("all");
+                  setTrustScoreFilter("all");
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -1929,27 +2313,48 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             <div className="space-y-6">
               {filteredProposals.map((proposal, index) => {
                 // Get original index for proper handling
-                const originalIndex = proposals.findIndex(p => p === proposal);
-                const proposalStatus = proposal.status || 'pending';
+                const originalIndex = proposals.findIndex(
+                  (p) => p === proposal
+                );
+                const proposalStatus = proposal.status || "pending";
 
                 // Status detection logic for project owner actions
-                const canOwnerAct = ['pending', 'submitted', 'pending_review', 'resubmitted', 'negotiated', 'counter_offer'].includes(proposalStatus);
-                const isWaitingForVendor = proposalStatus === 'waiting_for_vendor';
-                const isNegotiateStatus = proposalStatus === 'negotiate';
-                const isVendorResponded = ['resubmitted', 'negotiated', 'counter_offer'].includes(proposalStatus);
-                const showActionButtons = canOwnerAct && !isWaitingForVendor && !isNegotiateStatus;
+                const canOwnerAct = [
+                  "pending",
+                  "submitted",
+                  "pending_review",
+                  "resubmitted",
+                  "negotiated",
+                  "counter_offer",
+                ].includes(proposalStatus);
+                const isWaitingForVendor =
+                  proposalStatus === "waiting_for_vendor";
+                const isNegotiateStatus = proposalStatus === "negotiate";
+                const isVendorResponded = [
+                  "resubmitted",
+                  "negotiated",
+                  "counter_offer",
+                ].includes(proposalStatus);
+                const showActionButtons =
+                  canOwnerAct && !isWaitingForVendor && !isNegotiateStatus;
 
-                console.log(`📋 Proposal ${originalIndex} (${proposal.vendorName}):`, {
-                  proposalStatus,
-                  canOwnerAct,
-                  isWaitingForVendor,
-                  isNegotiateStatus,
-                  isVendorResponded,
-                  showActionButtons
-                });
+                console.log(
+                  `📋 Proposal ${originalIndex} (${proposal.vendorName}):`,
+                  {
+                    proposalStatus,
+                    canOwnerAct,
+                    isWaitingForVendor,
+                    isNegotiateStatus,
+                    isVendorResponded,
+                    showActionButtons,
+                  }
+                );
 
                 return (
-                  <div key={originalIndex} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div
+                    key={originalIndex}
+                    className="border border-gray-200 rounded-lg overflow-hidden"
+                  >
                     {/* Proposal Header */}
                     <div className="p-6 bg-white">
                       <div className="flex items-start justify-between mb-4">
@@ -1957,68 +2362,99 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           <div className="flex items-center gap-4 mb-2">
                             <div className="flex items-center gap-3">
                               <button
-                                onClick={() => handleViewPortfolio(proposal.vendorId, proposal.vendorName, proposal, originalIndex)}
+                                onClick={() =>
+                                  handleViewPortfolio(
+                                    proposal.vendorId,
+                                    proposal.vendorName,
+                                    proposal,
+                                    originalIndex
+                                  )
+                                }
                                 className="text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                               >
-                                {proposal.vendorName || 'Unknown Vendor'}
+                                {proposal.vendorName || "Unknown Vendor"}
                               </button>
-                              <span className={`px-3 py-1 text-xs font-medium rounded-full ${getProposalStatusColor(proposalStatus)}`}>
-                                {proposalStatus.charAt(0).toUpperCase() + proposalStatus.slice(1)}
+                              <span
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${getProposalStatusColor(
+                                  proposalStatus
+                                )}`}
+                              >
+                                {proposalStatus.charAt(0).toUpperCase() +
+                                  proposalStatus.slice(1)}
                               </span>
                             </div>
                             {/* Trust Score Component */}
-                            <TrustScoreCircle 
-                              score={proposal.trustScore || proposal.vendorTrustScore || Math.floor(Math.random() * 101)} 
-                              size={50} 
+                            <TrustScoreCircle
+                              score={
+                                proposal.trustScore ||
+                                proposal.vendorTrustScore ||
+                                Math.floor(Math.random() * 101)
+                              }
+                              size={50}
                             />
                           </div>
                           <div className="text-sm text-gray-500 mb-3">
                             <div className="flex items-center gap-4 flex-wrap">
                               <span>
-                                Submitted on: {proposal.submittedAt ? 
-                                  new Date(proposal.submittedAt).toLocaleDateString('id-ID', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  }) : 'Unknown date'
-                                }
+                                Submitted on:{" "}
+                                {proposal.submittedAt
+                                  ? new Date(
+                                      proposal.submittedAt
+                                    ).toLocaleDateString("id-ID", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "Unknown date"}
                               </span>
                               {/* Vendor Location Display */}
                               <div className="flex items-center gap-1">
                                 <FiMapPin size={14} className="text-gray-400" />
                                 <span className="text-sm font-medium text-gray-600">
-                                  {proposal.vendorCity && proposal.vendorProvince ? 
-                                    `${proposal.vendorCity}, ${proposal.vendorProvince}` :
-                                    proposal.vendorLocation || proposal.location || 'Location not specified'
-                                  }
+                                  {proposal.vendorCity &&
+                                  proposal.vendorProvince
+                                    ? `${proposal.vendorCity}, ${proposal.vendorProvince}`
+                                    : proposal.vendorLocation ||
+                                      proposal.location ||
+                                      "Location not specified"}
                                 </span>
                               </div>
                               {/* Vendor Full Name/Company Display */}
-                              {proposal.vendorAccountType === 'perusahaan' ? (
-                                proposal.vendorCompany && (
-                                  <div className="flex items-center gap-1">
-                                    <FiUser size={14} className="text-gray-400" />
-                                    <span className="text-sm font-medium text-gray-600">
-                                      {proposal.vendorCompany}
-                                    </span>
-                                  </div>
-                                )
-                              ) : (
-                                (proposal.vendorFirstName || proposal.vendorLastName) && (
-                                  <div className="flex items-center gap-1">
-                                    <FiUser size={14} className="text-gray-400" />
-                                    <span className="text-sm font-medium text-gray-600">
-                                      {`${proposal.vendorFirstName || ''} ${proposal.vendorLastName || ''}`.trim()}
-                                    </span>
-                                  </div>
-                                )
-                              )}
+                              {proposal.vendorAccountType === "perusahaan"
+                                ? proposal.vendorCompany && (
+                                    <div className="flex items-center gap-1">
+                                      <FiUser
+                                        size={14}
+                                        className="text-gray-400"
+                                      />
+                                      <span className="text-sm font-medium text-gray-600">
+                                        {proposal.vendorCompany}
+                                      </span>
+                                    </div>
+                                  )
+                                : (proposal.vendorFirstName ||
+                                    proposal.vendorLastName) && (
+                                    <div className="flex items-center gap-1">
+                                      <FiUser
+                                        size={14}
+                                        className="text-gray-400"
+                                      />
+                                      <span className="text-sm font-medium text-gray-600">
+                                        {`${proposal.vendorFirstName || ""} ${
+                                          proposal.vendorLastName || ""
+                                        }`.trim()}
+                                      </span>
+                                    </div>
+                                  )}
                               {/* Vendor Phone Number Display */}
                               {proposal.vendorPhone && (
                                 <div className="flex items-center gap-1">
-                                  <FiPhone size={14} className="text-gray-400" />
+                                  <FiPhone
+                                    size={14}
+                                    className="text-gray-400"
+                                  />
                                   <span className="text-sm font-medium text-gray-600">
                                     {proposal.vendorPhone}
                                   </span>
@@ -2036,7 +2472,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Action Buttons */}
                         <div className="flex gap-2 flex-wrap">
                           {/* Status-based display */}
@@ -2056,38 +2492,61 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                               {isVendorResponded && (
                                 <div className="w-full mb-2 px-4 py-2 bg-green-50 border border-green-200 text-green-800 rounded-lg font-medium flex items-center gap-2">
                                   <FiCheck size={16} />
-                                  <span>Vendor has submitted a new proposal!</span>
+                                  <span>
+                                    Vendor has submitted a new proposal!
+                                  </span>
                                 </div>
                               )}
                               <button
                                 onClick={() => {
-                                  console.log('🔘 Accept button clicked', { originalIndex, proposalStatus, vendorName: proposal.vendorName });
+                                  console.log("🔘 Accept button clicked", {
+                                    originalIndex,
+                                    proposalStatus,
+                                    vendorName: proposal.vendorName,
+                                  });
                                   handleAcceptProposal(originalIndex, proposal);
                                 }}
                                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiCheck size={16} />
-                                {isVendorResponded ? 'Accept New Proposal' : 'Accept'}
+                                {isVendorResponded
+                                  ? "Accept New Proposal"
+                                  : "Accept"}
                               </button>
                               <button
                                 onClick={() => {
-                                  console.log('🔘 Negotiate button clicked', { originalIndex, proposalStatus, vendorName: proposal.vendorName });
-                                  handleStartNegotiation(originalIndex, proposal);
+                                  console.log("🔘 Negotiate button clicked", {
+                                    originalIndex,
+                                    proposalStatus,
+                                    vendorName: proposal.vendorName,
+                                  });
+                                  handleStartNegotiation(
+                                    originalIndex,
+                                    proposal
+                                  );
                                 }}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiMessageSquare size={16} />
-                                {isVendorResponded ? 'Renegotiate' : 'Negotiate'}
+                                {isVendorResponded
+                                  ? "Renegotiate"
+                                  : "Negotiate"}
                               </button>
                               <button
                                 onClick={() => {
-                                  console.log('🔘 Reject button clicked', { originalIndex, proposalStatus, vendorName: proposal.vendorName });
+                                  console.log("🔘 Reject button clicked", {
+                                    originalIndex,
+                                    proposalStatus,
+                                    vendorName: proposal.vendorName,
+                                  });
                                   handleRejectProposal(originalIndex, proposal);
                                 }}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
                               >
                                 <FiX size={16} />
-                                {isVendorResponded ? 'Reject New Proposal' : 'Reject'}
+                                {isVendorResponded
+                                  ? "Reject New Proposal"
+                                  : "Reject"}
                               </button>
                             </>
                           ) : null}
@@ -2097,7 +2556,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       {/* Proposal Summary */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="text-sm text-gray-500 mb-1">Total Bid Amount</p>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Total Bid Amount
+                          </p>
                           <p className="font-semibold text-gray-900">
                             {formatCurrencyProposal(proposal.totalAmount)}
                           </p>
@@ -2105,17 +2566,25 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <p className="text-sm text-gray-500 mb-1">BOQ Type</p>
                           <p className="font-semibold text-gray-900">
-                            {proposal.boqType || proposal.proposalType || 'Standard'}
+                            {proposal.boqType ||
+                              proposal.proposalType ||
+                              "Standard"}
                           </p>
                         </div>
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="text-sm text-gray-500 mb-1">Negotiable</p>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Negotiable
+                          </p>
                           <p className="font-semibold text-gray-900">
-                            {proposal.negotiable === 'negotiable' ? 'Yes' : 'No'}
+                            {proposal.negotiable === "negotiable"
+                              ? "Yes"
+                              : "No"}
                           </p>
                         </div>
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="text-sm text-gray-500 mb-1">Items Count</p>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Items Count
+                          </p>
                           <p className="font-semibold text-gray-900">
                             {proposal.boqPricing?.length || 0} items
                           </p>
@@ -2125,8 +2594,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       {/* Vendor Message */}
                       {proposal.message && (
                         <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                          <h5 className="text-sm font-medium text-gray-900 mb-2">Vendor Message:</h5>
-                          <p className="text-sm text-gray-700">{proposal.message}</p>
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">
+                            Vendor Message:
+                          </h5>
+                          <p className="text-sm text-gray-700">
+                            {proposal.message}
+                          </p>
                         </div>
                       )}
 
@@ -2143,25 +2616,33 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                       </button>
 
                       {/* Contact Section - Show when negotiating or negotiate status */}
-                      {(proposalStatus === 'negotiating' || proposalStatus === 'negotiate') && (
+                      {(proposalStatus === "negotiating" ||
+                        proposalStatus === "negotiate") && (
                         <div className="bg-white border border-gray-200 p-4 rounded-lg mt-4 shadow-sm">
                           <h5 className="text-sm font-medium text-blue-900 mb-4 flex items-center gap-2">
                             <FiMessageSquare size={16} />
                             Contact Vendor for Negotiation
                             <div className="relative group">
-                              <FiInfo size={14} className="text-blue-600 cursor-help" />
+                              <FiInfo
+                                size={14}
+                                className="text-blue-600 cursor-help"
+                              />
                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
-                                Negotiate directly with the vendor outside the platform. Once you reach an agreement, the vendor will submit a new BOQ for your approval.
+                                Negotiate directly with the vendor outside the
+                                platform. Once you reach an agreement, the
+                                vendor will submit a new BOQ for your approval.
                                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                               </div>
                             </div>
                           </h5>
-                          
+
                           <div className="flex gap-3 flex-wrap">
                             {/* WhatsApp Button */}
                             {proposal.vendorPhone && (
                               <a
-                                href={`https://wa.me/62${proposal.vendorPhone.replace(/\D/g, '').replace(/^62/, '')}`}
+                                href={`https://wa.me/62${proposal.vendorPhone
+                                  .replace(/\D/g, "")
+                                  .replace(/^62/, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
@@ -2195,7 +2676,10 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                               <div className="px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-sm">
                                 <div className="flex items-center gap-2">
                                   <FiAlertTriangle size={16} />
-                                  <span>Phone number not available - Contact via email</span>
+                                  <span>
+                                    Phone number not available - Contact via
+                                    email
+                                  </span>
                                 </div>
                               </div>
                             )}
@@ -2234,7 +2718,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                 <FiArrowLeft size={20} />
                 <span className="font-medium">Back to Proposals</span>
               </button>
-              <h2 className="text-2xl font-bold text-gray-900">{selectedVendor.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {selectedVendor.name}
+              </h2>
             </div>
           </div>
 
@@ -2243,37 +2729,55 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Company Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Company Information
+                </h3>
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500">Company Name</p>
-                    <p className="font-medium text-gray-900">{selectedVendor.name}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedVendor.name}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Vendor ID</p>
-                    <p className="font-medium text-gray-900">{selectedVendor.id || 'Not specified'}</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedVendor.id || "Not specified"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Specialization</p>
-                    <p className="font-medium text-gray-900">Construction & Design</p>
+                    <p className="font-medium text-gray-900">
+                      Construction & Design
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Contact Information
+                </h3>
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-gray-900">contact@{selectedVendor.name?.toLowerCase().replace(/\s+/g, '')}.com</p>
+                    <p className="font-medium text-gray-900">
+                      contact@
+                      {selectedVendor.name?.toLowerCase().replace(/\s+/g, "")}
+                      .com
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium text-gray-900">+62 xxx-xxxx-xxxx</p>
+                    <p className="font-medium text-gray-900">
+                      +62 xxx-xxxx-xxxx
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Location</p>
-                    <p className="font-medium text-gray-900">Jakarta, Indonesia</p>
+                    <p className="font-medium text-gray-900">
+                      Jakarta, Indonesia
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2282,18 +2786,25 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             {/* Proposal Summary */}
             {selectedVendor.proposal && (
               <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Proposal Summary</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Proposal Summary
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Total Bid Amount</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Total Bid Amount
+                    </p>
                     <p className="text-xl font-bold text-blue-600">
                       {formatCurrency(selectedVendor.proposal.totalAmount || 0)}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Estimated Duration</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Estimated Duration
+                    </p>
                     <p className="text-xl font-bold text-green-600">
-                      {selectedVendor.proposal.estimatedDuration || 'Not specified'}
+                      {selectedVendor.proposal.estimatedDuration ||
+                        "Not specified"}
                     </p>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
@@ -2306,8 +2817,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
                 {selectedVendor.proposal.message && (
                   <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Vendor Message:</h4>
-                    <p className="text-sm text-gray-700">{selectedVendor.proposal.message}</p>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">
+                      Vendor Message:
+                    </h4>
+                    <p className="text-sm text-gray-700">
+                      {selectedVendor.proposal.message}
+                    </p>
                   </div>
                 )}
               </div>
@@ -2315,18 +2830,28 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
             {/* Portfolio Section - Placeholder */}
             <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Portfolio</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Portfolio
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Placeholder portfolio items */}
                 {[1, 2, 3].map((item) => (
-                  <div key={item} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div
+                    key={item}
+                    className="border border-gray-200 rounded-lg overflow-hidden"
+                  >
                     <div className="h-48 bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-500">Portfolio Image {item}</span>
+                      <span className="text-gray-500">
+                        Portfolio Image {item}
+                      </span>
                     </div>
                     <div className="p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Project {item}</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Project {item}
+                      </h4>
                       <p className="text-sm text-gray-600">
-                        Sample project description showcasing the vendor's work quality and expertise.
+                        Sample project description showcasing the vendor's work
+                        quality and expertise.
                       </p>
                     </div>
                   </div>
@@ -2338,7 +2863,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             <div className="border-t border-gray-200 pt-6 flex gap-4">
               <button
                 onClick={() => {
-                  console.log('Select vendor:', selectedVendor.name);
+                  console.log("Select vendor:", selectedVendor.name);
                   // Add vendor selection logic here
                 }}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -2359,13 +2884,19 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   };
 
   const renderDokumentasiTab = () => {
-    const isVendorAccepted = hasAcceptedProposal || project.selectedVendorId || project.status === 'Awarded' || project.negotiationAccepted;
-    
+    const isVendorAccepted =
+      hasAcceptedProposal ||
+      project.selectedVendorId ||
+      project.status === "Awarded" ||
+      project.negotiationAccepted;
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Dokumentasi Progress</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+              Dokumentasi Progress
+            </h3>
             <p className="text-gray-600 text-sm">
               Dokumentasi progress pekerjaan dari vendor yang telah diterima
             </p>
@@ -2377,8 +2908,13 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             <div className="flex items-center space-x-3">
               <FiAlertTriangle className="w-6 h-6 text-yellow-600" />
               <div>
-                <h4 className="font-semibold text-yellow-800">Vendor Belum Diterima</h4>
-                <p className="text-sm text-yellow-700 mt-1">Dokumentasi akan tersedia setelah Anda menerima salah satu vendor untuk proyek ini.</p>
+                <h4 className="font-semibold text-yellow-800">
+                  Vendor Belum Diterima
+                </h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Dokumentasi akan tersedia setelah Anda menerima salah satu
+                  vendor untuk proyek ini.
+                </p>
               </div>
             </div>
           </div>
@@ -2389,9 +2925,14 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             {documentationImages.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {documentationImages.map((image) => (
-                  <div key={image.id} className="aspect-square bg-gray-100 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative">
+                  <div
+                    key={image.id}
+                    className="aspect-square bg-gray-100 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative"
+                  >
                     <img
-                      src={imageErrors[`doc-${image.id}`] ? dummyImage : image.url}
+                      src={
+                        imageErrors[`doc-${image.id}`] ? dummyImage : image.url
+                      }
                       alt="Documentation"
                       className="w-full h-full object-cover"
                       onError={() => handleImageError(`doc-${image.id}`)}
@@ -2409,8 +2950,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden w-64 h-64 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-6xl mb-4">🖼️</div>
-                    <p className="text-gray-600 font-medium">Image Not Available</p>
-                    <p className="text-sm text-gray-500 mt-2">Vendor belum mengupload dokumentasi</p>
+                    <p className="text-gray-600 font-medium">
+                      Image Not Available
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Vendor belum mengupload dokumentasi
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2427,17 +2972,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     }
 
     switch (activeTab) {
-      case 'overview':
+      case "overview":
         return renderOverviewTab();
-      case 'tahapan':
+      case "tahapan":
         return renderTahapanTab();
-      case 'boq':
+      case "boq":
         return renderBOQTab();
-      case 'proposals':
+      case "proposals":
         return renderProposalsTab();
-      case 'negotiation':
+      case "negotiation":
         return renderNegotiationTab();
-      case 'dokumentasi':
+      case "dokumentasi":
         return renderDokumentasiTab();
       default:
         return renderOverviewTab();
@@ -2457,10 +3002,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <FiArrowLeft size={20} />
               <span className="font-medium">Back to Projects</span>
             </button>
-            
-            <div className="text-sm text-gray-500">
-              Project Owner Dashboard
-            </div>
+
+            <div className="text-sm text-gray-500">Project Owner Dashboard</div>
           </div>
         </div>
       </div>
@@ -2478,15 +3021,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`relative flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     <Icon size={16} />
                     {tab.label}
                     {tab.hasNotification && tab.notificationCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {tab.notificationCount > 9 ? '9+' : tab.notificationCount}
+                        {tab.notificationCount > 9
+                          ? "9+"
+                          : tab.notificationCount}
                       </span>
                     )}
                   </button>
