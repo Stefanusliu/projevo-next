@@ -732,28 +732,61 @@ export default function TransactionComponent() {
                   {/* Location */}
                   <p className="text-sm mb-3 text-gray-600">Jakarta Selatan</p>
 
-                  {/* Vendor */}
-                  <div className="mt-0">
-                    <p className="text-sm text-gray-500">Vendor</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {transaction.vendorName}
-                    </p>
-                  </div>
+                  {/* Two column layout for fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Left sub-column */}
+                    <div className="space-y-2">
+                      {/* Vendor */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Vendor</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {transaction.vendorName}
+                        </p>
+                      </div>
 
-                  {/* Status Proyek */}
-                  <div className="mt-0">
-                    <p className="text-sm text-gray-500">Status Proyek</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {getProjectOwnerStatusDescription(transaction.status)}
-                    </p>
-                  </div>
+                      {/* Status Proyek */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Status Proyek</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {getProjectOwnerStatusDescription(transaction.status)}
+                        </p>
+                      </div>
 
-                  {/* Jenis Tagihan */}
-                  <div className="mt-0">
-                    <p className="text-sm text-gray-500">Jenis Tagihan</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      Termin
-                    </p>
+                      {/* Jenis Tagihan */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Jenis Tagihan</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          Termin
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right sub-column */}
+                    <div className="space-y-2">
+                      {/* Nilai Kontrak */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Nilai Kontrak</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {formatCurrency(transaction.amount * 2)}
+                        </p>
+                      </div>
+
+                      {/* Escrow */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Escrow</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          Termin 3
+                        </p>
+                      </div>
+
+                      {/* Tahap Pembayaran */}
+                      <div className="mt-0">
+                        <p className="text-sm text-gray-500">Tahap Pembayaran</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {transaction.paymentType}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -785,33 +818,8 @@ export default function TransactionComponent() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 flex-1">
-                      {/* Left Column */}
+                      {/* Left Column - Empty now since we moved all fields to the left section */}
                       <div className="space-y-4">
-                        {/* Nilai Kontrak */}
-                        <div>
-                          <p className="text-sm text-gray-500">Nilai Kontrak</p>
-                          <p className="text-lg font-bold text-gray-900">
-                            {formatCurrency(transaction.amount * 2)}
-                          </p>
-                        </div>
-
-                        {/* Escrow */}
-                        <div>
-                          <p className="text-sm text-gray-500">Escrow</p>
-                          <p className="text-lg font-bold text-gray-900">
-                            Termin 3
-                          </p>
-                        </div>
-
-                        {/* Tahap Pembayaran */}
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Tahap Pembayaran
-                          </p>
-                          <p className="text-lg font-bold text-gray-900">
-                            {transaction.paymentType}
-                          </p>
-                        </div>
                       </div>
 
                       {/* Right Column - Nilai Tagihan positioned at same height as Jenis Tagihan */}
