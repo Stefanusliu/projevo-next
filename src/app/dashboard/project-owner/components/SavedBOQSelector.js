@@ -128,7 +128,7 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 mb-1">{boq.title || 'Untitled BOQ'}</h4>
+                        <h4 className="font-bold text-gray-900 mb-1">{boq.title || 'Untitled BOQ'}</h4>
                         <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
                           <span>{stats.tahapanCount} work phases</span>
                           <span>{stats.totalItems} total items</span>

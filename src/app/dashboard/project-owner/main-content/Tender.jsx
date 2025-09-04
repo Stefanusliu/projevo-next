@@ -362,7 +362,7 @@ const Tender = () => {
 
   // Format budget consistently
   const formatBudget = (budget) => {
-    if (!budget) return 'Budget not specified';
+    if (!budget) return 'Anggaran belum ada';
     
     // If it's already a formatted string, return as is
     if (typeof budget === 'string' && budget.includes('Rp')) {
@@ -378,7 +378,7 @@ const Tender = () => {
     }
     
     if (isNaN(numBudget) || numBudget === 0) {
-      return 'Budget not specified';
+      return 'Anggaran belum ada';
     }
     
     // Format with Indonesian locale

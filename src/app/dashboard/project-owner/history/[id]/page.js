@@ -139,7 +139,7 @@ export default function ProjectHistoryDetailPage() {
             </div>
             <div className="text-right ml-8">
               <div className="text-3xl font-bold text-slate-900 mb-2">
-                {formatCurrency(project.budget || project.totalBudget)}
+                {(project.budget === '0' || project.totalBudget === '0') ? 'Anggaran belum ada' : formatCurrency(project.budget || project.totalBudget)}
               </div>
               <p className="text-slate-600">Project Budget</p>
             </div>

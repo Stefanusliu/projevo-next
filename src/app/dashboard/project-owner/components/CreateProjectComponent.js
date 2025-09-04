@@ -23,6 +23,7 @@ export default function CreateProjectComponent({ onBack }) {
     propertyType: '',
     otherProperty: '',
     estimatedBudget: '',
+    budgetNotAvailable: false,
     estimatedDuration: '',
     tenderDuration: '',
     estimatedStartDate: '',
@@ -77,6 +78,7 @@ export default function CreateProjectComponent({ onBack }) {
           propertyType: projectData.propertyType || '',
           otherProperty: projectData.otherProperty || '',
           estimatedBudget: projectData.estimatedBudget || projectData.marketplace?.budget || projectData.budget || '',
+          budgetNotAvailable: (projectData.estimatedBudget || projectData.marketplace?.budget || projectData.budget) === '0',
           estimatedDuration: projectData.estimatedDuration || projectData.duration || '',
           tenderDuration: projectData.tenderDuration || '',
           estimatedStartDate: projectData.estimatedStartDate || projectData.startDate || '',
@@ -221,6 +223,9 @@ export default function CreateProjectComponent({ onBack }) {
 
   // Handle budget input with automatic formatting
   const handleBudgetChange = (value) => {
+    // If budget is not available, don't update
+    if (formData.budgetNotAvailable) return;
+    
     // Remove any non-digit characters except commas
     const cleanValue = value.replace(/[^\d,]/g, '');
     // Remove existing commas to get pure number
@@ -228,6 +233,15 @@ export default function CreateProjectComponent({ onBack }) {
     
     // Update the form data with clean number
     setFormData(prev => ({ ...prev, estimatedBudget: numberOnly }));
+  };
+
+  // Handle budget not available checkbox
+  const handleBudgetNotAvailableChange = (checked) => {
+    setFormData(prev => ({
+      ...prev,
+      budgetNotAvailable: checked,
+      estimatedBudget: checked ? '0' : prev.estimatedBudget
+    }));
   };
 
   // Get formatted budget for display
@@ -322,7 +336,7 @@ export default function CreateProjectComponent({ onBack }) {
         marketplace: {
           category: formData.projectType,
           tags: formData.projectScope,
-          budget: formData.estimatedBudget,
+          budget: formData.budgetNotAvailable ? '0' : formData.estimatedBudget,
           duration: formData.estimatedDuration,
           location: {
             province: formData.province,
@@ -372,7 +386,7 @@ export default function CreateProjectComponent({ onBack }) {
     // Validation
     if (!formData.projectTitle || !formData.province || !formData.city || !formData.fullAddress ||
         !formData.projectType || !formData.procurementMethod || !formData.propertyType ||
-        !formData.estimatedBudget || !formData.estimatedDuration || !formData.tenderDuration ||
+        (!formData.budgetNotAvailable && !formData.estimatedBudget) || !formData.estimatedDuration || !formData.tenderDuration ||
         !formData.estimatedStartDate || formData.projectScope.length === 0) {
       alert('Please fill in all required fields');
       return;
@@ -419,7 +433,7 @@ export default function CreateProjectComponent({ onBack }) {
         marketplace: {
           category: formData.projectType,
           tags: formData.projectScope,
-          budget: formData.estimatedBudget,
+          budget: formData.budgetNotAvailable ? '0' : formData.estimatedBudget,
           duration: formData.estimatedDuration,
           location: {
             province: formData.province,
@@ -750,12 +764,27 @@ export default function CreateProjectComponent({ onBack }) {
                 </span>
                 <input
                   type="text"
-                  value={getFormattedBudget()}
+                  value={formData.budgetNotAvailable ? '0' : getFormattedBudget()}
                   onChange={(e) => handleBudgetChange(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    formData.budgetNotAvailable ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                   placeholder="50,000,000"
-                  required
+                  required={!formData.budgetNotAvailable}
+                  disabled={formData.budgetNotAvailable}
                 />
+              </div>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="budgetNotAvailable"
+                  checked={formData.budgetNotAvailable}
+                  onChange={(e) => handleBudgetNotAvailableChange(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="budgetNotAvailable" className="ml-2 text-sm text-gray-700">
+                  Belum ada
+                </label>
               </div>
               <p className="text-xs text-gray-400 mt-1">
                 Contoh: 50,000,000 (untuk Rp 50.000.000)
@@ -934,7 +963,7 @@ export default function CreateProjectComponent({ onBack }) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">
-                      BOQ Attached: {selectedBOQ.title || 'Untitled BOQ'}
+                      BOQ Attached: <span className="font-bold">{selectedBOQ.title || 'Untitled BOQ'}</span>
                     </p>
                     <div className="flex items-center space-x-4 text-xs text-green-600 mt-1">
                       <span>{selectedBOQ.tahapanKerja?.length || 0} work phases</span>
