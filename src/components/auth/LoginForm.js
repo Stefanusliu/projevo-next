@@ -22,7 +22,7 @@ export default function LoginForm() {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      setErrors({ submit: 'Please fill in all fields' });
+      setErrors({ submit: 'Silakan isi semua kolom' });
       return;
     }
 
@@ -35,16 +35,16 @@ export default function LoginForm() {
     } catch (error) {
       console.error('Login error:', error);
       
-      let errorMessage = 'Login failed. Please try again.';
+      let errorMessage = 'Login gagal. Silakan coba lagi.';
       
       if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
+        errorMessage = 'Tidak ada akun yang ditemukan dengan email ini.';
       } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
+        errorMessage = 'Kata sandi salah. Silakan coba lagi.';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
+        errorMessage = 'Silakan masukkan alamat email yang valid.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
+        errorMessage = 'Terlalu banyak percobaan gagal. Silakan coba lagi nanti.';
       }
       
       setErrors({ submit: errorMessage });
@@ -62,7 +62,7 @@ export default function LoginForm() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Google sign in error:', error);
-      setErrors({ submit: 'Google sign-in failed. Please try again.' });
+      setErrors({ submit: 'Login Google gagal. Silakan coba lagi.' });
     } finally {
       setLoading(false);
     }
@@ -85,46 +85,44 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
+                <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
+        Masuk ke Akun Anda
+      </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome back to Projevo
+            Selamat datang kembali di Projevo
           </p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your email"
-              />
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Masukkan email Anda"
+          required
+        />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your password"
-              />
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          Kata Sandi
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Masukkan kata sandi Anda"
+          required
+        />
             </div>
 
             <div className="flex items-center justify-between">
@@ -138,13 +136,13 @@ export default function LoginForm() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
-                  Remember me
+                  Ingat saya
                 </label>
               </div>
 
               <div className="text-sm">
                 <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                  Forgot your password?
+                  Lupa kata sandi?
                 </a>
               </div>
             </div>
@@ -162,7 +160,7 @@ export default function LoginForm() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Masuk...' : 'Masuk'}
             </button>
           </div>
 
@@ -172,7 +170,7 @@ export default function LoginForm() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+                <span className="px-2 bg-gray-50 text-gray-500">Atau lanjutkan dengan</span>
               </div>
             </div>
 
@@ -189,16 +187,16 @@ export default function LoginForm() {
                   <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Sign in with Google
+                Masuk dengan Google
               </button>
             </div>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{' '}
+              Belum punya akun?{' '}
               <a href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign up
+                Daftar
               </a>
             </p>
           </div>

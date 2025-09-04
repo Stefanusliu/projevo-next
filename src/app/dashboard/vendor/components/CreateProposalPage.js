@@ -163,10 +163,10 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
   // Step titles
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return 'BOQ Pricing';
+      case 1: return 'Penetapan Harga BOQ';
       case 2: return 'Pilihan Negosiasi';
       case 3: return 'Ringkasan & Konfirmasi';
-      default: return 'BOQ Pricing';
+      default: return 'Penetapan Harga BOQ';
     }
   };
 
@@ -402,7 +402,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
       <div className="p-6">
         <p>Project not found</p>
         <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded">
-          Back
+          Kembali
         </button>
       </div>
     );
@@ -423,7 +423,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Projects
+                Kembali ke Proyek
               </button>
               
               <div className="flex items-center space-x-3">
@@ -538,7 +538,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-semibold text-gray-900">Step 1: BOQ Pricing</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Langkah 1: Penetapan Harga BOQ</h2>
                     {isEditing && (
                       <span className="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
                         Editing
@@ -604,19 +604,19 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                               Uraian
                             </th>
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                              Item Description
+                              Deskripsi Item
                             </th>
                             <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                               Volume
                             </th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                              Unit
+                              Satuan
                             </th>
                             <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                              Reference Price
+                              Harga Referensi
                             </th>
                             <th className="px-4 py-4 text-right text-xs font-semibold text-blue-700 uppercase tracking-wider border-r border-gray-200 bg-blue-50">
-                              Your Price *
+                              Harga Anda *
                             </th>
                             <th className="px-4 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                               Subtotal
@@ -697,12 +697,12 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-sm font-medium text-amber-800 mb-1">Pricing Tips</h3>
+                        <h3 className="text-sm font-medium text-amber-800 mb-1">Tips Penetapan Harga</h3>
                         <ul className="text-sm text-amber-700 space-y-1">
-                          <li>• Consider market rates and your competition</li>
-                          <li>• Factor in material costs, labor, and profit margins</li>
-                          <li>• Reference prices are for guidance only</li>
-                          <li>• All prices should be in Indonesian Rupiah (IDR)</li>
+                          <li>• Pertimbangkan harga pasar dan kompetitor Anda</li>
+                          <li>• Perhitungkan biaya material, tenaga kerja, dan margin keuntungan</li>
+                          <li>• Harga referensi hanya sebagai panduan</li>
+                          <li>• Semua harga harus dalam Rupiah Indonesia (IDR)</li>
                         </ul>
                       </div>
                     </div>
@@ -724,7 +724,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Step 2: Terms & Options</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Langkah 2: Syarat & Opsi</h2>
                   <p className="text-indigo-700 mt-1">
                     Define your pricing terms and project conditions
                   </p>
@@ -769,13 +769,13 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                         <span className="font-semibold text-gray-900">Harga Negotiable</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">
-                        Your prices can be discussed and adjusted during negotiation with the client
+                        Harga Anda dapat didiskusikan dan disesuaikan selama negosiasi dengan klien
                       </p>
                       <div className="flex items-center gap-2 text-xs text-emerald-700">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Flexible for clients
+                        Fleksibel untuk klien
                       </div>
                     </div>
                     {proposalData.negotiable === 'negotiable' && (
@@ -810,13 +810,13 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                         <span className="font-semibold text-gray-900">Harga Tidak Negotiable</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">
-                        Your prices are final and cannot be changed during negotiation
+                        Harga Anda bersifat final dan tidak dapat diubah selama negosiasi
                       </p>
                       <div className="flex items-center gap-2 text-xs text-blue-700">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
-                        Clear pricing structure
+                        Struktur harga yang jelas
                       </div>
                     </div>
                     {proposalData.negotiable === 'fixed' && (
@@ -865,9 +865,9 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Step 3: Proposal Summary</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Langkah 3: Ringkasan Penawaran</h2>
                   <p className="text-emerald-700 mt-1">
-                    Review your complete proposal before submission
+                    Tinjau penawaran lengkap Anda sebelum pengiriman
                   </p>
                 </div>
               </div>
@@ -920,29 +920,29 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                 <div className="bg-white rounded-lg p-4 border border-emerald-200">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-gray-600">Total Proposal Amount</p>
+                      <p className="text-sm text-gray-600">Total Jumlah Penawaran</p>
                       <p className="text-3xl font-bold text-emerald-700">
                         {formatCurrency(proposalData.totalAmount)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-600">BOQ Items</p>
+                      <p className="text-sm text-gray-600">Item BOQ</p>
                       <p className="text-xl font-semibold text-gray-900">{proposalData.boqPricing.length}</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-emerald-100">
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Pricing Type</p>
+                      <p className="text-sm text-gray-600">Tipe Harga</p>
                       <div className="flex items-center justify-center gap-2 mt-1">
                         <div className={`w-3 h-3 rounded-full ${proposalData.negotiable === 'negotiable' ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
                         <p className="font-semibold text-gray-900">
-                          {proposalData.negotiable === 'negotiable' ? 'Negotiable' : 'Fixed Price'}
+                          {proposalData.negotiable === 'negotiable' ? 'Negotiable' : 'Harga Tetap'}
                         </p>
                       </div>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">Completion</p>
+                      <p className="text-sm text-gray-600">Kelengkapan</p>
                       <div className="flex items-center justify-center gap-1 mt-1">
                         <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -960,7 +960,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                   <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
-                  <h3 className="text-lg font-semibold text-gray-900">BOQ Pricing Breakdown</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Rincian Harga BOQ</h3>
                 </div>
                 
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -970,7 +970,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                         <tr>
                           <th className="px-4 py-3 text-left font-medium text-gray-700">Item</th>
                           <th className="px-4 py-3 text-right font-medium text-gray-700">Volume</th>
-                          <th className="px-4 py-3 text-right font-medium text-gray-700">Unit Price</th>
+                          <th className="px-4 py-3 text-right font-medium text-gray-700">Harga Satuan</th>
                           <th className="px-4 py-3 text-right font-medium text-gray-700">Subtotal</th>
                         </tr>
                       </thead>
@@ -1087,7 +1087,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Previous Step
+            Langkah Sebelumnya
           </button>
 
           <div className="flex items-center space-x-4">
@@ -1109,7 +1109,7 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                 disabled={!validateStep(currentStep)}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-indigo-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                Next Step
+                Langkah Selanjutnya
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -1123,14 +1123,14 @@ export default function CreateProposalPage({ project, existingProposal, isEditin
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {isEditing ? 'Updating Proposal...' : 'Submitting Proposal...'}
+                    {isEditing ? 'Memperbarui Penawaran...' : 'Mengirim Penawaran...'}
                   </>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
-                    {isEditing ? 'Update Proposal' : 'Submit Proposal'}
+                    {isEditing ? 'Perbarui Penawaran' : 'Kirim Penawaran'}
                   </>
                 )}
               </button>

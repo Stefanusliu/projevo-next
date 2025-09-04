@@ -138,10 +138,10 @@ export default function Profile() {
       await updateUserProfile(dataToSave);
       setOriginalData(profileData);
       setIsEditing(false);
-      setMessage('Profile updated successfully!');
+      setMessage('Profil berhasil diperbarui!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage('Failed to update profile. Please try again.');
+      setMessage('Gagal memperbarui profil. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -155,12 +155,12 @@ export default function Profile() {
 
   // Define tabs based on account type
   const tabs = [
-    { id: 'personal', label: 'Personal Info', icon: <FiUser className="w-4 h-4" /> },
+    { id: 'personal', label: 'Info Pribadi', icon: <FiUser className="w-4 h-4" /> },
     // Only show company tab for 'perusahaan' account type
-    ...(profileData.accountType === 'perusahaan' ? [{ id: 'company', label: 'Company', icon: <FiHome className="w-4 h-4" /> }] : []),
-    { id: 'professional', label: 'Professional', icon: <FiBriefcase className="w-4 h-4" /> },
-    { id: 'preferences', label: 'Preferences', icon: <FiSettings className="w-4 h-4" /> },
-    { id: 'security', label: 'Security', icon: <FiShield className="w-4 h-4" /> }
+    ...(profileData.accountType === 'perusahaan' ? [{ id: 'company', label: 'Perusahaan', icon: <FiHome className="w-4 h-4" /> }] : []),
+    { id: 'professional', label: 'Profesional', icon: <FiBriefcase className="w-4 h-4" /> },
+    { id: 'preferences', label: 'Preferensi', icon: <FiSettings className="w-4 h-4" /> },
+    { id: 'security', label: 'Keamanan', icon: <FiShield className="w-4 h-4" /> }
   ];
 
   // Indonesian provinces and their cities
@@ -217,26 +217,26 @@ export default function Profile() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-              <p className="text-gray-600 mt-2">Manage your account information and preferences</p>
+              <h1 className="text-3xl font-bold text-gray-900">Pengaturan Profil</h1>
+              <p className="text-gray-600 mt-2">Kelola informasi akun dan preferensi Anda</p>
             </div>
             <div className="flex items-center space-x-3">
               {isEditing ? (
                 <>
-                  <button onClick={handleCancel} disabled={loading} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
-                  <button onClick={handleSave} disabled={loading} className="px-6 py-2 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl disabled:opacity-50" style={{ backgroundColor: '#2373FF' }}>{loading ? 'Saving...' : 'Save Changes'}</button>
+                  <button onClick={handleCancel} disabled={loading} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">Batal</button>
+                  <button onClick={handleSave} disabled={loading} className="px-6 py-2 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl disabled:opacity-50" style={{ backgroundColor: '#2373FF' }}>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => setIsEditing(true)} className="px-6 py-2 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center space-x-2" style={{ backgroundColor: '#2373FF' }}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg><span>Edit Profile</span></button>
-                  <button onClick={() => logout()} className="px-4 py-2 border border-red-300 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center space-x-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Logout</span></button>
+                  <button onClick={() => setIsEditing(true)} className="px-6 py-2 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center space-x-2" style={{ backgroundColor: '#2373FF' }}><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg><span>Edit Profil</span></button>
+                  <button onClick={() => logout()} className="px-4 py-2 border border-red-300 text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center space-x-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Keluar</span></button>
                 </>
               )}
             </div>
           </div>
         </div>
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.includes('success') || message.includes('successfully') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{message}</div>
+          <div className={`mb-6 p-4 rounded-lg ${message.includes('berhasil') || message.includes('successfully') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{message}</div>
         )}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Profile Summary Card */}
@@ -257,7 +257,7 @@ export default function Profile() {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 mt-4">
                   {profileData.accountType === 'perusahaan' 
-                    ? profileData.company || 'Company Name'
+                    ? profileData.company || 'Nama Perusahaan'
                     : `${profileData.firstName} ${profileData.lastName}`
                   }
                 </h2>
@@ -272,11 +272,11 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
                   <div className="text-center">
                     <div className="text-2xl font-bold" style={{ color: '#2373FF' }}>{profileData.projectsCompleted || 0}</div>
-                    <div className="text-xs text-gray-600">Projects</div>
+                    <div className="text-xs text-gray-600">Proyek</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-600">{profileData.yearsOfExperience || 0}</div>
-                    <div className="text-xs text-gray-600">Years Exp.</div>
+                    <div className="text-xs text-gray-600">Thn Pengalaman</div>
                   </div>
                 </div>
               </div>
@@ -296,20 +296,20 @@ export default function Profile() {
               {/* Personal Tab */}
               {activeTab === 'personal' && (
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Informasi Pribadi</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Account Type Display (Read-only) */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Akun</label>
                       <p className="text-gray-900 font-medium py-2 px-4 bg-gray-50 rounded-lg border">
-                        {profileData.accountType === 'perusahaan' ? 'Company Account (Perusahaan)' : 'Personal Account (Individu)'}
+                        {profileData.accountType === 'perusahaan' ? 'Akun Perusahaan' : 'Akun Pribadi (Individu)'}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Account type cannot be changed after registration</p>
+                      <p className="text-xs text-gray-500 mt-1">Jenis akun tidak dapat diubah setelah registrasi</p>
                     </div>
 
                     {profileData.accountType === 'perusahaan' ? (
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nama Perusahaan</label>
                         {isEditing ? (
                           <input 
                             type="text" 
@@ -318,13 +318,13 @@ export default function Profile() {
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                           />
                         ) : (
-                          <p className="text-gray-900 font-medium py-2">{profileData.company || 'Not specified'}</p>
+                          <p className="text-gray-900 font-medium py-2">{profileData.company || 'Belum ditentukan'}</p>
                         )}
                       </div>
                     ) : (
                       <>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Nama Depan</label>
                           {isEditing ? (
                             <input type="text" value={profileData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                           ) : (
@@ -332,7 +332,7 @@ export default function Profile() {
                           )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Nama Belakang</label>
                           {isEditing ? (
                             <input type="text" value={profileData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                           ) : (
@@ -350,19 +350,19 @@ export default function Profile() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Telepon</label>
                       {isEditing ? (
                         <input type="tel" value={profileData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                       ) : (
-                        <p className="text-gray-900 font-medium py-2">{profileData.phone || 'Not specified'}</p>
+                        <p className="text-gray-900 font-medium py-2">{profileData.phone || 'Belum ditentukan'}</p>
                       )}
                     </div>
                     
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        City
+                        Kota
                         {!profileData.city && (
-                          <FiAlertTriangle className="w-4 h-4 text-orange-500 ml-2" title="City is required" />
+                          <FiAlertTriangle className="w-4 h-4 text-orange-500 ml-2" title="Kota wajib diisi" />
                         )}
                       </label>
                       {isEditing ? (
@@ -373,7 +373,7 @@ export default function Profile() {
                               onChange={(e) => handleInputChange('city', e.target.value)} 
                               className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!profileData.city ? 'border-orange-300' : 'border-gray-300'}`}
                             >
-                              <option value="">Select City</option>
+                              <option value="">Pilih Kota</option>
                               {getCitiesForProvince(profileData.province).map((city) => (
                                 <option key={city} value={city}>{city}</option>
                               ))}
@@ -384,19 +384,19 @@ export default function Profile() {
                                 disabled 
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                               >
-                                <option value="">Please select province first</option>
+                                <option value="">Silakan pilih provinsi terlebih dahulu</option>
                               </select>
-                              <p className="text-sm text-gray-500 mt-1">Select a province first to see available cities</p>
+                              <p className="text-sm text-gray-500 mt-1">Pilih provinsi terlebih dahulu untuk melihat kota yang tersedia</p>
                             </div>
                           )}
                           {!profileData.city && profileData.province && (
-                            <p className="text-orange-600 text-xs mt-1">City is required for complete profile</p>
+                            <p className="text-orange-600 text-xs mt-1">Kota wajib diisi untuk profil yang lengkap</p>
                           )}
                         </div>
                       ) : (
                         <div>
                           <p className={`font-medium py-2 ${!profileData.city ? 'text-orange-600' : 'text-gray-900'}`}>
-                            {profileData.city || 'Not specified - Please select your city'}
+                            {profileData.city || 'Belum ditentukan - Silakan pilih kota Anda'}
                           </p>
                         </div>
                       )}
@@ -404,9 +404,9 @@ export default function Profile() {
                     
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        Province
+                        Provinsi
                         {!profileData.province && (
-                          <FiAlertTriangle className="w-4 h-4 text-orange-500 ml-2" title="Province is required" />
+                          <FiAlertTriangle className="w-4 h-4 text-orange-500 ml-2" title="Provinsi wajib diisi" />
                         )}
                       </label>
                       {isEditing ? (
@@ -416,7 +416,7 @@ export default function Profile() {
                             onChange={(e) => handleInputChange('province', e.target.value)} 
                             className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!profileData.province ? 'border-orange-300' : 'border-gray-300'}`}
                           >
-                            <option value="">Select Province</option>
+                            <option value="">Pilih Provinsi</option>
                             <option value="Aceh">Aceh</option>
                             <option value="Bali">Bali</option>
                             <option value="Banten">Banten</option>
@@ -457,13 +457,13 @@ export default function Profile() {
                             <option value="Sumatera Utara">Sumatera Utara</option>
                           </select>
                           {!profileData.province && (
-                            <p className="text-orange-600 text-xs mt-1">Province is required for complete profile</p>
+                            <p className="text-orange-600 text-xs mt-1">Provinsi wajib diisi untuk profil yang lengkap</p>
                           )}
                         </div>
                       ) : (
                         <div>
                           <p className={`font-medium py-2 ${!profileData.province ? 'text-orange-600' : 'text-gray-900'}`}>
-                            {profileData.province || 'Not specified - Please select your province'}
+                            {profileData.province || 'Belum ditentukan - Silakan pilih provinsi Anda'}
                           </p>
                         </div>
                       )}
@@ -482,7 +482,7 @@ export default function Profile() {
                             placeholder="XX.XXX.XXX.X-XXX.XXX"
                           />
                         ) : (
-                          <p className="text-gray-900 font-medium py-2">{profileData.npwp || 'Not provided'}</p>
+                          <p className="text-gray-900 font-medium py-2">{profileData.npwp || 'Belum disediakan'}</p>
                         )}
                       </div>
                     )}
@@ -492,10 +492,10 @@ export default function Profile() {
               {/* Company Tab */}
               {activeTab === 'company' && (
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Informasi Perusahaan</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nama Perusahaan</label>
                       {isEditing ? (
                         <input type="text" value={profileData.company} onChange={(e) => handleInputChange('company', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                       ) : (
@@ -503,7 +503,7 @@ export default function Profile() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spesialisasi</label>
                       {isEditing ? (
                         <input type="text" value={profileData.specialization} onChange={(e) => handleInputChange('specialization', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                       ) : (
@@ -511,7 +511,7 @@ export default function Profile() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Pengalaman</label>
                       {isEditing ? (
                         <input type="text" value={profileData.experience} onChange={(e) => handleInputChange('experience', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                       ) : (
@@ -519,7 +519,7 @@ export default function Profile() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">License</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lisensi</label>
                       {isEditing ? (
                         <input type="text" value={profileData.license} onChange={(e) => handleInputChange('license', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                       ) : (
@@ -540,12 +540,12 @@ export default function Profile() {
               {/* Professional Tab */}
               {activeTab === 'professional' && (
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Professional Information</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6">Informasi Profesional</h3>
                   <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center">
                         <div className="text-3xl font-bold text-blue-600">{profileData.yearsOfExperience || 0}</div>
-                        <div className="text-sm text-blue-700 mt-1">Years of Experience</div>
+                        <div className="text-sm text-blue-700 mt-1">Tahun Pengalaman</div>
                       </div>
                       <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 text-center">
                         <div className="text-3xl font-bold text-green-600">{profileData.projectsCompleted || 0}</div>

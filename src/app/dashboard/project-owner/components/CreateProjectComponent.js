@@ -291,13 +291,13 @@ export default function CreateProjectComponent({ onBack }) {
 
   const saveDraft = async () => {
     if (!user?.uid) {
-      alert('Please log in to save a draft');
+      alert('Silakan masuk untuk menyimpan draft');
       return;
     }
 
     // Basic validation - at least project title should be filled
     if (!formData.projectTitle) {
-      alert('Please enter a project title before saving as draft');
+      alert('Silakan masukkan judul proyek sebelum menyimpan sebagai draft');
       return;
     }
 
@@ -363,13 +363,13 @@ export default function CreateProjectComponent({ onBack }) {
       console.log('Draft saved with Firestore ID:', docRef.id, 'Custom ID:', customProjectId);
       console.log('Full draft data saved:', draftData);
       
-      alert(`Draft saved successfully! Your draft ID is: ${customProjectId}. You can continue editing this project later.`);
+      alert(`Draft berhasil disimpan! ID draft Anda adalah: ${customProjectId}. Anda dapat melanjutkan mengedit proyek ini nanti.`);
       
       // Optional: Clear the form or go back to dashboard
       // onBack();
     } catch (error) {
       console.error('Error saving draft:', error);
-      alert('Failed to save draft. Please try again.');
+      alert('Gagal menyimpan draft. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -379,7 +379,7 @@ export default function CreateProjectComponent({ onBack }) {
     e.preventDefault();
     
     if (!user?.uid) {
-      alert('Please log in to create a project');
+      alert('Silakan masuk untuk membuat proyek');
       return;
     }
 
@@ -388,13 +388,13 @@ export default function CreateProjectComponent({ onBack }) {
         !formData.projectType || !formData.procurementMethod || !formData.propertyType ||
         (!formData.budgetNotAvailable && !formData.estimatedBudget) || !formData.estimatedDuration || !formData.tenderDuration ||
         !formData.estimatedStartDate || formData.projectScope.length === 0) {
-      alert('Please fill in all required fields');
+      alert('Silakan lengkapi semua field yang wajib diisi');
       return;
     }
 
     // Check required agreements
     if (!formData.agreementTerms || !formData.agreementData || !formData.agreementValidation) {
-      alert('Please accept all required agreements to continue');
+      alert('Silakan setujui semua persetujuan yang diperlukan untuk melanjutkan');
       return;
     }
 
@@ -472,20 +472,20 @@ export default function CreateProjectComponent({ onBack }) {
         console.log('Project updated with ID:', editingProjectId);
         console.log('Updated project data:', projectData);
         
-        alert('Project updated successfully! Your changes have been saved and the project is pending approval.');
+        alert('Proyek berhasil diperbarui! Perubahan Anda telah disimpan dan proyek sedang menunggu persetujuan.');
       } else {
         // Create new project
         const docRef = await addDoc(collection(db, 'projects'), projectData);
         console.log('Project created with Firestore ID:', docRef.id, 'Custom ID:', customProjectId);
         console.log('Full project data saved:', projectData);
         
-        alert(`Project submitted successfully! Your project ID is: ${customProjectId}. Your project is now pending approval and will be available in the marketplace once approved.`);
+        alert(`Proyek berhasil disubmit! ID proyek Anda adalah: ${customProjectId}. Proyek Anda sekarang sedang menunggu persetujuan dan akan tersedia di marketplace setelah disetujui.`);
       }
       
       onBack();
     } catch (error) {
       console.error(isEditMode ? 'Error updating project:' : 'Error creating project:', error);
-      alert(isEditMode ? 'Failed to update project. Please try again.' : 'Failed to create project. Please try again.');
+      alert(isEditMode ? 'Gagal memperbarui proyek. Silakan coba lagi.' : 'Gagal membuat proyek. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -503,11 +503,11 @@ export default function CreateProjectComponent({ onBack }) {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Projects
+            Kembali ke Proyek
           </button>
           <div className="h-6 w-px bg-gray-300"></div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? 'Edit Project' : 'Buat Proyek Baru'}
+            {isEditMode ? 'Edit Proyek' : 'Buat Proyek Baru'}
           </h1>
         </div>
         <div className="flex items-center space-x-3">
@@ -515,7 +515,7 @@ export default function CreateProjectComponent({ onBack }) {
             onClick={saveDraft}
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
           >
-            Save as Draft
+            Simpan sebagai Draft
           </button>
         </div>
       </div>
@@ -678,7 +678,7 @@ export default function CreateProjectComponent({ onBack }) {
                 1. Jenis Proyek *
               </label>
               <p className="text-xs text-gray-500 mb-3">
-                This is a required question
+                Ini adalah pertanyaan wajib
               </p>
               <select
                 value={formData.projectType}
@@ -930,11 +930,11 @@ export default function CreateProjectComponent({ onBack }) {
           {/* BOQ Attachment Section */}
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-              BOQ Attachment (Optional)
+              Lampiran BOQ (Opsional)
             </h3>
             <p className="text-sm text-gray-600">
-              Attach a Bill of Quantities (BOQ) to provide detailed project specifications and cost estimates to vendors. 
-              BOQs created in BOQ Maker will be available for selection here.
+              Lampirkan Bill of Quantities (BOQ) untuk memberikan spesifikasi proyek yang detail dan estimasi biaya kepada vendor. 
+              BOQ yang dibuat di BOQ Maker akan tersedia untuk dipilih di sini.
             </p>
             
             <div className="flex items-center justify-between mb-4">
@@ -946,14 +946,14 @@ export default function CreateProjectComponent({ onBack }) {
                   rel="noopener noreferrer"
                   className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
                 >
-                  Create New BOQ
+                  Buat BOQ Baru
                 </a>
                 <button
                   type="button"
                   onClick={() => setShowBOQSelector(true)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  {selectedBOQ ? 'Change BOQ' : 'Attach BOQ'}
+                  {selectedBOQ ? 'Ubah BOQ' : 'Lampirkan BOQ'}
                 </button>
               </div>
             </div>
@@ -963,17 +963,17 @@ export default function CreateProjectComponent({ onBack }) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">
-                      BOQ Attached: <span className="font-bold">{selectedBOQ.title || 'Untitled BOQ'}</span>
+                      BOQ Terlampir: <span className="font-bold">{selectedBOQ.title || 'BOQ Tanpa Judul'}</span>
                     </p>
                     <div className="flex items-center space-x-4 text-xs text-green-600 mt-1">
-                      <span>{selectedBOQ.tahapanKerja?.length || 0} work phases</span>
+                      <span>{selectedBOQ.tahapanKerja?.length || 0} tahapan kerja</span>
                       {selectedBOQ.createdAt && (
-                        <span>Created: {new Date(selectedBOQ.createdAt).toLocaleDateString('id-ID')}</span>
+                        <span>Dibuat: {new Date(selectedBOQ.createdAt).toLocaleDateString('id-ID')}</span>
                       )}
                     </div>
                     {selectedBOQ.updatedAt && selectedBOQ.updatedAt !== selectedBOQ.createdAt && (
                       <p className="text-xs text-green-500 mt-1">
-                        Last updated: {new Date(selectedBOQ.updatedAt).toLocaleDateString('id-ID')}
+                        Terakhir diperbarui: {new Date(selectedBOQ.updatedAt).toLocaleDateString('id-ID')}
                       </p>
                     )}
                   </div>
@@ -981,7 +981,7 @@ export default function CreateProjectComponent({ onBack }) {
                     type="button"
                     onClick={() => setSelectedBOQ(null)}
                     className="text-green-600 hover:text-green-800 transition-colors ml-4"
-                    title="Remove BOQ"
+                    title="Hapus BOQ"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -992,7 +992,7 @@ export default function CreateProjectComponent({ onBack }) {
             ) : (
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  No BOQ attached. You can attach a saved BOQ from BOQ Maker to this project.
+                  Tidak ada BOQ terlampir. Anda dapat melampirkan BOQ tersimpan dari BOQ Maker ke proyek ini.
                 </p>
               </div>
             )}
@@ -1001,18 +1001,18 @@ export default function CreateProjectComponent({ onBack }) {
           {/* Special Notes Section */}
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-              Special Notes (Optional)
+              Catatan Khusus (Opsional)
             </h3>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Requirements or Notes
+                Kebutuhan atau Catatan Tambahan
               </label>
               <textarea
                 value={formData.specialNotes}
                 onChange={(e) => handleInputChange('specialNotes', e.target.value)}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter any special requirements, notes, or additional information for vendors"
+                placeholder="Masukkan kebutuhan khusus, catatan, atau informasi tambahan untuk vendor"
               />
               {renderFieldRevisionComment('specialNotes')}
             </div>
@@ -1021,10 +1021,10 @@ export default function CreateProjectComponent({ onBack }) {
           {/* Agreements Section */}
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-              Terms and Agreements *
+              Syarat dan Persetujuan *
             </h3>
             <p className="text-sm text-gray-600">
-              Please review and accept the following agreements to proceed with project submission:
+              Silakan tinjau dan setujui persetujuan berikut untuk melanjutkan pengiriman proyek:
             </p>
             
             <div className="space-y-4">
@@ -1040,10 +1040,10 @@ export default function CreateProjectComponent({ onBack }) {
                 />
                 <div className="flex-1">
                   <label htmlFor="agreementTerms" className="text-sm font-medium text-gray-900 cursor-pointer">
-                    I agree to the Terms of Service and Project Guidelines
+                    Saya setuju dengan Syarat Layanan dan Panduan Proyek
                   </label>
                   <p className="text-xs text-gray-600 mt-1">
-                    By checking this box, you agree to abide by Projevo&apos;s terms of service, project guidelines, and understand the responsibilities as a project owner.
+                    Dengan mencentang kotak ini, Anda setuju untuk mematuhi syarat layanan Projevo, panduan proyek, dan memahami tanggung jawab sebagai pemilik proyek.
                   </p>
                 </div>
               </div>
@@ -1060,10 +1060,10 @@ export default function CreateProjectComponent({ onBack }) {
                 />
                 <div className="flex-1">
                   <label htmlFor="agreementData" className="text-sm font-medium text-gray-900 cursor-pointer">
-                    I consent to data processing and marketplace listing
+                    Saya menyetujui pemrosesan data dan pencantuman di marketplace
                   </label>
                   <p className="text-xs text-gray-600 mt-1">
-                    You consent to the processing of your project data and agree to have your project listed on the marketplace after approval.
+                    Anda menyetujui pemrosesan data proyek Anda dan setuju untuk proyek Anda dicantumkan di marketplace setelah disetujui.
                   </p>
                 </div>
               </div>
@@ -1080,10 +1080,10 @@ export default function CreateProjectComponent({ onBack }) {
                 />
                 <div className="flex-1">
                   <label htmlFor="agreementValidation" className="text-sm font-medium text-gray-900 cursor-pointer">
-                    I confirm that all information provided is accurate and complete
+                    Saya mengonfirmasi bahwa semua informasi yang diberikan akurat dan lengkap
                   </label>
                   <p className="text-xs text-gray-600 mt-1">
-                    You confirm that all project information, requirements, and specifications provided are accurate, complete, and truthful to the best of your knowledge.
+                    Anda mengonfirmasi bahwa semua informasi proyek, kebutuhan, dan spesifikasi yang diberikan akurat, lengkap, dan sesuai pengetahuan terbaik Anda.
                   </p>
                 </div>
               </div>
@@ -1095,10 +1095,10 @@ export default function CreateProjectComponent({ onBack }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="text-sm text-blue-800">
-                  <p className="font-medium">Moderation Process</p>
+                  <p className="font-medium">Proses Moderasi</p>
                   <p className="mt-1">
-                    Your project will be submitted for review and approval. Once approved by our team, 
-                    it will be published on the marketplace and vendors will be able to submit proposals.
+                    Proyek Anda akan disubmit untuk ditinjau dan disetujui. Setelah disetujui oleh tim kami, 
+                    proyek akan dipublikasikan di marketplace dan vendor akan dapat mengirimkan proposal.
                   </p>
                 </div>
               </div>
@@ -1120,10 +1120,10 @@ export default function CreateProjectComponent({ onBack }) {
               {loading ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-500 rounded-full animate-spin"></div>
-                  <span>Submitting for Approval...</span>
+                  <span>Mengirim untuk Persetujuan...</span>
                 </div>
               ) : (
-                'Submit Project for Approval'
+                'Kirim Proyek untuk Persetujuan'
               )}
             </button>
           </div>

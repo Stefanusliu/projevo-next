@@ -481,29 +481,29 @@ export default function Profile() {
   const tabs = [
     { 
       id: 'personal', 
-      label: 'Personal Info', 
+      label: 'Info Personal', 
       icon: <FiUser className="w-4 h-4" />
     },
     // Only show company tab for 'perusahaan' account type
     ...(profileData.accountType === 'perusahaan' ? [{ 
       id: 'company', 
-      label: 'Company', 
+      label: 'Perusahaan', 
       icon: <FiHome className="w-4 h-4" />
     }] : []),
     { 
       id: 'address', 
-      label: 'Address', 
+      label: 'Alamat', 
       icon: <FiMapPin className="w-4 h-4" />
     },
     // Professional tab removed for project owners
     { 
       id: 'preferences', 
-      label: 'Preferences', 
+      label: 'Preferensi', 
       icon: <FiSettings className="w-4 h-4" />
     },
     { 
       id: 'security', 
-      label: 'Security', 
+      label: 'Keamanan', 
       icon: <FiShield className="w-4 h-4" />
     }
   ];
@@ -515,9 +515,9 @@ export default function Profile() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Pengaturan Profil</h1>
               <p className="text-gray-600 mt-2">
-                Manage your account information and preferences
+                Kelola informasi akun dan preferensi Anda
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -528,7 +528,7 @@ export default function Profile() {
                     disabled={loading}
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button
                     onClick={handleSave}
@@ -538,7 +538,7 @@ export default function Profile() {
                     onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#1a5ce6')}
                     onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#2373FF')}
                   >
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
                   </button>
                 </>
               ) : (
@@ -553,7 +553,7 @@ export default function Profile() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
-                    <span>Edit Profile</span>
+                    <span>Edit Profil</span>
                   </button>
                   <button
                     onClick={() => logout()}
@@ -562,7 +562,7 @@ export default function Profile() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span>Logout</span>
+                    <span>Keluar</span>
                   </button>
                 </>
               )}
@@ -652,7 +652,7 @@ export default function Profile() {
                       {profileData.projectsCompleted || 0}
                     </div>
                     <div className="text-xs text-gray-600">
-                      Projects
+                      Proyek
                     </div>
                   </div>
                   <div className="text-center">
@@ -660,7 +660,7 @@ export default function Profile() {
                       {profileData.yearsOfExperience || 0}
                     </div>
                     <div className="text-xs text-gray-600">
-                      Years Exp.
+                      Tahun Pengalaman
                     </div>
                   </div>
                 </div>
@@ -695,12 +695,12 @@ export default function Profile() {
               {activeTab === 'personal' && (
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                    Personal Information
+                    Informasi Personal
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name
+                        Nama Depan
                       </label>
                       {isEditing ? (
                         <input
@@ -719,7 +719,7 @@ export default function Profile() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name
+                        Nama Belakang
                       </label>
                       {isEditing ? (
                         <input
@@ -738,7 +738,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
+                        Alamat Email
                       </label>
                       <div className="space-y-2">
                         {isEditing ? (
@@ -760,7 +760,7 @@ export default function Profile() {
                                   <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
-                                  Verified
+                                  Terverifikasi
                                 </span>
                               ) : (
                                 <div className="flex items-center space-x-2">
@@ -768,7 +768,7 @@ export default function Profile() {
                                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                     </svg>
-                                    Not Verified
+                                    Belum Terverifikasi
                                   </span>
                                   <button
                                     onClick={handleEmailVerification}
@@ -778,7 +778,7 @@ export default function Profile() {
                                     onMouseEnter={(e) => !verifyingEmail && (e.target.style.backgroundColor = '#1a5ce6')}
                                     onMouseLeave={(e) => !verifyingEmail && (e.target.style.backgroundColor = '#2373FF')}
                                   >
-                                    {verifyingEmail ? 'Sending...' : 'Verify'}
+                                    {verifyingEmail ? 'Mengirim...' : 'Verifikasi'}
                                   </button>
                                 </div>
                               )}
@@ -790,7 +790,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number
+                        Nomor Telepon
                       </label>
                       <div className="space-y-2">
                         {isEditing ? (
@@ -802,14 +802,14 @@ export default function Profile() {
                           />
                         ) : (
                           <div className="flex items-center justify-between">
-                            <p className="text-gray-900 font-medium py-2">{profileData.phone || 'Not provided'}</p>
+                            <p className="text-gray-900 font-medium py-2">{profileData.phone || 'Tidak tersedia'}</p>
                             <div className="flex items-center space-x-2">
                               {userProfile?.phoneVerified ? (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ">
                                   <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
-                                  Verified
+                                  Terverifikasi
                                 </span>
                               ) : profileData.phone ? (
                                 <div className="flex items-center space-x-2">
@@ -817,7 +817,7 @@ export default function Profile() {
                                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                     </svg>
-                                    Not Verified
+                                    Belum Terverifikasi
                                   </span>
                                   <button
                                     onClick={handlePhoneVerification}
@@ -827,12 +827,12 @@ export default function Profile() {
                                     onMouseEnter={(e) => !verifyingPhone && (e.target.style.backgroundColor = '#1a5ce6')}
                                     onMouseLeave={(e) => !verifyingPhone && (e.target.style.backgroundColor = '#2373FF')}
                                   >
-                                    {verifyingPhone ? 'Sending...' : 'Verify'}
+                                    {verifyingPhone ? 'Mengirim...' : 'Verifikasi'}
                                   </button>
                                 </div>
                               ) : (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 ">
-                                  Not provided
+                                  Tidak tersedia
                                 </span>
                               )}
                             </div>
@@ -843,7 +843,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date of Birth
+                        Tanggal Lahir
                       </label>
                       {isEditing ? (
                         <input
@@ -861,7 +861,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gender
+                        Jenis Kelamin
                       </label>
                       {isEditing ? (
                         <select
@@ -869,11 +869,11 @@ export default function Profile() {
                           onChange={(e) => handleInputChange('gender', e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select Gender</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                          <option value="Prefer not to say">Prefer not to say</option>
+                          <option value="">Pilih Jenis Kelamin</option>
+                          <option value="Male">Laki-laki</option>
+                          <option value="Female">Perempuan</option>
+                          <option value="Other">Lainnya</option>
+                          <option value="Prefer not to say">Tidak ingin menyebutkan</option>
                         </select>
                       ) : (
                         <p className="text-gray-900 font-medium py-2">{profileData.gender}</p>
@@ -895,14 +895,14 @@ export default function Profile() {
                             placeholder="XX.XXX.XXX.X-XXX.XXX"
                           />
                         ) : (
-                          <p className="text-gray-900 font-medium py-2">{profileData.npwp || 'Not provided'}</p>
+                          <p className="text-gray-900 font-medium py-2">{profileData.npwp || 'Tidak tersedia'}</p>
                         )}
                       </div>
                     )}
 
                     <div className={profileData.accountType === 'perusahaan' ? '' : 'md:col-span-2'}>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nationality
+                        Kewarganegaraan
                       </label>
                       {isEditing ? (
                         <input
@@ -923,12 +923,12 @@ export default function Profile() {
               {activeTab === 'company' && (
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                    Company Information
+                    Informasi Perusahaan
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Name
+                        Nama Perusahaan
                       </label>
                       {isEditing ? (
                         <input
@@ -944,7 +944,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Position
+                        Posisi
                       </label>
                       {isEditing ? (
                         <input
@@ -960,7 +960,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Industry
+                        Industri
                       </label>
                       {isEditing ? (
                         <input
@@ -976,7 +976,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Size
+                        Ukuran Perusahaan
                       </label>
                       {isEditing ? (
                         <select
@@ -984,12 +984,12 @@ export default function Profile() {
                           onChange={(e) => handleInputChange('companySize', e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select Company Size</option>
-                          <option value="1-10 employees">1-10 employees</option>
-                          <option value="11-50 employees">11-50 employees</option>
-                          <option value="50-100 employees">50-100 employees</option>
-                          <option value="101-500 employees">101-500 employees</option>
-                          <option value="500+ employees">500+ employees</option>
+                          <option value="">Pilih Ukuran Perusahaan</option>
+                          <option value="1-10 employees">1-10 karyawan</option>
+                          <option value="11-50 employees">11-50 karyawan</option>
+                          <option value="50-100 employees">50-100 karyawan</option>
+                          <option value="101-500 employees">101-500 karyawan</option>
+                          <option value="500+ employees">500+ karyawan</option>
                         </select>
                       ) : (
                         <p className="text-gray-900 font-medium py-2">{profileData.companySize}</p>
@@ -998,7 +998,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Phone
+                        Telepon Perusahaan
                       </label>
                       {isEditing ? (
                         <input
@@ -1014,7 +1014,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Website
+                        Website Perusahaan
                       </label>
                       {isEditing ? (
                         <input
@@ -1032,7 +1032,7 @@ export default function Profile() {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Address
+                        Alamat Perusahaan
                       </label>
                       {isEditing ? (
                         <textarea
@@ -1048,7 +1048,7 @@ export default function Profile() {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Company Description
+                        Deskripsi Perusahaan
                       </label>
                       {isEditing ? (
                         <textarea
@@ -1069,12 +1069,12 @@ export default function Profile() {
               {activeTab === 'address' && (
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                    Address Information
+                    Informasi Alamat
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Street Address
+                        Alamat Jalan
                       </label>
                       {isEditing ? (
                         <input
@@ -1090,7 +1090,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City
+                        Kota
                       </label>
                       {isEditing ? (
                         <input
@@ -1106,7 +1106,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State/Province
+                        Provinsi
                       </label>
                       {isEditing ? (
                         <input
@@ -1122,7 +1122,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Postal Code
+                        Kode Pos
                       </label>
                       {isEditing ? (
                         <input
@@ -1138,7 +1138,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Country
+                        Negara
                       </label>
                       {isEditing ? (
                         <select
@@ -1166,14 +1166,14 @@ export default function Profile() {
               {activeTab === 'preferences' && (
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                    Preferences & Settings
+                    Preferensi & Pengaturan
                   </h3>
                   <div className="space-y-8">
                     {/* Language & Timezone */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Language
+                          Bahasa
                         </label>
                         {isEditing ? (
                           <select
@@ -1192,7 +1192,7 @@ export default function Profile() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Timezone
+                          Zona Waktu
                         </label>
                         {isEditing ? (
                           <select
@@ -1276,44 +1276,44 @@ export default function Profile() {
               {activeTab === 'security' && (
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                    Security Settings
+                    Pengaturan Keamanan
                   </h3>
                   <div className="space-y-8">
                     {/* Password Change */}
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                        Change Password
+                        Ganti Kata Sandi
                       </h4>
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Current Password
+                            Kata Sandi Saat Ini
                           </label>
                           <input
                             type="password"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter current password"
+                            placeholder="Masukkan kata sandi saat ini"
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              New Password
+                              Kata Sandi Baru
                             </label>
                             <input
                               type="password"
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Enter new password"
+                              placeholder="Masukkan kata sandi baru"
                             />
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Confirm New Password
+                              Konfirmasi Kata Sandi Baru
                             </label>
                             <input
                               type="password"
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Confirm new password"
+                              placeholder="Konfirmasi kata sandi baru"
                             />
                           </div>
                         </div>
@@ -1323,7 +1323,7 @@ export default function Profile() {
                           onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
                           onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                         >
-                          Update Password
+                          Perbarui Kata Sandi
                         </button>
                       </div>
                     </div>
@@ -1333,10 +1333,10 @@ export default function Profile() {
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <h4 className="text-lg font-semibold text-gray-900">
-                            Two-Factor Authentication
+                            Autentikasi Dua Faktor
                           </h4>
                           <p className="text-gray-600 text-sm">
-                            Add an extra layer of security to your account
+                            Tambahkan lapisan keamanan ekstra pada akun Anda
                           </p>
                         </div>
                         <button 
@@ -1345,7 +1345,7 @@ export default function Profile() {
                           onMouseEnter={(e) => e.target.style.backgroundColor = '#1a5ce6'}
                           onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
                         >
-                          Enable 2FA
+                          Aktifkan 2FA
                         </button>
                       </div>
                     </div>
@@ -1353,7 +1353,7 @@ export default function Profile() {
                     {/* Account Security Info */}
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                        Account Security
+                        Keamanan Akun
                       </h4>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
@@ -1361,15 +1361,15 @@ export default function Profile() {
                             <FiShield className="w-5 h-5 text-gray-600" />
                             <div>
                               <p className="font-medium text-gray-900">
-                                Current Session
+                                Sesi Saat Ini
                               </p>
                               <p className="text-sm text-gray-600">
-                                {user?.email} • Active now
+                                {user?.email} • Aktif sekarang
                               </p>
                             </div>
                           </div>
                           <span className="text-gray-600 text-sm font-medium">
-                            Secure
+                            Aman
                           </span>
                         </div>
                         
@@ -1378,10 +1378,10 @@ export default function Profile() {
                             <FiBriefcase className="w-5 h-5 text-gray-600" />
                             <div>
                               <p className="font-medium text-gray-900">
-                                Account Created
+                                Akun Dibuat
                               </p>
                               <p className="text-sm text-gray-600">
-                                {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Recently'}
+                                {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Baru-baru ini'}
                               </p>
                             </div>
                           </div>
@@ -1392,10 +1392,10 @@ export default function Profile() {
                             <FiAlertTriangle className="w-5 h-5 text-gray-600" />
                             <div>
                               <p className="font-medium text-gray-900">
-                                Email Verification
+                                Verifikasi Email
                               </p>
                               <p className="text-sm text-gray-600">
-                                {user?.emailVerified ? 'Email verified' : 'Email not verified'}
+                                {user?.emailVerified ? 'Email sudah terverifikasi' : 'Email belum terverifikasi'}
                               </p>
                             </div>
                           </div>

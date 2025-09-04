@@ -149,24 +149,24 @@ export default function SelectUserTypePage() {
 
     // Validate account type selection
     if (!selectedAccountType) {
-      setError('Please select account type (Individu or Perusahaan)');
+      setError('Silakan pilih jenis akun (Individu atau Perusahaan)');
       return;
     }
 
     // Validate required fields based on account type
     if (selectedAccountType === 'individu') {
       if (!formData.firstName || !formData.lastName) {
-        setError('Please fill in your first and last name');
+        setError('Silakan isi nama depan dan nama belakang Anda');
         return;
       }
     } else if (selectedAccountType === 'perusahaan') {
       if (!formData.companyName || !formData.npwp) {
-        setError('Please fill in company name and NPWP');
+        setError('Silakan isi nama perusahaan dan NPWP');
         return;
       }
       // Validate NPWP format (should be 15 digits)
       if (formData.npwp.replace(/\D/g, '').length !== 15) {
-        setError('NPWP must be exactly 15 digits');
+        setError('NPWP harus tepat 15 digit');
         return;
       }
     }

@@ -33,7 +33,7 @@ export default function AdminLogin() {
       
       if (attempts >= MAX_ATTEMPTS && timeSinceLastAttempt < BLOCK_DURATION) {
         const remainingTime = Math.ceil((BLOCK_DURATION - timeSinceLastAttempt) / 60000);
-        setError(`Too many failed attempts. Try again in ${remainingTime} minutes.`);
+        setError(`Terlalu banyak percobaan gagal. Coba lagi dalam ${remainingTime} menit.`);
         setIsBlocked(true);
         return false;
       } else if (timeSinceLastAttempt >= BLOCK_DURATION) {
@@ -139,7 +139,7 @@ export default function AdminLogin() {
     
     // Basic validation
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password');
+      setError('Silakan masukkan email dan kata sandi');
       setIsLoading(false);
       logSecurityEvent('ADMIN_LOGIN_FAILED', { email: formData.email, reason: 'incomplete_fields' });
       return;
@@ -148,7 +148,7 @@ export default function AdminLogin() {
     // Check admin credentials - must use exact admin email
     if (formData.email !== 'admin@projevo.com' || formData.password !== 'admin123') {
       recordFailedAttempt();
-      setError('Invalid admin credentials');
+      setError('Kredensial admin tidak valid');
       setIsLoading(false);
       logSecurityEvent('ADMIN_LOGIN_FAILED', { 
         email: formData.email, 
@@ -236,15 +236,15 @@ export default function AdminLogin() {
       });
       
       if (error.code === 'auth/user-not-found') {
-        setError('Invalid credentials. Contact your system administrator if you need access.');
+        setError('Kredensial tidak valid. Hubungi administrator sistem jika Anda perlu akses.');
       } else if (error.code === 'auth/wrong-password') {
-        setError('Invalid admin credentials');
+        setError('Kredensial admin tidak valid');
       } else if (error.code === 'auth/invalid-credential') {
-        setError('Invalid admin credentials');
+        setError('Kredensial admin tidak valid');
       } else if (error.code === 'auth/too-many-requests') {
-        setError('Too many failed attempts. Please try again later.');
+        setError('Terlalu banyak percobaan gagal. Silakan coba lagi nanti.');
       } else {
-        setError('Authentication failed. Please try again.');
+        setError('Autentikasi gagal. Silakan coba lagi.');
       }
     } finally {
       setIsLoading(false);
@@ -274,8 +274,8 @@ export default function AdminLogin() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Admin Portal</h1>
-              <p className="text-blue-100 text-sm">Secure Administrator Access</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Portal Admin</h1>
+              <p className="text-blue-100 text-sm">Akses Administrator Aman</p>
             </div>
           </div>
 
@@ -300,7 +300,7 @@ export default function AdminLogin() {
               {/* Email Field */}
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                  Email Address
+                  Alamat Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -315,7 +315,7 @@ export default function AdminLogin() {
                     value={formData.email}
                     onChange={handleChange}
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="Enter admin email address"
+                    placeholder="Masukkan alamat email admin"
                     required
                     autoComplete="email"
                   />
@@ -325,7 +325,7 @@ export default function AdminLogin() {
               {/* Password Field */}
               <div className="space-y-2">
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                  Password
+                  Kata Sandi
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -340,7 +340,7 @@ export default function AdminLogin() {
                     value={formData.password}
                     onChange={handleChange}
                     className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="Enter admin password"
+                    placeholder="Masukkan kata sandi admin"
                     required
                     autoComplete="current-password"
                   />
@@ -379,14 +379,14 @@ export default function AdminLogin() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    <span>Account Locked</span>
+                    <span>Akun Terkunci</span>
                   </>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Access Admin Panel</span>
+                    <span>Akses Panel Admin</span>
                   </>
                 )}
               </button>
@@ -398,12 +398,12 @@ export default function AdminLogin() {
                 onClick={() => router.push('/')}
                 className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
               >
-                ← Return to Main Site
+                ← Kembali ke Situs Utama
               </button>
               
               <div className="text-xs text-gray-500">
-                <p>Administrator access only</p>
-                <p>Unauthorized access is prohibited and monitored</p>
+                <p>Hanya akses administrator</p>
+                <p>Akses tidak sah dilarang dan dipantau</p>
               </div>
             </div>
           </div>
@@ -419,14 +419,14 @@ export default function AdminLogin() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-white mb-2">
-                Security Notice
+                Pemberitahuan Keamanan
               </h3>
               <div className="text-sm text-gray-300 space-y-1">
-                <p>This system is for authorized administrators only.</p>
-                <p>All access attempts are logged and monitored.</p>
-                <p>Only the designated admin email address is permitted.</p>
+                <p>Sistem ini hanya untuk administrator yang berwenang.</p>
+                <p>Semua upaya akses dicatat dan dipantau.</p>
+                <p>Hanya alamat email admin yang ditentukan yang diizinkan.</p>
                 <p className="text-xs text-gray-400 mt-2">
-                  If you need access, contact your system administrator.
+                  Jika Anda memerlukan akses, hubungi administrator sistem Anda.
                 </p>
               </div>
             </div>

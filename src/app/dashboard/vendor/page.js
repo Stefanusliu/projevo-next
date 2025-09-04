@@ -33,7 +33,7 @@ function VendorDashboardContent() {
   const { user, userProfile } = useAuth();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("All Locations");
+  const [selectedLocation, setSelectedLocation] = useState("Semua Lokasi");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -349,7 +349,7 @@ function VendorDashboardContent() {
                   <div className="relative flex-1 flex items-center bg-white border border-gray-300 rounded-lg shadow-md search-container">
                     <input
                       type="text"
-                      placeholder="Find Contractor"
+                      placeholder="Cari Kontraktor"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="flex-1 px-3 py-2 bg-transparent border-0 rounded-l-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0"
@@ -379,13 +379,13 @@ function VendorDashboardContent() {
                         {isSearching ? (
                           <div className="p-4 text-center text-gray-500">
                             <FiSearch className="w-5 h-5 animate-spin mx-auto mb-2" />
-                            Searching...
+                            Mencari...
                           </div>
                         ) : searchResults.length > 0 ? (
                           <>
                             <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                               <span className="text-sm font-medium text-gray-700">
-                                Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                                Ditemukan {searchResults.length} hasil{searchResults.length !== 1 ? '' : ''}
                               </span>
                               <button
                                 onClick={() => setShowSearchResults(false)}
@@ -454,10 +454,10 @@ function VendorDashboardContent() {
                                       {person.type === 'vendor' && (
                                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                                           {person.experience && (
-                                            <span>{person.experience} experience</span>
+                                            <span>{person.experience} pengalaman</span>
                                           )}
                                           {person.projectsCompleted > 0 && (
-                                            <span>{person.projectsCompleted} projects</span>
+                                            <span>{person.projectsCompleted} proyek</span>
                                           )}
                                           {person.rating > 0 && (
                                             <span>★ {person.rating}/5</span>
@@ -486,7 +486,7 @@ function VendorDashboardContent() {
                                               }}
                                               className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
                                             >
-                                              Call
+                                              Telepon
                                             </button>
                                             <button
                                               onClick={(e) => {
@@ -509,8 +509,8 @@ function VendorDashboardContent() {
                         ) : (
                           <div className="p-4 text-center text-gray-500">
                             <FiUser className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                            <p>No results found for &quot;{searchQuery}&quot;</p>
-                            <p className="text-sm">Try adjusting your search terms or location filter</p>
+                            <p>Tidak ada hasil ditemukan untuk &quot;{searchQuery}&quot;</p>
+                            <p className="text-sm">Coba sesuaikan kata kunci pencarian atau filter lokasi</p>
                           </div>
                         )}
                       </div>
@@ -609,10 +609,10 @@ function VendorDashboardContent() {
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                       <span><FiMapPin className="inline w-4 h-4 mr-1" />{selectedUser.location}</span>
                       {selectedUser.experience && (
-                        <span>{selectedUser.experience} experience</span>
+                        <span>{selectedUser.experience} pengalaman</span>
                       )}
                       {selectedUser.projectsCompleted > 0 && (
-                        <span>{selectedUser.projectsCompleted} projects</span>
+                        <span>{selectedUser.projectsCompleted} proyek</span>
                       )}
                       {selectedUser.rating > 0 && (
                         <span>★ {selectedUser.rating}/5</span>
@@ -623,9 +623,9 @@ function VendorDashboardContent() {
                 
                 <div className="text-center py-12 text-gray-500">
                   <FiBriefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">Portfolio Not Available</h4>
-                  <p className="text-sm">Portfolio details are not available in this view.</p>
-                  <p className="text-sm mt-1">Contact the vendor directly for their portfolio and work samples.</p>
+                  <h4 className="text-lg font-medium mb-2">Portofolio Tidak Tersedia</h4>
+                  <p className="text-sm">Detail portofolio tidak tersedia dalam tampilan ini.</p>
+                  <p className="text-sm mt-1">Hubungi vendor secara langsung untuk portofolio dan contoh pekerjaan mereka.</p>
                   
                   <div className="flex gap-3 justify-center mt-6">
                     {selectedUser.email && (
@@ -668,7 +668,7 @@ function VendorDashboardContent() {
             <div className="bg-white rounded-lg max-w-4xl w-full m-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {selectedUser.name} - Project History
+                  {selectedUser.name} - Riwayat Proyek
                 </h2>
                 <button
                   onClick={() => {
@@ -706,9 +706,9 @@ function VendorDashboardContent() {
                 
                 <div className="text-center py-12 text-gray-500">
                   <FiBriefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h4 className="text-lg font-medium mb-2">Project History Not Available</h4>
-                  <p className="text-sm">Project history details are not available in this view.</p>
-                  <p className="text-sm mt-1">Contact the project owner directly for information about their past projects.</p>
+                  <h4 className="text-lg font-medium mb-2">Riwayat Proyek Tidak Tersedia</h4>
+                  <p className="text-sm">Detail riwayat proyek tidak tersedia dalam tampilan ini.</p>
+                  <p className="text-sm mt-1">Hubungi pemilik proyek secara langsung untuk informasi tentang proyek-proyek mereka sebelumnya.</p>
                   
                   <div className="flex gap-3 justify-center mt-6">
                     {selectedUser.email && (

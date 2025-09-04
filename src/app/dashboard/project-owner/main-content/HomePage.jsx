@@ -8,10 +8,10 @@ import TransactionComponent from '../components/TransactionComponent';
 import CreateProjectComponent from '../components/CreateProjectComponent';
 
 export default function HomePage() {
-  const [activeMenu, setActiveMenu] = useState("Project");
+  const [activeMenu, setActiveMenu] = useState("Proyek");
   const [showCreateProject, setShowCreateProject] = useState(false);
   
-  const menuItems = ['Project', 'BOQ Generator', 'Transaksi', 'History'];
+  const menuItems = ['Proyek', 'Generator BOQ', 'Transaksi', 'Riwayat'];
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#d9d9d9' }}>
@@ -42,19 +42,19 @@ export default function HomePage() {
           {/* Main Content Area */}
           <div className="flex-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
-              {activeMenu === "Project" && showCreateProject && (
+              {activeMenu === "Proyek" && showCreateProject && (
                 <CreateProjectComponent 
                   onBack={() => setShowCreateProject(false)} 
                 />
               )}
-              {activeMenu === "Project" && !showCreateProject && (
+              {activeMenu === "Proyek" && !showCreateProject && (
                 <HomeComponent 
                   onCreateProject={() => setShowCreateProject(true)}
                 />
               )}
-              {activeMenu === "BOQ Generator" && <SavedBOQComponent />}
+              {activeMenu === "Generator BOQ" && <SavedBOQComponent />}
               {activeMenu === "Transaksi" && <TransactionComponent />}
-              {activeMenu === "History" && <HistoryComponent />}
+              {activeMenu === "Riwayat" && <HistoryComponent />}
             </div>
           </div>
         </div>

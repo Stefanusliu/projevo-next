@@ -8,15 +8,15 @@ import PortfolioComponent from '../components/PortfolioComponent';
 import VendorTransactionComponent from '../components/VendorTransactionComponent';
 
 export default function HomePage() {
-  const [activeMenu, setActiveMenu] = useState("Project");
+  const [activeMenu, setActiveMenu] = useState("Proyek");
   const [expandedMenu, setExpandedMenu] = useState(null);
   const [projectFilter, setProjectFilter] = useState('Tender');
   
   const menuItems = [
-    { id: 'Project', label: 'Project' },
-    { id: 'Portfolio', label: 'Portfolio' },
-    { id: 'Transaction', label: 'Transaction' },
-    { id: 'History', label: 'History' }
+    { id: 'Proyek', label: 'Proyek' },
+    { id: 'Portofolio', label: 'Portofolio' },
+    { id: 'Transaksi', label: 'Transaksi' },
+    { id: 'Riwayat', label: 'Riwayat' }
   ];
 
   const handleMainMenuClick = (item) => {
@@ -97,10 +97,10 @@ export default function HomePage() {
 
         {/* Main Content Area */}
         <div className="flex-1">
-          {activeMenu === "Project" && <MyProjectsComponent projectFilter={projectFilter} />}
-          {activeMenu === "Portfolio" && <PortfolioComponent />}
-          {activeMenu === "Transaction" && <VendorTransactionComponent />}
-          {activeMenu === "History" && <HistoryComponent />}
+          {activeMenu === "Proyek" && <MyProjectsComponent projectFilter={projectFilter} />}
+          {activeMenu === "Portofolio" && <PortfolioComponent />}
+          {activeMenu === "Transaksi" && <VendorTransactionComponent />}
+          {activeMenu === "Riwayat" && <HistoryComponent />}
         </div>
       </div>
     </main>

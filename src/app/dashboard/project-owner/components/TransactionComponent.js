@@ -282,29 +282,29 @@ export default function TransactionComponent() {
   const getProjectOwnerStatusDescription = (status) => {
     switch (status) {
       case "waiting-approval":
-        return "Waiting for Approval";
+        return "Menunggu Persetujuan";
       case "process":
-        return "Processing Payment";
+        return "Memproses Pembayaran";
       case "inescrow":
-        return "Funds in Escrow";
+        return "Dana di Escrow";
       case "release":
-        return "Ready to Release";
+        return "Siap Dicairkan";
       case "settle":
-        return "Payment Released";
+        return "Pembayaran Dicairkan";
       case "add-funds":
-        return "Additional Funding";
+        return "Dana Tambahan";
       case "refund":
-        return "Refund Processed";
+        return "Pengembalian Dana Diproses";
       case "indispute":
-        return "Under Dispute";
+        return "Dalam Sengketa";
       case "failed":
-        return "Payment Failed";
+        return "Pembayaran Gagal";
       case "pending":
-        return "Pending Payment";
+        return "Pembayaran Tertunda";
       case "completed":
-        return "Transaction Completed";
+        return "Transaksi Selesai";
       case "overdue":
-        return "Payment Overdue";
+        return "Pembayaran Terlambat";
       default:
         return status;
     }
@@ -689,18 +689,18 @@ export default function TransactionComponent() {
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All Status</option>
-            <option value="waiting-approval">Waiting Approval</option>
-            <option value="process">Processing</option>
-            <option value="inescrow">In Escrow</option>
-            <option value="release">Ready to Release</option>
-            <option value="settle">Released</option>
-            <option value="add-funds">Additional Funding</option>
-            <option value="refund">Refund</option>
-            <option value="indispute">Dispute</option>
-            <option value="failed">Failed</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
+            <option value="all">Semua Status</option>
+            <option value="waiting-approval">Menunggu Persetujuan</option>
+            <option value="process">Diproses</option>
+            <option value="inescrow">Di Escrow</option>
+            <option value="release">Siap Dicairkan</option>
+            <option value="settle">Sudah Dicairkan</option>
+            <option value="add-funds">Dana Tambahan</option>
+            <option value="refund">Pengembalian Dana</option>
+            <option value="indispute">Dalam Sengketa</option>
+            <option value="failed">Gagal</option>
+            <option value="pending">Tertunda</option>
+            <option value="completed">Selesai</option>
             <option value="overdue">Overdue</option>
           </select>
         </div>
@@ -710,7 +710,7 @@ export default function TransactionComponent() {
       <div className="space-y-4">
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No transactions found for the selected status.</p>
+            <p>Tidak ada transaksi ditemukan untuk status yang dipilih.</p>
           </div>
         ) : (
           filteredTransactions.map((transaction) => (

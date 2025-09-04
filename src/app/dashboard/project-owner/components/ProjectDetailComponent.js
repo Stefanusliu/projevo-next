@@ -207,7 +207,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
   const tabs = [
     { 
       id: 'overview', 
-      label: 'Overview', 
+      label: 'Ringkasan', 
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -216,7 +216,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
     },
     { 
       id: 'client', 
-      label: 'Client Details', 
+      label: 'Detail Klien', 
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -225,7 +225,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
     },
     { 
       id: 'documents', 
-      label: 'Documents', 
+      label: 'Dokumen', 
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -244,7 +244,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
     },
     { 
       id: 'gallery', 
-      label: 'Gallery', 
+      label: 'Galeri', 
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -253,7 +253,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
     },
     { 
       id: 'activity', 
-      label: 'Activity', 
+      label: 'Aktivitas', 
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -322,7 +322,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
               onClick={onBack}
               className="text-blue-600 dark:text-blue-400 hover:underline"
             >
-              All Projects
+              Semua Proyek
             </button>
             <span className="text-gray-400">›</span>
             <span className="text-gray-600 dark:text-gray-400 truncate">{projectData.title}</span>
@@ -364,7 +364,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
                 💬 Chat
               </button>
               <button className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base">
-                📋 Request Change
+                📋 Minta Perubahan
               </button>
             </div>
           </div>
@@ -375,7 +375,7 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
       <div className="bg-white/80 backdrop-blur-sm dark:bg-slate-800/90 border-b border-gray-200/50 dark:border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Progress</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress Proyek</span>
             <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{projectData.progress}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4 shadow-inner">
@@ -440,8 +440,8 @@ export default function ProjectDetailComponent({ project, onBack, userRole = 'pr
             <div className="lg:col-span-2">
               <div className="bg-white/80 backdrop-blur-sm dark:bg-slate-800/90 rounded-2xl p-4 sm:p-6 border border-gray-200/50 dark:border-slate-700/50 shadow-lg">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h3>
-                  <button className="text-blue-600 dark:text-blue-400 text-sm hover:underline">View All</button>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Aktivitas Terbaru</h3>
+                  <button className="text-blue-600 dark:text-blue-400 text-sm hover:underline">Lihat Semua</button>
                 </div>
                 <div className="space-y-4 sm:space-y-6">
                   {projectData.recentActivities.map((activity, index) => (

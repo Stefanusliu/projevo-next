@@ -112,7 +112,7 @@ const ProjectMarketplace = () => {
   };
 
   const calculateBidCountdown = (deadline) => {
-    if (!deadline) return "No deadline set";
+    if (!deadline) return "Tidak ada batas waktu";
 
     try {
       let deadlineDate;
@@ -744,7 +744,7 @@ const ProjectMarketplace = () => {
     // Check if vendor has already submitted a proposal
     if (hasVendorSubmittedProposal(project) && !canEditProposal(project)) {
       alert(
-        "You have already submitted a proposal for this project and editing is disabled because the deadline is less than 24 hours away."
+        "Anda sudah mengirim penawaran untuk proyek ini dan editing dinonaktifkan karena batas waktu kurang dari 24 jam."
       );
       return;
     }
@@ -924,7 +924,7 @@ const ProjectMarketplace = () => {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Tender</h1>
         <p className="text-gray-600 mt-2">
-          Discover projects open for tender and bidding
+          Temukan proyek yang terbuka untuk tender dan penawaran
         </p>
       </div>
       {/* Error State */}
@@ -946,7 +946,7 @@ const ProjectMarketplace = () => {
             </svg>
             <div className="ml-3 flex-1">
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-                Error loading tender projects
+                Gagal memuat proyek tender
               </h3>
               <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                 <p>{error}</p>
@@ -956,13 +956,13 @@ const ProjectMarketplace = () => {
                   onClick={handleRetry}
                   className="bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-800 dark:text-red-200 px-3 py-1 rounded text-sm font-medium transition-colors mr-2"
                 >
-                  Try Again
+                  Coba Lagi
                 </button>
                 <button
                   onClick={() => window.location.reload()}
                   className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded text-sm font-medium transition-colors"
                 >
-                  Refresh Page
+                  Muat Ulang Halaman
                 </button>
               </div>
             </div>
@@ -974,7 +974,7 @@ const ProjectMarketplace = () => {
       {loading ? (
         <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-tender-blue mb-6"></div>
-          <p className="text-gray-600 text-lg">Loading tender projects...</p>
+          <p className="text-gray-600 text-lg">Memuat proyek tender...</p>
         </div>
       ) : showCreateProposal && selectedProject ? (
         <CreateProposalPage
@@ -1096,7 +1096,7 @@ const ProjectMarketplace = () => {
                             className="text-xs hover:underline"
                             style={{ color: "#2373FF" }}
                           >
-                            Clear All
+                            Hapus Semua
                           </button>
                         </div>
                       )}
@@ -1191,7 +1191,7 @@ const ProjectMarketplace = () => {
                             className="text-xs hover:underline"
                             style={{ color: "#2373FF" }}
                           >
-                            Clear All
+                            Hapus Semua
                           </button>
                         </div>
                       )}
@@ -1291,7 +1291,7 @@ const ProjectMarketplace = () => {
                             className="text-xs hover:underline"
                             style={{ color: "#2373FF" }}
                           >
-                            Clear All
+                            Hapus Semua
                           </button>
                         </div>
                       )}
@@ -1305,7 +1305,7 @@ const ProjectMarketplace = () => {
                 ref={sortFilterRef}
               >
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Sort By
+                  Urutkan Berdasarkan
                 </label>
                 <button
                   onClick={() => setShowSortFilter(!showSortFilter)}
@@ -1393,12 +1393,12 @@ const ProjectMarketplace = () => {
                 />
               </svg>
               <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-                No tender projects found
+                Tidak ada proyek tender ditemukan
               </h3>
               <p className="text-slate-500 dark:text-slate-400">
                 {marketData.length === 0
-                  ? "There are no projects currently open for tender."
-                  : "No projects match your current filter criteria. Try adjusting your filters."}
+                  ? "Tidak ada proyek yang sedang terbuka untuk tender saat ini."
+                  : "Tidak ada proyek yang sesuai dengan kriteria filter Anda. Coba sesuaikan filter Anda."}
               </p>
             </div>
           ) : (
@@ -1472,8 +1472,8 @@ const ProjectMarketplace = () => {
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors mb-2"
                           title={
                             bookmarkedProjects.includes(project.id)
-                              ? "Remove bookmark"
-                              : "Add bookmark"
+                              ? "Hapus bookmark"
+                              : "Tambah bookmark"
                           }
                         >
                           <svg
@@ -1536,39 +1536,35 @@ const ProjectMarketplace = () => {
                               ? project.scope
                               : [project.scope]
                             ).length - 3}{" "}
-                            more
+                            lainnya
                           </span>
                         )}
                       </div>
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Budget</p>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Anggaran</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {project.budget}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Durasi</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {project.duration}
+                          </p>
+                        </div>
+                      </div>                    {/* Client Info */}
+                      <div className="mb-4">
+                        <p className="text-xs text-gray-500">Klien</p>
                         <p className="text-sm font-semibold text-gray-900">
-                          {project.budget}
+                          {project.client}
                         </p>
-                      </div>
+                      </div>                    <div className="grid grid-cols-2 gap-4 mb-6">
                       <div>
-                        <p className="text-xs text-gray-500">Duration</p>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {project.duration}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Client Info */}
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500">Client</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {project.client}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <p className="text-xs text-gray-500">Deadline</p>
+                        <p className="text-xs text-gray-500">Batas Waktu</p>
                         <span
                           className="px-2.5 py-1 text-xs font-medium rounded-full text-white"
                           style={{ backgroundColor: "#2373FF" }}
@@ -1607,7 +1603,7 @@ const ProjectMarketplace = () => {
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                   />
                                 </svg>
-                                Edit Proposal
+                                Edit Penawaran
                               </div>
                             </button>
                           </div>
@@ -1615,7 +1611,7 @@ const ProjectMarketplace = () => {
                           <button
                             disabled
                             className="flex-1 px-4 py-2 text-gray-500 text-sm font-medium rounded-lg bg-gray-100 border border-gray-300 cursor-not-allowed flex items-center justify-center gap-2"
-                            title="Proposal submitted (editing disabled - deadline is less than 24 hours away)"
+                            title="Proposal terkirim (editing dinonaktifkan - batas waktu kurang dari 24 jam)"
                           >
                             <svg
                               className="w-4 h-4"
@@ -1630,7 +1626,7 @@ const ProjectMarketplace = () => {
                                 d="M5 13l4 4L19 7"
                               />
                             </svg>
-                            Proposal Submitted
+                            Penawaran Terkirim
                           </button>
                         )
                       ) : (
@@ -1652,7 +1648,7 @@ const ProjectMarketplace = () => {
                         onClick={() => handleViewDetails(project)}
                         className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        View Details
+                        Lihat Detail
                       </button>
                     </div>
                   </div>
@@ -1672,7 +1668,7 @@ const ProjectMarketplace = () => {
           setToast({
             isVisible: true,
             message:
-              "Proposal submitted successfully! You can track its progress in the Proposals section.",
+              "Penawaran berhasil dikirim! Anda dapat melacak progresnya di bagian Proposals.",
             type: "success",
           });
           closeModals();

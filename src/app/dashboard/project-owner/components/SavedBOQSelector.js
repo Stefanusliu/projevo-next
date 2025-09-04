@@ -76,7 +76,7 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Select Saved BOQ
+              Pilih BOQ Tersimpan
             </h3>
             <button
               onClick={onClose}
@@ -94,22 +94,22 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500 text-sm">Loading saved BOQs...</p>
+              <p className="text-gray-500 text-sm">Memuat BOQ tersimpan...</p>
             </div>
           ) : savedBOQs.length === 0 ? (
             <div className="text-center py-8">
               <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-gray-500 text-sm">No saved BOQs found</p>
-              <p className="text-gray-400 text-xs mt-1">Create a BOQ first using the BOQ Maker to attach it to your project</p>
+              <p className="text-gray-500 text-sm">Tidak ditemukan BOQ tersimpan</p>
+              <p className="text-gray-400 text-xs mt-1">Buat BOQ terlebih dahulu menggunakan BOQ Maker untuk melampirkannya ke proyek Anda</p>
               <a 
                 href="/boq-maker" 
                 className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Create New BOQ
+                Buat BOQ Baru
               </a>
             </div>
           ) : (
@@ -128,15 +128,15 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 mb-1">{boq.title || 'Untitled BOQ'}</h4>
+                        <h4 className="font-bold text-gray-900 mb-1">{boq.title || 'BOQ Tanpa Judul'}</h4>
                         <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
-                          <span>{stats.tahapanCount} work phases</span>
-                          <span>{stats.totalItems} total items</span>
-                          <span>Created: {formatDate(boq.createdAt)}</span>
+                          <span>{stats.tahapanCount} tahapan kerja</span>
+                          <span>{stats.totalItems} total item</span>
+                          <span>Dibuat: {formatDate(boq.createdAt)}</span>
                         </div>
                         {boq.updatedAt && boq.updatedAt !== boq.createdAt && (
                           <p className="text-xs text-gray-400">
-                            Last updated: {formatDate(boq.updatedAt)}
+                            Terakhir diperbarui: {formatDate(boq.updatedAt)}
                           </p>
                         )}
                       </div>
@@ -163,7 +163,7 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
             onClick={onClose}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Cancel
+            Batal
           </button>
           <button
             onClick={handleSelect}
@@ -174,7 +174,7 @@ export default function SavedBOQSelector({ onSelect, onClose }) {
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            Select BOQ
+            Pilih BOQ
           </button>
         </div>
       </div>

@@ -710,7 +710,7 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
       {loading && (
         <div className="flex items-center justify-center h-64">
           <FiLoader className="animate-spin h-12 w-12" style={{ color: '#2373FF' }} />
-          <span className="ml-3 text-gray-600">Loading your projects...</span>
+          <span className="ml-3 text-gray-600">Memuat proyek Anda...</span>
         </div>
       )}
 
@@ -720,18 +720,18 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">
-                {projectFilter === 'All' || projectFilter === 'Project' ? 'All Projects' : 
-                 projectFilter === 'Tender' ? 'Tender Projects' : 
-                 'Contract Projects'}
+                {projectFilter === 'All' || projectFilter === 'Project' ? 'Semua Proyek' : 
+                 projectFilter === 'Tender' ? 'Proyek Tender' : 
+                 'Proyek Kontrak'}
               </h2>
               <p className="text-slate-600">
-                {projectFilter === 'All' || projectFilter === 'Project' ? 'View and track your awarded projects' :
-                 projectFilter === 'Tender' ? 'View and track your tender projects' :
-                 'View and track your contract projects'}
+                {projectFilter === 'All' || projectFilter === 'Project' ? 'Lihat dan lacak proyek yang Anda terima' :
+                 projectFilter === 'Tender' ? 'Lihat dan lacak proyek tender Anda' :
+                 'Lihat dan lacak proyek kontrak Anda'}
               </p>
             </div>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-              Browse Projects
+              Jelajahi Proyek
             </button>
           </div>
 
@@ -909,7 +909,7 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
       {/* Empty State */}
       {filteredProjects.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-300">
-          <p className="text-gray-500">No projects found</p>
+          <p className="text-gray-500">Tidak ada proyek ditemukan</p>
         </div>
       )}
 

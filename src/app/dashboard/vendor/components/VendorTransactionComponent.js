@@ -422,13 +422,13 @@ export default function VendorTransactionComponent() {
 
   const handleRequestFunds = (transaction) => {
     // Open request additional funds modal
-    alert(`Request additional funds for project: ${transaction.projectTitle}`);
+    alert(`Ajukan dana tambahan untuk proyek: ${transaction.projectTitle}`);
   };
 
   const handleContactClient = (transaction) => {
     // Open contact client modal or redirect to communication
     alert(
-      `Contact client: ${transaction.clientName} (${transaction.clientEmail})`
+      `Hubungi klien: ${transaction.clientName} (${transaction.clientEmail})`
     );
   };
 
@@ -481,11 +481,11 @@ export default function VendorTransactionComponent() {
   const getVendorStatusDescription = (status) => {
     switch (status) {
       case "waiting-approval":
-        return "Client belum menyetujui pembayaran";
+        return "Klien belum menyetujui pembayaran";
       case "process":
-        return "Client sedang melakukan pembayaran";
+        return "Klien sedang melakukan pembayaran";
       case "inescrow":
-        return "Dana aman tersimpan, menunggu project selesai";
+        return "Dana aman tersimpan, menunggu proyek selesai";
       case "release":
         return "Dana sedang ditransfer ke rekening Anda";
       case "settle":

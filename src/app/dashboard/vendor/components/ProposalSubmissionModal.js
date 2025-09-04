@@ -44,21 +44,21 @@ export default function ProposalSubmissionModal({ project, isOpen, onClose, onSu
     const newErrors = {};
     
     if (!proposalData.bidAmount) {
-      newErrors.bidAmount = 'Bid amount is required';
+      newErrors.bidAmount = 'Jumlah penawaran wajib diisi';
     } else if (isNaN(proposalData.bidAmount) || parseFloat(proposalData.bidAmount) <= 0) {
-      newErrors.bidAmount = 'Please enter a valid amount';
+      newErrors.bidAmount = 'Silakan masukkan jumlah yang valid';
     }
     
     if (!proposalData.timeline) {
-      newErrors.timeline = 'Timeline is required';
+      newErrors.timeline = 'Timeline wajib diisi';
     }
     
     if (!proposalData.coverLetter || proposalData.coverLetter.trim().length < 100) {
-      newErrors.coverLetter = 'Cover letter must be at least 100 characters';
+      newErrors.coverLetter = 'Surat pengantar harus minimal 100 karakter';
     }
 
     if (proposalData.keyDifferentiators.filter(d => d.trim()).length === 0) {
-      newErrors.keyDifferentiators = 'At least one key differentiator is required';
+      newErrors.keyDifferentiators = 'Setidaknya satu keunggulan utama harus diisi';
     }
     
     setErrors(newErrors);

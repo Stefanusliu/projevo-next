@@ -199,7 +199,7 @@ function CreateProjectModal({ onClose }) {
     e.preventDefault();
     
     if (!user?.uid) {
-      alert('Please log in to create a project');
+      alert('Silakan login untuk membuat proyek');
       return;
     }
     
@@ -241,11 +241,11 @@ function CreateProjectModal({ onClose }) {
         submittedAt: serverTimestamp(),
         team: [],
         milestones: [
-          { name: 'Planning', completed: false, date: '' },
-          { name: 'Design', completed: false, date: '' },
-          { name: 'Development', completed: false, date: '' },
+          { name: 'Perencanaan', completed: false, date: '' },
+          { name: 'Desain', completed: false, date: '' },
+          { name: 'Pembangunan', completed: false, date: '' },
           { name: 'Review', completed: false, date: '' },
-          { name: 'Completion', completed: false, date: '' }
+          { name: 'Penyelesaian', completed: false, date: '' }
         ],
         marketplace: {
           category: formData.projectType,
@@ -283,11 +283,11 @@ function CreateProjectModal({ onClose }) {
       console.log('Project created with Firestore ID:', docRef.id, 'Custom ID:', customProjectId);
       console.log('Full project data saved:', projectData);
       
-      alert(`Project submitted successfully! Your project ID is: ${customProjectId}. Your project is now pending approval and will be available in the marketplace once approved.`);
+      alert(`Proyek berhasil dikirim! ID proyek Anda: ${customProjectId}. Proyek Anda sedang menunggu persetujuan dan akan tersedia di marketplace setelah disetujui.`);
       onClose();
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project. Please try again.');
+      alert('Gagal membuat proyek. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -295,7 +295,7 @@ function CreateProjectModal({ onClose }) {
 
   const handleSaveDraft = async () => {
     if (!user?.uid) {
-      alert('Please log in to save a draft');
+      alert('Silakan login untuk menyimpan draft');
       return;
     }
 
@@ -330,11 +330,11 @@ function CreateProjectModal({ onClose }) {
         submittedAt: null, // No submission date for drafts
         team: [],
         milestones: [
-          { name: 'Planning', completed: false, date: '' },
-          { name: 'Design', completed: false, date: '' },
-          { name: 'Development', completed: false, date: '' },
+          { name: 'Perencanaan', completed: false, date: '' },
+          { name: 'Desain', completed: false, date: '' },
+          { name: 'Pembangunan', completed: false, date: '' },
           { name: 'Review', completed: false, date: '' },
-          { name: 'Completion', completed: false, date: '' }
+          { name: 'Penyelesaian', completed: false, date: '' }
         ],
         // Add metadata for marketplace (but won't be published)
         marketplace: {
@@ -808,14 +808,14 @@ function CreateProjectModal({ onClose }) {
                         onClick={() => setShowBOQSelector(true)}
                         className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
-                        Load from BOQ Maker
+                        Muat dari BOQ Maker
                       </button>
                     </div>
                     
                     {formData.selectedBOQ && (
                       <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-3">
                         <p className="text-sm text-green-700 dark:text-green-300">
-                          BOQ Loaded: {formData.boqData?.title || 'Selected BOQ'}
+                          BOQ Dimuat: {formData.boqData?.title || 'BOQ Terpilih'}
                         </p>
                       </div>
                     )}
@@ -959,7 +959,7 @@ function CreateProjectModal({ onClose }) {
                 onClick={handleSaveDraft}
                 className="px-6 py-2 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors"
               >
-                Save Draft
+                Simpan Draft
               </button>
               
               <div className="flex space-x-4">
@@ -975,7 +975,7 @@ function CreateProjectModal({ onClose }) {
                   disabled={loading}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Creating...' : 'Buat Proyek'}
+                  {loading ? 'Membuat...' : 'Buat Proyek'}
                 </button>
               </div>
             </div>
@@ -1046,8 +1046,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const [loading, setLoading] = useState(true);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [sortBy, setSortBy] = useState('Recent');
-  const [filterBy, setFilterBy] = useState('All');
+  const [sortBy, setSortBy] = useState('Terbaru');
+  const [filterBy, setFilterBy] = useState('Semua');
   const [showDetailsView, setShowDetailsView] = useState(false);
   const [activeProjectFilter, setActiveProjectFilter] = useState(null); // Internal project filter state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -1056,7 +1056,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   const filterDropdownRef = useRef(null);
   
   // Project filter tabs
-  const projectFilterTabs = ['All', 'In Progress', 'Tender', 'Contract', 'Negotiation', 'Penunjukan Langsung'];
+  const projectFilterTabs = ['Semua', 'Dalam Proses', 'Tender', 'Kontrak', 'Negosiasi', 'Penunjukan Langsung'];
   
   // Load projects from Firestore
   useEffect(() => {
@@ -1212,7 +1212,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     console.log('  - Proposal index:', proposalIndex);
     
     if (!selectedProposal) {
-      alert('Selected vendor proposal not found. Please contact support.');
+      alert('Penawaran vendor yang dipilih tidak ditemukan. Silakan hubungi dukungan.');
       return;
     }
     
@@ -1232,7 +1232,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     console.log('Resubmit project for tender:', project);
     // TODO: Implement project resubmission logic
     // This should reset project status and open it for new tender
-    alert('Project resubmission feature will be implemented. This will reset the tender deadline and open the project for new bids.');
+    alert('Fitur kirim ulang proyek akan diimplementasikan. Ini akan mengatur ulang batas waktu tender dan membuka proyek untuk penawaran baru.');
   };
 
   const handleDeleteProject = async (project) => {
@@ -1247,12 +1247,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         console.log('Project deleted successfully:', project.id);
         
         // Show success message
-        alert('Project deleted successfully!');
+        alert('Proyek berhasil dihapus!');
         
         // The projects list will automatically update due to the real-time listener
       } catch (error) {
         console.error('Error deleting project:', error);
-        alert('Failed to delete project. Please try again.');
+        alert('Gagal menghapus proyek. Silakan coba lagi.');
       }
     }
   };
@@ -1637,15 +1637,15 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
     // Draft Mode Statuses
     if (project.status === 'Draft' || project.moderationStatus === 'draft') {
-      return 'In Progress'; // Owner still creates the project draft
+      return 'Dalam Proses'; // Owner still creates the project draft
     }
     
     if (project.moderationStatus === 'pending' || project.status === 'Under Review' || project.status === 'Review') {
-      return 'Review'; // Owner clicks "Submit Draft"
+      return 'Ditinjau'; // Owner clicks "Submit Draft"
     }
     
     if (project.moderationStatus === 'rejected' || project.status === 'Revise' || project.moderationStatus === 'revision_required') {
-      return 'Revise'; // Admin require project owner to edit/revise the project details
+      return 'Revisi'; // Admin require project owner to edit/revise the project details
     }
     
     if (project.moderationStatus === 'approved' && project.procurementMethod !== 'Tender') {
@@ -1693,10 +1693,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         
         // If initial payment is completed, project is ongoing
         if (project.initialPaymentCompleted) {
-          return 'On Going'; // Project started, work in progress
+          return 'Berjalan'; // Project started, work in progress
         }
         // If vendor is selected but payment not completed, show payment needed
-        return 'Awarded'; // Show awarded status with payment needed
+        return 'Diberikan'; // Show awarded status with payment needed
       }
       
       // Check for active negotiation status (vendor hasn't accepted yet)
@@ -1715,26 +1715,26 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           ))) {
         // Only show negotiate if negotiation hasn't been accepted yet
         if (!project.negotiationAccepted && !hasAcceptedProposal) {
-          return 'Negotiate';
+          return 'Negosiasi';
         }
         // If negotiation was accepted, fall through to check other conditions
       }
       
       if (timeLeft !== null) {
         if (timeLeft <= 24 && timeLeft > 0) {
-          return 'Locked'; // Locked if less than 24 hours to deadline
+          return 'Terkunci'; // Locked if less than 24 hours to deadline
         }
         if (timeLeft <= 0) {
-          return 'Failed'; // No winner chosen until deadline
+          return 'Gagal'; // No winner chosen until deadline
         }
       }
       
-      return 'Open'; // Default for approved tender projects
+      return 'Terbuka'; // Default for approved tender projects
     }
     
     // Default fallback
     console.log('Using fallback status for project:', project.id, project.status);
-    return project.status || 'In Progress';
+    return project.status || 'Dalam Proses';
   }, []);
 
   // Helper function to calculate hours to deadline
@@ -1786,7 +1786,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     const status = getProjectStatus(project);
     
     // Draft Phase: In Progress, Review, Revise, Approved
-    if (['In Progress', 'Review', 'Revise', 'Approve'].includes(status)) {
+    if (['Dalam Proses', 'Ditinjau', 'Revisi', 'Approve'].includes(status)) {
       return 'Draft';
     }
     
@@ -1809,7 +1809,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     const projectStatus = getProjectStatus(project);
     
     switch (projectStatus) {
-      case 'In Progress':
+      case 'Dalam Proses':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced In Progress Status Card */}
@@ -1840,7 +1840,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
               >
                 <FiEdit className="w-4 h-4" />
-                Edit Project
+                Edit Proyek
               </button>
               
               {/* Delete Project Button */}
@@ -1849,13 +1849,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
               >
                 <FiTrash2 className="w-4 h-4" />
-                Delete Project
+                Hapus Proyek
               </button>
             </div>
           </div>
         );
         
-      case 'Review':
+      case 'Ditinjau':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Review Status Card */}
@@ -1889,12 +1889,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               title="Wait Admin To Approve"
             >
               <FiClock className="w-4 h-4" />
-              Waiting Review
+              Menunggu Tinjauan
             </button>
           </div>
         );
         
-      case 'Revise':
+      case 'Revisi':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Revision Status Card */}
@@ -1924,7 +1924,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               title={project.adminNotes || "Admin requires revision. Please check admin notes for details."}
             >
               <FiEdit className="w-4 h-4" />
-              Fix & Resubmit
+              Perbaiki & Kirim Ulang
             </button>
           </div>
         );
@@ -1962,7 +1962,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           </div>
         );
         
-      case 'Open':
+      case 'Terbuka':
         const timeLeft = getTenderTimeLeft(project);
         return (
           <div className="flex items-stretch gap-3 w-full">
@@ -1996,7 +1996,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           </div>
         );
         
-      case 'Locked':
+      case 'Terkunci':
         const lockedTimeLeft = getTenderTimeLeft(project);
         return (
           <div className="flex items-stretch gap-3 w-full">
@@ -2031,7 +2031,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           </div>
         );
         
-      case 'Negotiate':
+      case 'Negosiasi':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Negotiation Status Card */}
@@ -2064,12 +2064,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiMessageSquare className="w-4 h-4" />
-              View Offer
+              Lihat Penawaran
             </button>
           </div>
         );
         
-      case 'Awarded':
+      case 'Diberikan':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Payment Status Card */}
@@ -2098,15 +2098,14 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiCreditCard className="w-4 h-4" />
-              Pay 50% Initial
+              Bayar 50% Awal
             </button>
           </div>
         );
         
-      case 'Failed':
+      case 'Gagal':
         return (
-          <div className="flex items-stretch gap-3 w-full">
-            {/* Enhanced Failed Status Card */}
+          <div className="flex items-stretch gap-3 w-full">{/* Enhanced Failed Status Card */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
@@ -2131,12 +2130,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiRefreshCw className="w-4 h-4" />
-              Resubmit
+              Kirim Ulang
             </button>
           </div>
         );
         
-      case 'On Going':
+      case 'Berjalan':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Ongoing Status Card */}
@@ -2164,12 +2163,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
-              Monitor Progress
+              Pantau Progres
             </button>
           </div>
         );
         
-      case 'Completed':
+      case 'Selesai':
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Completed Status Card */}
@@ -2197,7 +2196,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
-              View Results
+              Lihat Hasil
             </button>
           </div>
         );
@@ -2232,23 +2231,23 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     switch (projectStatus) {
       case 'Draft':
         return '#6B7280'; // Gray color for drafts
-      case 'Review':
+      case 'Ditinjau':
         return '#F59E0B'; // Orange for pending/review
-      case 'Revise':
+      case 'Revisi':
         return '#EF4444'; // Red for revision required
       case 'Approve':
         return '#8B5CF6'; // Purple for approved
-      case 'Open':
+      case 'Terbuka':
         return '#10B981'; // Green for open tender
-      case 'Locked':
+      case 'Terkunci':
         return '#F59E0B'; // Orange for locked tender
-      case 'Negotiate':
+      case 'Negosiasi':
         return '#8B5CF6'; // Purple for negotiation
-      case 'Awarded':
+      case 'Diberikan':
         return '#EF4444'; // Red for payment needed
-      case 'On Going':
+      case 'Berjalan':
         return '#2373FF'; // Blue for in progress/ongoing
-      case 'Failed':
+      case 'Gagal':
         return '#6B7280'; // Gray for failed
       case 'Menunggu Persetujuan':
       case 'Pending Approval':
@@ -2257,7 +2256,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       case 'Active':
       case 'Open for Tender':
         return '#10B981'; // Green for active/open
-      case 'Completed':
+      case 'Selesai':
         return '#10B981'; // Green for completed
       case 'Rejected':
         return '#EF4444'; // Red for rejected
@@ -2266,8 +2265,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     }
   };
 
-  const sortOptions = ['Recent', 'Oldest', 'A-Z', 'Z-A'];
-  const filterOptions = ['All', 'Draft', 'Review', 'Revise', 'Open', 'Locked', 'Negotiate', 'Awarded', 'On Going', 'Completed', 'Failed'];
+  const sortOptions = ['Terbaru', 'Terlama', 'A-Z', 'Z-A'];
+  const filterOptions = ['Semua', 'Draft', 'Ditinjau', 'Revisi', 'Terbuka', 'Terkunci', 'Negosiasi', 'Diberikan', 'Berjalan', 'Selesai', 'Gagal'];
 
   // Filter projects based on internal project filter and dropdown filter
   const getFilteredProjects = () => {
@@ -2276,10 +2275,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     // First apply the tab filter (Draft, Tender, Contract, etc.)
     const currentTabFilter = activeProjectFilter || activeProjectTab;
     
-    if (currentTabFilter && currentTabFilter !== 'All') {
+    if (currentTabFilter && currentTabFilter !== 'Semua') {
       filtered = filtered.filter(project => {
         switch (currentTabFilter) {
-          case 'In Progress':
+          case 'Dalam Proses':
             return project.status === 'Draft' || project.isDraft === true || project.moderationStatus === 'draft';
           case 'Tender':
             // Only show projects that are available for bidding (not awarded)
@@ -2288,13 +2287,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                    project.status !== 'Draft' && // Exclude drafts
                    project.isAvailableForBidding !== false &&
                    !project.selectedVendorId;
-          case 'Contract':
+          case 'Kontrak':
             return project.procurementMethod === 'Contract' && project.status !== 'Draft';
-          case 'Negotiation':
+          case 'Negosiasi':
             return project.procurementMethod === 'Negotiation' && project.status !== 'Draft';
           case 'Penunjukan Langsung':
             return project.procurementMethod === 'Penunjukan Langsung' && project.status !== 'Draft';
-          case 'Awarded':
+          case 'Diberikan':
             // Show projects that have been awarded to vendors
             return (project.status === 'awarded' || project.selectedVendorId) && project.status !== 'Draft';
           default:
@@ -2304,7 +2303,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     }
     
     // Then apply the dropdown filter (by status)
-    if (filterBy && filterBy !== 'All') {
+    if (filterBy && filterBy !== 'Semua') {
       filtered = filtered.filter(project => {
         const projectStatus = getProjectStatus(project);
         return projectStatus === filterBy;
@@ -2315,12 +2314,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     if (sortBy) {
       filtered = [...filtered].sort((a, b) => {
         switch (sortBy) {
-          case 'Recent':
+          case 'Terbaru':
             // Sort by creation date, most recent first
             const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
             const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
             return bDate.getTime() - aDate.getTime();
-          case 'Oldest':
+          case 'Terlama':
             // Sort by creation date, oldest first
             const aDateOld = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
             const bDateOld = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
@@ -2349,12 +2348,12 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
   // Get the current tab display name
   const getTabDisplayName = () => {
     const currentFilter = activeProjectFilter || activeProjectTab;
-    const statusFilter = filterBy && filterBy !== 'All' ? ` - ${filterBy}` : '';
+    const statusFilter = filterBy && filterBy !== 'Semua' ? ` - ${filterBy}` : '';
     
-    if (!currentFilter || currentFilter === 'All') {
-      return `All Projects${statusFilter}`;
+    if (!currentFilter || currentFilter === 'Semua') {
+      return `Semua Proyek${statusFilter}`;
     }
-    return `${currentFilter} Projects${statusFilter}`;
+    return `Proyek ${currentFilter}${statusFilter}`;
   };
 
   // Show loading state
@@ -2362,7 +2361,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     return (
       <div className="flex items-center justify-center h-64">
         <FiLoader className="animate-spin h-12 w-12" style={{ color: '#2373FF' }} />
-        <span className="ml-3 text-gray-600">Loading projects...</span>
+        <span className="ml-3 text-gray-600">Memuat proyek...</span>
       </div>
     );
   }
@@ -2386,22 +2385,22 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{getTabDisplayName()}</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Showing {filteredProjects.length} of {projects.length} projects
+            Menampilkan {filteredProjects.length} dari {projects.length} proyek
           </p>
         </div>
         
         <div className="flex items-center space-x-3">
           {/* Clear Filters Button - show when filters are applied */}
-          {(filterBy !== 'All' || sortBy !== 'Recent') && (
+          {(filterBy !== 'Semua' || sortBy !== 'Terbaru') && (
             <button
               onClick={() => {
-                setFilterBy('All');
-                setSortBy('Recent');
+                setFilterBy('Semua');
+                setSortBy('Terbaru');
               }}
               className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
             >
               <FiX className="w-4 h-4 mr-1" />
-              Clear
+              Hapus
             </button>
           )}
 
@@ -2412,7 +2411,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <MdSort className="w-4 h-4 mr-2" />
-              Sort: {sortBy}
+              Urut: {sortBy}
               <FiChevronDown className="w-4 h-4 ml-1" />
             </button>
             
@@ -2487,13 +2486,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         {projectFilterTabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveProjectFilter(tab === 'All' ? null : tab)}
+            onClick={() => setActiveProjectFilter(tab === 'Semua' ? null : tab)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              (activeProjectFilter === tab) || (tab === 'All' && !activeProjectFilter)
+              (activeProjectFilter === tab) || (tab === 'Semua' && !activeProjectFilter)
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
             }`}
-            style={(activeProjectFilter === tab) || (tab === 'All' && !activeProjectFilter) ? { backgroundColor: '#2373FF' } : {}}
+            style={(activeProjectFilter === tab) || (tab === 'Semua' && !activeProjectFilter) ? { backgroundColor: '#2373FF' } : {}}
           >
             {tab}
           </button>
@@ -2505,7 +2504,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         
         {filteredProjects.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-300">
-            <p className="text-gray-500">No projects found</p>
+            <p className="text-gray-500">Tidak ada proyek yang ditemukan</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2706,13 +2705,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           }
           
           // Show success alert
-          alert('🎉 Payment Successful!\n\nYour project status has been updated to "On Going" and work will begin shortly.');
+          alert('🎉 Pembayaran Berhasil!\n\nStatus proyek Anda telah diperbarui menjadi "Berjalan" dan pekerjaan akan segera dimulai.');
           
           // Projects will auto-refresh due to real-time listener
         }}
         onPaymentError={(error) => {
           console.error('Payment failed:', error);
-          alert('Payment failed. Please try again.');
+          alert('Pembayaran gagal. Silakan coba lagi.');
         }}
       />
     </div>

@@ -646,7 +646,7 @@ export default function BOQGeneratorComponent() {
           // List View
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-black">Draft BOQ Generator</h3>
+              <h3 className="text-xl font-semibold text-black">Generator BOQ Draft</h3>
               <button
                 onClick={createNewBOQ}
                 className="text-white px-4 py-2 rounded-lg transition-colors"
@@ -654,7 +654,7 @@ export default function BOQGeneratorComponent() {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
               >
-                Create New BOQ
+                Buat BOQ Baru
               </button>
             </div>
 
@@ -665,13 +665,13 @@ export default function BOQGeneratorComponent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No BOQs yet</h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">Create your first Bill of Quantities to get started.</p>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Belum ada BOQ</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6">Buat Bill of Quantities pertama Anda untuk memulai.</p>
                 <button
                   onClick={createNewBOQ}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
                 >
-                  Create Your First BOQ
+                  Buat BOQ Pertama Anda
                 </button>
               </div>
             ) : (
@@ -681,7 +681,7 @@ export default function BOQGeneratorComponent() {
                     <div>
                       <h4 className="font-medium text-slate-900 dark:text-white">{boq.title}</h4>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Created: {formatDate(boq.createdAt)}
+                        Dibuat: {formatDate(boq.createdAt)}
                       </p>
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                         Total: Rp {(boq.total || 0).toLocaleString('id-ID')}
@@ -704,25 +704,25 @@ export default function BOQGeneratorComponent() {
           // Editor View
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">BOQ Editor</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Editor BOQ</h3>
               <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentView('list')}
                   className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  View Saved BOQs
+                  Lihat BOQ Tersimpan
                 </button>
                 <button
                   onClick={saveBOQ}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  Save BOQ
+                  Simpan BOQ
                 </button>
                 <button
                   onClick={exportToCSV}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  Export CSV
+                  Ekspor CSV
                 </button>
               </div>
             </div>
@@ -730,13 +730,13 @@ export default function BOQGeneratorComponent() {
             {/* BOQ Title Input */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                BOQ Title
+                Judul BOQ
               </label>
               <input
                 type="text"
                 value={boqTitle}
                 onChange={(e) => setBoqTitle(e.target.value)}
-                placeholder="Enter BOQ title..."
+                placeholder="Masukkan judul BOQ..."
                 className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
               />
             </div>
@@ -744,12 +744,12 @@ export default function BOQGeneratorComponent() {
             {/* Simple BOQ Form - Basic version for dashboard */}
             <div className="space-y-4">
               <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
-                <h4 className="font-medium text-slate-900 dark:text-white mb-4">Quick BOQ Entry</h4>
+                <h4 className="font-medium text-slate-900 dark:text-white mb-4">Entri BOQ Cepat</h4>
                 <div className="grid grid-cols-5 gap-4 text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  <div>Description</div>
-                  <div>Unit</div>
+                  <div>Deskripsi</div>
+                  <div>Satuan</div>
                   <div>Volume</div>
-                  <div>Price/Unit</div>
+                  <div>Harga/Satuan</div>
                   <div>Total</div>
                 </div>
                 <div className="space-y-2">
@@ -760,7 +760,7 @@ export default function BOQGeneratorComponent() {
                         value={spec.description}
                         onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'description', e.target.value)}
                         onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'description')}
-                        placeholder="Item description"
+                        placeholder="Deskripsi item"
                         className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10"
                         data-row-index={index}
                         data-field="description"
@@ -770,7 +770,7 @@ export default function BOQGeneratorComponent() {
                         value={spec.satuan}
                         onChange={(e) => updateSpec(tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, spec.id, 'satuan', e.target.value)}
                         onKeyDown={(e) => handleKeyPress(e, tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id, index, 'satuan')}
-                        placeholder="Unit"
+                        placeholder="Satuan"
                         className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-600 dark:text-white text-sm h-10"
                         data-row-index={index}
                         data-field="satuan"
@@ -820,18 +820,18 @@ export default function BOQGeneratorComponent() {
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                         tabIndex={-1}
                       >
-                        Add Item
+                        Tambah Item
                       </button>
                       <button
                         onClick={() => openBulkAddModal('spec', tahapanKerja[0].id, tahapanKerja[0].jenisKerja[0].id, tahapanKerja[0].jenisKerja[0].uraian[0].id)}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                         tabIndex={-1}
                       >
-                        + Add Multiple
+                        + Tambah Beberapa
                       </button>
                     </div>
                     <div className="text-lg font-bold text-slate-900 dark:text-white">
-                      Grand Total: Rp {calculateGrandTotal().toLocaleString('id-ID')}
+                      Total Keseluruhan: Rp {calculateGrandTotal().toLocaleString('id-ID')}
                     </div>
                   </div>
                 </div>
@@ -840,13 +840,13 @@ export default function BOQGeneratorComponent() {
 
             <div className="text-center pt-4">
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                Need more advanced features? Use the full BOQ Maker.
+                Butuh fitur yang lebih canggih? Gunakan BOQ Maker lengkap.
               </p>
               <button
                 onClick={() => router.push('/boq-maker')}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
               >
-                Open Full BOQ Maker
+                Buka BOQ Maker Lengkap
               </button>
             </div>
           </div>
@@ -865,15 +865,15 @@ export default function BOQGeneratorComponent() {
                   </svg>
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">BOQ Saved Successfully!</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">Your Bill of Quantities has been saved and is ready for use.</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">BOQ Berhasil Disimpan!</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">Bill of Quantities Anda telah disimpan dan siap digunakan.</p>
               
               <div className="space-y-3">
                 <button
                   onClick={() => setShowSuccessModal(false)}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                 >
-                  Continue Editing
+                  Lanjutkan Edit
                 </button>
                 <button
                   onClick={() => {
@@ -882,7 +882,7 @@ export default function BOQGeneratorComponent() {
                   }}
                   className="w-full border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold"
                 >
-                  View All BOQs
+                  Lihat Semua BOQ
                 </button>
               </div>
             </div>
@@ -896,15 +896,15 @@ export default function BOQGeneratorComponent() {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 max-w-md mx-4 border border-slate-200 dark:border-slate-600">
             <div className="text-center">
               <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-                Add Multiple Specifications
+                Tambah Beberapa Spesifikasi
               </h3>
               <p className="text-slate-600 dark:text-slate-300 mb-6">
-                How many specifications would you like to add at once?
+                Berapa banyak spesifikasi yang ingin Anda tambahkan sekaligus?
               </p>
               
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-                  Quantity
+                  Jumlah
                 </label>
                 <input
                   type="number"
@@ -925,7 +925,7 @@ export default function BOQGeneratorComponent() {
                   }}
                   autoFocus
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Maximum 50 items</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Maksimum 50 item</p>
               </div>
               
               <div className="flex gap-3">
@@ -933,13 +933,13 @@ export default function BOQGeneratorComponent() {
                   onClick={closeBulkAddModal}
                   className="flex-1 px-4 py-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg transition-all duration-200 font-medium"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   onClick={handleBulkAdd}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
                 >
-                  Add {bulkAddModal.count} Items
+                  Tambah {bulkAddModal.count} Item
                 </button>
               </div>
             </div>

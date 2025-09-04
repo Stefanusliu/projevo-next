@@ -38,7 +38,7 @@ export default function SavedBOQComponent() {
       <div className="p-6">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-black">Draft BOQ Generator</h3>
+            <h3 className="text-xl font-semibold text-black">Generator Draft BOQ</h3>
             <button
               onClick={createNewBOQ}
               className="text-white px-4 py-2 rounded-lg transition-colors"
@@ -46,7 +46,7 @@ export default function SavedBOQComponent() {
               onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
               onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
             >
-              Create New BOQ
+              Buat BOQ Baru
             </button>
           </div>
 
@@ -57,8 +57,8 @@ export default function SavedBOQComponent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-black mb-2">No BOQ Drafts yet</h3>
-              <p className="text-gray-500 mb-6">Create your first Bill of Quantities draft to get started.</p>
+              <h3 className="text-lg font-medium text-black mb-2">Belum Ada Draft BOQ</h3>
+              <p className="text-gray-500 mb-6">Buat draft Bill of Quantities pertama Anda untuk memulai.</p>
               <button
                 onClick={createNewBOQ}
                 className="text-white px-6 py-3 rounded-lg transition-colors"
@@ -66,7 +66,7 @@ export default function SavedBOQComponent() {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
               >
-                Create Your First BOQ
+                Buat BOQ Pertama Anda
               </button>
             </div>
           ) : (
@@ -80,7 +80,7 @@ export default function SavedBOQComponent() {
                     <div>
                       <h4 className="font-medium text-black">{boq.title}</h4>
                       <p className="text-sm text-gray-600">
-                        Created: {formatDate(boq.createdAt)}
+                        Dibuat: {formatDate(boq.createdAt)}
                       </p>
                       <p className="text-sm font-medium text-gray-600">
                         Total: Rp {(boq.total || 0).toLocaleString('id-ID')}
@@ -105,7 +105,7 @@ export default function SavedBOQComponent() {
 
           <div className="text-center pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-500 mb-4">
-              Need to create a new BOQ or edit existing ones?
+              Perlu membuat BOQ baru atau mengedit yang sudah ada?
             </p>
             <button
               onClick={() => router.push('/boq-maker')}
@@ -114,7 +114,7 @@ export default function SavedBOQComponent() {
               onMouseEnter={(e) => e.target.style.backgroundColor = '#1d63ed'}
               onMouseLeave={(e) => e.target.style.backgroundColor = '#2373FF'}
             >
-              Open Full BOQ Maker
+              Buka BOQ Maker Lengkap
             </button>
           </div>
         </div>

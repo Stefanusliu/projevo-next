@@ -77,7 +77,7 @@ export default function Login() {
     
     // Basic validation
     if (!formData.email || !formData.password) {
-      setError('Please enter both email and password');
+      setError('Silakan masukkan email dan kata sandi');
       setIsLoading(false);
       return;
     }
@@ -95,18 +95,18 @@ export default function Login() {
     } catch (error) {
       console.error('Login error:', error);
       
-      let errorMessage = 'Failed to sign in. Please check your credentials.';
+      let errorMessage = 'Gagal masuk. Silakan periksa kredensial Anda.';
       
       if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email. Please sign up first.';
+        errorMessage = 'Tidak ada akun yang ditemukan dengan email ini. Silakan daftar terlebih dahulu.';
       } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
+        errorMessage = 'Kata sandi salah. Silakan coba lagi.';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
+        errorMessage = 'Silakan masukkan alamat email yang valid.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed login attempts. Please try again later.';
+        errorMessage = 'Terlalu banyak percobaan login gagal. Silakan coba lagi nanti.';
       } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled. Please contact support.';
+        errorMessage = 'Akun ini telah dinonaktifkan. Silakan hubungi dukungan.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -131,11 +131,11 @@ export default function Login() {
     } catch (error) {
       console.error('Google login error:', error);
       
-      let errorMessage = 'Failed to sign in with Google';
+      let errorMessage = 'Gagal masuk dengan Google';
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in was cancelled. Please try again.';
+        errorMessage = 'Masuk dibatalkan. Silakan coba lagi.';
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Popup was blocked. Please allow popups and try again.';
+        errorMessage = 'Popup diblokir. Silakan izinkan popup dan coba lagi.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -197,10 +197,10 @@ export default function Login() {
               />
             </Link>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Welcome back
+              Selamat datang kembali
             </h2>
             <p className="text-gray-600 mb-8">
-              Sign in to your account to continue your project evolution
+              Masuk ke akun Anda untuk melanjutkan evolusi proyek Anda
             </p>
           </div>
 
@@ -218,7 +218,7 @@ export default function Login() {
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-blue-600 text-sm">Loading your profile and redirecting to dashboard...</p>
+                  <p className="text-blue-600 text-sm">Memuat profil Anda dan mengarahkan ke dashboard...</p>
                 </div>
               </div>
             )}
@@ -228,7 +228,7 @@ export default function Login() {
               {/* Email field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
+                  Alamat email
                 </label>
                 <div className="relative">
                   <input
@@ -240,7 +240,7 @@ export default function Login() {
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your email"
+                    placeholder="Masukkan email Anda"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,7 +253,7 @@ export default function Login() {
               {/* Password field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  Kata sandi
                 </label>
                 <div className="relative">
                   <input
@@ -265,7 +265,7 @@ export default function Login() {
                     value={formData.password}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your password"
+                    placeholder="Masukkan kata sandi Anda"
                   />
                   <button
                     type="button"
@@ -298,13 +298,13 @@ export default function Login() {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 bg-white rounded"
                   />
                   <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                    Remember me
+                    Ingat saya
                   </label>
                 </div>
 
                 <div className="text-sm">
                   <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    Forgot password?
+                    Lupa kata sandi?
                   </Link>
                 </div>
               </div>
@@ -320,15 +320,15 @@ export default function Login() {
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Signing in...</span>
+                      <span>Masuk...</span>
                     </div>
                   ) : isProfileLoading ? (
                     <div className="flex items-center justify-center space-x-2">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading profile...</span>
+                      <span>Memuat profil...</span>
                     </div>
                   ) : (
-                    'Sign in to Projevo'
+                    'Masuk ke Projevo'
                   )}
                 </button>
               </div>
@@ -337,7 +337,7 @@ export default function Login() {
             {/* Divider */}
             <div className="my-6 flex items-center">
               <div className="flex-1 border-t border-gray-300"></div>
-              <span className="px-4 text-sm text-gray-500">Or continue with</span>
+              <span className="px-4 text-sm text-gray-500">Atau lanjutkan dengan</span>
               <div className="flex-1 border-t border-gray-300"></div>
             </div>
 
@@ -352,7 +352,7 @@ export default function Login() {
                 {isLoading || isProfileLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>{isProfileLoading ? 'Loading profile...' : 'Signing in...'}</span>
+                    <span>{isProfileLoading ? 'Memuat profil...' : 'Masuk...'}</span>
                   </>
                 ) : (
                   <>
@@ -362,7 +362,7 @@ export default function Login() {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    <span>Continue with Google</span>
+                    <span>Lanjutkan dengan Google</span>
                   </>
                 )}
               </div>
@@ -375,9 +375,9 @@ export default function Login() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900">Automatic Role Detection</h4>
+                  <h4 className="text-sm font-medium text-gray-900">Deteksi Peran Otomatis</h4>
                   <p className="text-xs text-gray-600 mt-1">
-                    Our system will automatically identify whether you&apos;re a Project Owner or Vendor based on your account.
+                    Sistem kami akan secara otomatis mengidentifikasi apakah Anda Pemilik Proyek atau Vendor berdasarkan akun Anda.
                   </p>
                 </div>
               </div>
@@ -386,9 +386,9 @@ export default function Login() {
             {/* Sign up link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don&apos;t have an account?{' '}
+                Belum punya akun?{' '}
                 <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                  Sign up for free
+                  Daftar gratis
                 </Link>
               </p>
             </div>
@@ -397,14 +397,15 @@ export default function Login() {
           {/* Additional info */}
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              By signing in, you agree to our{' '}
+              Dengan masuk, Anda menyetujui{' '}
               <Link href="/terms" className="underline hover:text-gray-700">
-                Terms of Service
+                Ketentuan Layanan
               </Link>
-              {' '}and{' '}
+              {' '}dan{' '}
               <Link href="/privacy" className="underline hover:text-gray-700">
-                Privacy Policy
+                Kebijakan Privasi
               </Link>
+              {' '}kami
             </p>
           </div>
         </div>

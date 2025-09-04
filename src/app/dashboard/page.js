@@ -88,7 +88,7 @@ function DashboardContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#2373FF' }}></div>
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            Setting up your dashboard...
+            Menyiapkan dashboard Anda...
           </h2>
           <p className="text-gray-600">
             Redirecting you to the right place.
@@ -135,9 +135,9 @@ function DashboardContent() {
           )}
           
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Choose Your Dashboard</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Pilih Dashboard Anda</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              Select your role to access the appropriate dashboard
+              Pilih peran Anda untuk mengakses dashboard yang sesuai
             </p>
           </div>
           
@@ -157,7 +157,7 @@ function DashboardContent() {
                   <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  Project Owner Dashboard
+                  Dashboard Pemilik Proyek
                 </>
               )}
             </button>
@@ -177,7 +177,7 @@ function DashboardContent() {
                   <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 00-2 2H10a2 2 0 00-2-2V6m8 0h2a2 2 0 012 2v6.5" />
                   </svg>
-                  Vendor Dashboard
+                  Dashboard Vendor
                 </>
               )}
             </button>

@@ -101,46 +101,46 @@ export default function SignUp() {
     
     // Validate account type selection
     if (!formData.accountType) {
-      setError('Please select account type (Individu or Perusahaan)');
+      setError('Silakan pilih jenis akun (Individu atau Perusahaan)');
       return;
     }
 
     // Validate required fields based on account type
     if (formData.accountType === 'individu') {
       if (!formData.firstName || !formData.lastName) {
-        setError('Please fill in your first and last name');
+        setError('Silakan isi nama depan dan nama belakang Anda');
         return;
       }
     } else if (formData.accountType === 'perusahaan') {
       if (!formData.companyName || !formData.npwp) {
-        setError('Please fill in company name and NPWP');
+        setError('Silakan isi nama perusahaan dan NPWP');
         return;
       }
       // Validate NPWP format (should be 15 digits)
       if (formData.npwp.replace(/\D/g, '').length !== 15) {
-        setError('NPWP must be exactly 15 digits');
+        setError('NPWP harus tepat 15 digit');
         return;
       }
     }
 
     // Validate required fields
     if (!formData.userType) {
-      setError('Please select whether you are a Project Owner or Vendor');
+      setError('Silakan pilih apakah Anda Project Owner atau Vendor');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Kata sandi tidak cocok');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Kata sandi harus minimal 6 karakter');
       return;
     }
 
     if (!formData.agreeToTerms) {
-      setError('Please agree to the Terms of Service and Privacy Policy');
+      setError('Silakan setujui Syarat Layanan dan Kebijakan Privasi');
       return;
     }
     
@@ -180,36 +180,36 @@ export default function SignUp() {
         // Show OTP modal anyway so user can try resending
         setShowOTPModal(true);
         setVerificationSent(false); // Indicate that initial send failed
-        setError(`OTP sending failed: ${otpError.message}. Please try resending.`);
+        setError(`Pengiriman OTP gagal: ${otpError.message}. Silakan coba kirim ulang.`);
       }
       
     } catch (error) {
       console.error('Signup error:', error);
       
       // Handle specific Firebase errors
-      let errorMessage = 'Failed to create account. Please try again.';
+      let errorMessage = 'Gagal membuat akun. Silakan coba lagi.';
       
       if (error.code === 'auth/admin-restricted-operation') {
-        errorMessage = 'Account creation is currently restricted. Please contact support or try again later.';
+        errorMessage = 'Pembuatan akun saat ini dibatasi. Silakan hubungi dukungan atau coba lagi nanti.';
       } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists. Please sign in instead.';
+        errorMessage = 'Akun dengan email ini sudah ada. Silakan masuk saja.';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
+        errorMessage = 'Kata sandi terlalu lemah. Silakan pilih kata sandi yang lebih kuat.';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
+        errorMessage = 'Silakan masukkan alamat email yang valid.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+        errorMessage = 'Akun email/kata sandi tidak diaktifkan. Silakan hubungi dukungan.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many unsuccessful sign up attempts. Please try again later.';
+        errorMessage = 'Terlalu banyak percobaan pendaftaran yang tidak berhasil. Silakan coba lagi nanti.';
       } else if (error.code === 'permission-denied' || error.code === 'insufficient-permissions') {
-        errorMessage = 'Account created but profile data could not be saved. Please complete your profile after signing in.';
+        errorMessage = 'Akun dibuat tetapi data profil tidak dapat disimpan. Silakan lengkapi profil Anda setelah masuk.';
         // Still move to verification step since user was created
         setStep(2);
         return;
       } else if (error.code === 'unavailable') {
-        errorMessage = 'Service is temporarily unavailable. Please try again in a few moments.';
+        errorMessage = 'Layanan sementara tidak tersedia. Silakan coba lagi dalam beberapa saat.';
       } else if (error.name === 'NetworkError' || error.message.includes('network')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
+        errorMessage = 'Kesalahan jaringan. Silakan periksa koneksi internet Anda dan coba lagi.';
       } else if (error.message) {
         // Use the error message but make it more user-friendly
         errorMessage = error.message.replace(/firebase:/gi, '').replace(/auth\//gi, '').trim();
@@ -236,21 +236,21 @@ export default function SignUp() {
     } catch (error) {
       console.error('Google signup error:', error);
       
-      let errorMessage = 'Failed to sign up with Google';
+      let errorMessage = 'Gagal mendaftar dengan Google';
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-up was cancelled. Please try again.';
+        errorMessage = 'Pendaftaran dibatalkan. Silakan coba lagi.';
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Popup was blocked. Please allow popups and try again.';
+        errorMessage = 'Popup diblokir. Silakan izinkan popup dan coba lagi.';
       } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = 'Only one popup request is allowed at a time.';
+        errorMessage = 'Hanya satu permintaan popup yang diizinkan pada satu waktu.';
       } else if (error.code === 'auth/account-exists-with-different-credential') {
-        errorMessage = 'An account already exists with the same email but different sign-in method.';
+        errorMessage = 'Akun sudah ada dengan email yang sama tetapi metode masuk yang berbeda.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Google sign-in is not enabled. Please contact support.';
+        errorMessage = 'Login Google tidak diaktifkan. Silakan hubungi dukungan.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many requests. Please try again later.';
+        errorMessage = 'Terlalu banyak permintaan. Silakan coba lagi nanti.';
       } else if (error.name === 'NetworkError' || error.message.includes('network')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
+        errorMessage = 'Kesalahan jaringan. Silakan periksa koneksi internet Anda dan coba lagi.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -306,11 +306,11 @@ export default function SignUp() {
       
       // Handle network and API errors more specifically
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Please check your internet connection and try again.');
+        throw new Error('Kesalahan jaringan: Silakan periksa koneksi internet Anda dan coba lagi.');
       } else if (error.name === 'AbortError') {
-        throw new Error('Request timed out. Please try again.');
+        throw new Error('Permintaan timeout. Silakan coba lagi.');
       } else if (error.message.includes('JSON')) {
-        throw new Error('Server communication error. Please try again.');
+        throw new Error('Kesalahan komunikasi server. Silakan coba lagi.');
       }
       
       throw error;
@@ -503,7 +503,7 @@ export default function SignUp() {
 
       <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background gradient effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900/20 dark:to-indigo-900/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-full">
           <div className="w-96 h-96 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl absolute top-20 left-1/4"></div>
           <div className="w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl absolute top-40 right-1/4"></div>
@@ -524,19 +524,19 @@ export default function SignUp() {
                 unoptimized={process.env.NODE_ENV === 'development'}
               />
             </Link>
-            <h2 className="text-3xl font-bold text-white mb-2">
-              Start your evolution
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Mulai evolusi Anda
             </h2>
-            <p className="text-white/90">
-              Create your account and transform how you manage projects
+            <p className="text-gray-700">
+              Buat akun Anda dan transformasi cara Anda mengelola proyek
             </p>
           </div>
 
           {/* Signup form */}
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-8">
             {error && (
-              <div className="mb-4 p-4 bg-red-900/30 border border-red-500/50 rounded-lg backdrop-blur-sm">
-                <p className="text-red-200 text-sm">{error}</p>
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -545,7 +545,7 @@ export default function SignUp() {
               
               {/* Account Type Selection */}
               <div>
-                <label className="block text-sm font-medium text-white mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-4">
                   Jenis Akun
                 </label>
                 <div className="grid grid-cols-2 gap-4">
@@ -555,7 +555,7 @@ export default function SignUp() {
                     className={`p-6 border-2 rounded-lg text-center transition-all duration-200 ${
                       formData.accountType === 'individu'
                         ? 'border-blue-400 bg-blue-50 text-blue-700'
-                        : 'border-white/30 hover:border-white/50 text-white bg-white/10 hover:bg-white/20'
+                        : 'border-gray-300 hover:border-blue-400 text-gray-700 bg-gray-50 hover:bg-blue-50'
                     }`}
                   >
                     <div className="text-lg font-semibold mb-2">Individu</div>
@@ -567,7 +567,7 @@ export default function SignUp() {
                     className={`p-6 border-2 rounded-lg text-center transition-all duration-200 ${
                       formData.accountType === 'perusahaan'
                         ? 'border-blue-400 bg-blue-50 text-blue-700'
-                        : 'border-white/30 hover:border-white/50 text-white bg-white/10 hover:bg-white/20'
+                        : 'border-gray-300 hover:border-blue-400 text-gray-700 bg-gray-50 hover:bg-blue-50'
                     }`}
                   >
                     <div className="text-lg font-semibold mb-2">Perusahaan</div>
@@ -579,8 +579,8 @@ export default function SignUp() {
               {/* Name fields - show different fields based on account type */}
               {formData.accountType === 'individu' && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div>                      <label htmlFor="firstName" className="block text-sm font-medium text-white mb-2">
-                        First name
+                  <div>                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Nama Depan
                       </label>
                     <input
                       id="firstName"
@@ -589,12 +589,12 @@ export default function SignUp() {
                       required
                       value={formData.firstName}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="First name"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Nama depan"
                     />
                   </div>
-                  <div>                      <label htmlFor="lastName" className="block text-sm font-medium text-white mb-2">
-                        Last name
+                  <div>                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Nama Belakang
                       </label>
                     <input
                       id="lastName"
@@ -603,8 +603,8 @@ export default function SignUp() {
                       required
                       value={formData.lastName}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Last name"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Nama belakang"
                     />
                   </div>
                 </div>
@@ -614,8 +614,8 @@ export default function SignUp() {
               {formData.accountType === 'perusahaan' && (
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium text-white mb-2">
-                      Company Name
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Nama Perusahaan
                     </label>
                     <input
                       id="companyName"
@@ -624,12 +624,12 @@ export default function SignUp() {
                       required
                       value={formData.companyName}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter company name"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Masukkan nama perusahaan"
                     />
                   </div>
                   <div>
-                    <label htmlFor="npwp" className="block text-sm font-medium text-white mb-2">
+                    <label htmlFor="npwp" className="block text-sm font-medium text-gray-700 mb-2">
                       NPWP
                     </label>
                     <input
@@ -639,12 +639,12 @@ export default function SignUp() {
                       required
                       value={formatNPWPDisplay(formData.npwp)}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="XX.XXX.XXX.X-XXX.XXX"
                       maxLength="20"
                     />
-                    <p className="mt-1 text-xs text-white/70">
-                      15-digit tax identification number
+                    <p className="mt-1 text-xs text-gray-500">
+                      Nomor Pokok Wajib Pajak 15 digit
                     </p>
                   </div>
                 </div>
@@ -655,8 +655,8 @@ export default function SignUp() {
                 <>
                   {/* Email field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                      Email address
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Alamat Email
                     </label>
                     <input
                       id="email"
@@ -666,15 +666,15 @@ export default function SignUp() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter your email"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Masukkan alamat email Anda"
                     />
                   </div>
 
                   {/* Phone Number field */}
                   <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-white mb-2">
-                      Phone Number
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                      Nomor Telepon
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -687,20 +687,20 @@ export default function SignUp() {
                         required
                         value={formatPhoneDisplay(formData.phoneNumber)}
                         onChange={handleChange}
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         placeholder="812 3456 7890"
                         maxLength="15"
                       />
                     </div>
-                    <p className="mt-1 text-xs text-white/70">
-                      Enter your number starting with 8 (e.g., 812 3456 7890)
+                    <p className="mt-1 text-xs text-gray-500">
+                      Masukkan nomor Anda dimulai dengan 8 (contoh: 812 3456 7890)
                     </p>
                   </div>
 
                   {/* User Type dropdown */}
                   <div>
-                    <label htmlFor="userType" className="block text-sm font-medium text-white mb-2">
-                      I am a
+                    <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-2">
+                      Saya adalah
                     </label>
                     <select
                       id="userType"
@@ -708,22 +708,22 @@ export default function SignUp() {
                       required
                       value={formData.userType}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     >
-                      <option value="">Select your role</option>
-                      <option value="project-owner">Project Owner</option>
+                      <option value="">Pilih peran Anda</option>
+                      <option value="project-owner">Pemilik Proyek</option>
                       <option value="vendor">Vendor</option>
                     </select>
-                    <p className="mt-1 text-xs text-white/70">
-                      {formData.userType === 'project-owner' && "Looking for qualified vendors to complete your projects"}
-                      {formData.userType === 'vendor' && "Ready to provide services and grow your business"}
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formData.userType === 'project-owner' && "Mencari vendor berkualitas untuk menyelesaikan proyek Anda"}
+                      {formData.userType === 'vendor' && "Siap menyediakan layanan dan mengembangkan bisnis Anda"}
                     </p>
                   </div>
 
                   {/* Password field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                      Password
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      Kata Sandi
                     </label>
                     <div className="relative">
                       <input
@@ -733,8 +733,8 @@ export default function SignUp() {
                         required
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        placeholder="Create a strong password"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Buat kata sandi yang kuat"
                       />
                       <button
                         type="button"
@@ -757,8 +757,8 @@ export default function SignUp() {
 
                   {/* Confirm Password field */}
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-2">
-                      Confirm password
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Konfirmasi Kata Sandi
                     </label>
                     <div className="relative">
                       <input
@@ -768,8 +768,8 @@ export default function SignUp() {
                         required
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        placeholder="Confirm your password"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Konfirmasi kata sandi Anda"
                       />
                       <button
                         type="button"
@@ -801,14 +801,14 @@ export default function SignUp() {
                       onChange={handleChange}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
                     />
-                    <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-white">
-                      I agree to the{' '}
-                      <Link href="/terms" className="text-blue-300 hover:text-blue-200 underline">
-                        Terms of Service
+                    <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-700">
+                      Saya menyetujui{' '}
+                      <Link href="/terms" className="text-blue-600 hover:text-blue-500 underline">
+                        Ketentuan Layanan
                       </Link>
-                      {' '}and{' '}
-                      <Link href="/privacy" className="text-blue-300 hover:text-blue-200 underline">
-                        Privacy Policy
+                      {' '}dan{' '}
+                      <Link href="/privacy" className="text-blue-600 hover:text-blue-500 underline">
+                        Kebijakan Privasi
                       </Link>
                     </label>
                   </div>
@@ -827,14 +827,14 @@ export default function SignUp() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Creating account...
+                          Membuat akun...
                         </span>
                       ) : (
                         formData.userType === 'project-owner' 
-                          ? 'Start Finding Vendors' 
+                          ? 'Mulai Mencari Vendor' 
                           : formData.userType === 'vendor' 
-                          ? 'Start Getting Projects' 
-                          : 'Create your Projevo account'
+                          ? 'Mulai Mendapat Proyek' 
+                          : 'Buat akun Projevo Anda'
                       )}
                     </button>
                   </div>
@@ -843,11 +843,11 @@ export default function SignUp() {
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/30" />
+                  <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-transparent text-white">
-                    Or sign up with
+                  <span className="px-2 bg-white text-gray-500">
+                    Atau daftar dengan
                   </span>
                 </div>
               </div>
@@ -858,7 +858,7 @@ export default function SignUp() {
                   type="button"
                   onClick={handleGoogleSignUp}
                   disabled={loading}
-                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-white/30 hover:border-white/50 rounded-lg shadow-sm bg-white/10 hover:bg-white/20 text-sm font-medium text-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex justify-center py-3 px-4 border-2 border-gray-300 hover:border-blue-400 rounded-lg shadow-sm bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -873,7 +873,7 @@ export default function SignUp() {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      <span className="ml-2">Continue with Google</span>
+                      <span className="ml-2">Lanjutkan dengan Google</span>
                     </>
                   )}
                 </button>
@@ -890,14 +890,14 @@ export default function SignUp() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Check your email
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Periksa email Anda
                   </h3>
-                  <p className="text-white/90">
-                    We&apos;ve sent a verification code to <strong>{formData.email}</strong>
+                  <p className="text-gray-700">
+                    Kami telah mengirimkan kode verifikasi ke <strong>{formData.email}</strong>
                   </p>
-                  <p className="text-sm text-white/70 mt-2">
-                    Enter the 6-digit code from your email to continue.
+                  <p className="text-sm text-gray-500 mt-2">
+                    Masukkan kode 6 digit dari email Anda untuk melanjutkan.
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -906,13 +906,13 @@ export default function SignUp() {
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
                     style={{ backgroundColor: '#2373FF' }}
                   >
-                    Enter Verification Code
+                    Masukkan Kode Verifikasi
                   </button>
                   <button
                     onClick={() => setStep(1)}
-                    className="w-full text-white/90 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-200"
+                    className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-100 transition-all duration-200 border border-gray-300"
                   >
-                    Back to form
+                    Kembali ke formulir
                   </button>
                 </div>
               </div>
@@ -927,14 +927,14 @@ export default function SignUp() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Verify your phone number
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Verifikasi nomor telepon Anda
                   </h3>
-                  <p className="text-white/90">
-                    Secure your account with phone verification
+                  <p className="text-gray-700">
+                    Amankan akun Anda dengan verifikasi telepon
                   </p>
-                  <p className="text-sm text-white/70 mt-2">
-                    Phone: <strong>+62{formatPhoneDisplay(formData.phoneNumber)}</strong>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Telepon: <strong>+62{formatPhoneDisplay(formData.phoneNumber)}</strong>
                   </p>
                 </div>
                 
@@ -950,18 +950,18 @@ export default function SignUp() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Setting up verification...
+                        Menyiapkan verifikasi...
                       </span>
                     ) : (
-                      'Start Phone Verification'
+                      'Mulai Verifikasi Telepon'
                     )}
                   </button>
                   
                   <button
                     onClick={() => setStep(4)} // Skip phone verification
-                    className="w-full text-white/90 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-200"
+                    className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-100 transition-all duration-200 border border-gray-300"
                   >
-                    Skip for now
+                    Lewati untuk sekarang
                   </button>
                 </div>
               </div>
@@ -976,15 +976,15 @@ export default function SignUp() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Welcome to Projevo!
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Selamat datang di Projevo!
                   </h3>
-                  <p className="text-white/90">
-                    Your account has been created successfully. You can now access your dashboard and start using the platform.
+                  <p className="text-gray-700">
+                    Akun Anda telah berhasil dibuat. Anda sekarang dapat mengakses dashboard dan mulai menggunakan platform.
                   </p>
                   {formData.phoneNumber && (
-                    <p className="text-sm text-white/70 mt-2">
-                      📱 Phone verification {phoneVerificationStep === 'verify' || step === 4 ? 'completed' : 'can be completed later in settings'}
+                    <p className="text-sm text-gray-500 mt-2">
+                      📱 Verifikasi telepon {phoneVerificationStep === 'verify' || step === 4 ? 'selesai' : 'dapat diselesaikan nanti di pengaturan'}
                     </p>
                   )}
                 </div>
@@ -994,7 +994,7 @@ export default function SignUp() {
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
                     style={{ backgroundColor: '#2373FF' }}
                   >
-                    Continue to Dashboard
+                    Lanjutkan ke Dashboard
                   </button>
                 </div>
               </div>

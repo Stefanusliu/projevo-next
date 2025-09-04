@@ -31,46 +31,44 @@ export default function SignUpForm() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
+    newErrors.firstName = 'Nama depan wajib diisi';
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+      newErrors.lastName = 'Nama belakang wajib diisi';
     }
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email wajib diisi';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Format email tidak valid';
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Kata sandi wajib diisi';
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'Kata sandi harus minimal 6 karakter';
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Kata sandi tidak cocok';
     }
 
     if (!formData.phoneNumber) {
-      newErrors.phoneNumber = 'Phone number is required';
+      newErrors.phoneNumber = 'Nomor telepon wajib diisi';
     } else if (!/^\+[1-9]\d{1,14}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Please enter a valid phone number with country code (e.g., +62812345678)';
+      newErrors.phoneNumber = 'Masukkan nomor telepon yang valid dengan kode negara (contoh: +62812345678)';
     }
 
     if (!formData.userType) {
-      newErrors.userType = 'Please select your account type';
+      newErrors.userType = 'Silakan pilih jenis akun Anda';
     }
 
     if (formData.userType === 'vendor' && !formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required for vendors';
+      newErrors.companyName = 'Nama perusahaan wajib diisi untuk vendor';
     }
 
     if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms and conditions';
+      newErrors.agreeToTerms = 'Anda harus menyetujui syarat dan ketentuan';
     }
 
     return newErrors;
@@ -187,10 +185,10 @@ export default function SignUpForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+            Buat akun Anda
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join Projevo to connect with qualified professionals
+            Bergabung dengan Projevo untuk terhubung dengan profesional terpercaya
           </p>
         </div>
         
@@ -199,7 +197,7 @@ export default function SignUpForm() {
             {/* User Type Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                I am a:
+                Saya adalah:
               </label>
               <div className="flex space-x-4">
                 <label className="flex items-center">
@@ -211,7 +209,7 @@ export default function SignUpForm() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  Project Owner
+                  Pemilik Proyek
                 </label>
                 <label className="flex items-center">
                   <input
@@ -222,7 +220,7 @@ export default function SignUpForm() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  Vendor/Contractor
+                  Vendor/Kontraktor
                 </label>
               </div>
               {errors.userType && <p className="text-red-500 text-sm mt-1">{errors.userType}</p>}
@@ -232,7 +230,7 @@ export default function SignUpForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name
+                  Nama Depan
                 </label>
                 <input
                   id="firstName"
@@ -247,7 +245,7 @@ export default function SignUpForm() {
               
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name
+                  Nama Belakang
                 </label>
                 <input
                   id="lastName"
@@ -265,7 +263,7 @@ export default function SignUpForm() {
             {formData.userType === 'vendor' && (
               <div>
                 <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                  Company Name
+                  Nama Perusahaan
                 </label>
                 <input
                   id="companyName"
@@ -282,7 +280,7 @@ export default function SignUpForm() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
+                Alamat Email
               </label>
               <input
                 id="email"
@@ -299,7 +297,7 @@ export default function SignUpForm() {
             {/* Phone Number */}
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                Phone Number
+                Nomor Telepon
               </label>
               <input
                 id="phoneNumber"
@@ -310,14 +308,14 @@ export default function SignUpForm() {
                 onChange={handleInputChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="text-sm text-gray-500 mt-1">Include country code (e.g., +62 for Indonesia)</p>
+              <p className="text-sm text-gray-500 mt-1">Sertakan kode negara (contoh: +62 untuk Indonesia)</p>
               {errors.phoneNumber && <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>}
             </div>
 
             {/* Password Fields */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Kata Sandi
               </label>
               <input
                 id="password"
@@ -333,7 +331,7 @@ export default function SignUpForm() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
+                Konfirmasi Kata Sandi
               </label>
               <input
                 id="confirmPassword"
@@ -358,8 +356,8 @@ export default function SignUpForm() {
                   className="mr-2"
                 />
                 <span className="text-sm text-gray-600">
-                  I agree to the <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a> and{' '}
-                  <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+                  Saya menyetujui <a href="/terms" className="text-blue-600 hover:underline">Syarat Layanan</a> dan{' '}
+                  <a href="/privacy" className="text-blue-600 hover:underline">Kebijakan Privasi</a>
                 </span>
               </label>
               {errors.agreeToTerms && <p className="text-red-500 text-sm mt-1">{errors.agreeToTerms}</p>}
@@ -378,7 +376,7 @@ export default function SignUpForm() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Membuat Akun...' : 'Buat Akun'}
             </button>
           </div>
 
@@ -388,7 +386,7 @@ export default function SignUpForm() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+                <span className="px-2 bg-gray-50 text-gray-500">Atau lanjutkan dengan</span>
               </div>
             </div>
 
@@ -405,16 +403,16 @@ export default function SignUpForm() {
                   <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Sign up with Google
+                Daftar dengan Google
               </button>
             </div>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
+              Sudah punya akun?{' '}
               <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign in
+                Masuk
               </a>
             </p>
           </div>

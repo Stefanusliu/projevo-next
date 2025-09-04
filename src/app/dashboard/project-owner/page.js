@@ -31,7 +31,7 @@ import Head from 'next/head';
 function ProjectOwnerDashboardContent() {
   const { user, userProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("All Locations");
+  const [selectedLocation, setSelectedLocation] = useState("Semua Lokasi");
   const [activeView, setActiveView] = useState("home"); // Default to home page
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -41,7 +41,7 @@ function ProjectOwnerDashboardContent() {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const locations = [
-    "All Locations",
+    "Semua Lokasi",
     "Jakarta Selatan",
     "Jakarta Pusat",
     "Jakarta Barat",
@@ -110,7 +110,7 @@ function ProjectOwnerDashboardContent() {
         
         // Apply location filter if specified
         let locationMatch = true;
-        if (selectedLocation !== "All Locations") {
+        if (selectedLocation !== "Semua Lokasi") {
           const userLocation = [
             userData.city,
             userData.province,
@@ -260,7 +260,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  How it Works?
+                  Bagaimana Cara Kerjanya?
                 </Link>
                 <Link
                   href="/boq-maker"
@@ -268,7 +268,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  BOQ Generator
+                  Generator BOQ
                 </Link>
                 <Link
                   href="/contact"
@@ -276,7 +276,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  Contact Us
+                  Hubungi Kami
                 </Link>
                 <Link
                   href="/about"
@@ -284,7 +284,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  About Us
+                  Tentang Kami
                 </Link>
                 <Link
                   href="/partners"
@@ -292,7 +292,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  Partners
+                  Mitra
                 </Link>
                 <Link
                   href="/promotions"
@@ -300,7 +300,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  Promotions
+                  Promosi
                 </Link>
               </nav>
             </div>
@@ -330,7 +330,7 @@ function ProjectOwnerDashboardContent() {
                   <div className="relative flex-1 flex items-center bg-white border border-gray-300 rounded-lg shadow-md search-container">
                     <input
                       type="text"
-                      placeholder="Find Contractor"
+                      placeholder="Cari Kontraktor"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="flex-1 px-3 py-2 bg-transparent border-0 rounded-l-lg text-black placeholder-gray-500 focus:outline-none focus:ring-0"
@@ -360,13 +360,13 @@ function ProjectOwnerDashboardContent() {
                         {isSearching ? (
                           <div className="p-4 text-center text-gray-500">
                             <FiSearch className="w-5 h-5 animate-spin mx-auto mb-2" />
-                            Searching...
+                            Mencari...
                           </div>
                         ) : searchResults.length > 0 ? (
                           <>
                             <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                               <span className="text-sm font-medium text-gray-700">
-                                Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                                Ditemukan {searchResults.length} hasil
                               </span>
                               <button
                                 onClick={() => setShowSearchResults(false)}
@@ -407,7 +407,7 @@ function ProjectOwnerDashboardContent() {
                                             ? 'bg-green-100 text-green-700' 
                                             : 'bg-blue-100 text-blue-700'
                                         }`}>
-                                          {person.type === 'vendor' ? 'Vendor' : 'Project Owner'}
+                                          {person.type === 'vendor' ? 'Vendor' : 'Pemilik Proyek'}
                                         </span>
                                         {person.verified && (
                                           <span className="text-green-500">
@@ -435,10 +435,10 @@ function ProjectOwnerDashboardContent() {
                                       {person.type === 'vendor' && (
                                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                                           {person.experience && (
-                                            <span>{person.experience} experience</span>
+                                            <span>{person.experience} pengalaman</span>
                                           )}
                                           {person.projectsCompleted > 0 && (
-                                            <span>{person.projectsCompleted} projects</span>
+                                            <span>{person.projectsCompleted} proyek</span>
                                           )}
                                           {person.rating > 0 && (
                                             <span>★ {person.rating}/5</span>
@@ -469,7 +469,7 @@ function ProjectOwnerDashboardContent() {
                                               className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
                                             >
                                               <FiPhone className="w-3 h-3" />
-                                              Call
+                                              Telepon
                                             </button>
                                             <button
                                               onClick={(e) => {
@@ -493,8 +493,8 @@ function ProjectOwnerDashboardContent() {
                         ) : (
                           <div className="p-4 text-center text-gray-500">
                             <FiUser className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm">No contractors or project owners found</p>
-                            <p className="text-xs text-gray-400 mt-1">Try different keywords or location</p>
+                            <p className="text-sm">Tidak ada kontraktor atau pemilik proyek ditemukan</p>
+                            <p className="text-xs text-gray-400 mt-1">Coba kata kunci atau lokasi yang berbeda</p>
                           </div>
                         )}
                       </div>

@@ -224,7 +224,7 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
               </span>
             </div>
             <p className="text-sm text-gray-600">
-              Budget: {formatBudget(project.budget)} | Duration: {project.duration}
+              Anggaran: {formatBudget(project.budget)} | Durasi: {project.duration}
             </p>
           </div>
 
@@ -239,7 +239,7 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Proposal Details
+                Detail Penawaran
               </button>
               {vendorBOQ && (
                 <button
@@ -250,7 +250,7 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  BOQ Pricing
+                  Penetapan Harga BOQ
                 </button>
               )}
             </nav>
@@ -342,13 +342,13 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-blue-900 mb-2">BOQ Pricing</h3>
+                      <h3 className="text-xl font-bold text-blue-900 mb-2">Penetapan Harga BOQ</h3>
                       <p className="text-blue-700">
-                        Enter your pricing for each work item below
+                        Masukkan harga untuk setiap item pekerjaan di bawah ini
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-blue-600 mb-1">Grand Total</p>
+                      <p className="text-sm text-blue-600 mb-1">Total Keseluruhan</p>
                       <p className="text-2xl font-bold text-blue-900">
                         {formatCurrency(calculateGrandTotal())}
                       </p>
@@ -362,11 +362,11 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-gray-50 border-b border-gray-200">
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Work Item</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Item Pekerjaan</th>
                           <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-24">Volume</th>
-                          <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Unit</th>
-                          <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 w-32">Unit Price</th>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 w-32">Amount</th>
+                          <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900 w-20">Satuan</th>
+                          <th className="px-4 py-4 text-right text-sm font-semibold text-gray-900 w-32">Harga Satuan</th>
+                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 w-32">Jumlah</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -377,7 +377,7 @@ const VendorProposalModal = ({ isOpen, onClose, project, onSubmitSuccess }) => {
                               <td colSpan="5" className="px-6 py-3">
                                 <div className="flex items-center justify-between">
                                   <h4 className="text-lg font-semibold text-blue-900">
-                                    {tahapan.name || `Phase ${tahapanIndex + 1}`}
+                                    {tahapan.name || `Tahapan ${tahapanIndex + 1}`}
                                   </h4>
                                   <span className="text-blue-800 font-semibold">
                                     {formatCurrency(calculateTahapanKerjaTotal(tahapan))}
