@@ -241,7 +241,7 @@ export default function SelectUserTypePage() {
         <div className="text-center mb-8">
           <div className="mb-6">
             <Image 
-              src="/logo.png" 
+              src="/logo-black.png" 
               alt="Projevo Logo" 
               width={120}
               height={40}

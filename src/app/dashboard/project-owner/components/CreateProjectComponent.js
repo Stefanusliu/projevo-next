@@ -934,7 +934,7 @@ export default function CreateProjectComponent({ onBack }) {
             </h3>
             <p className="text-sm text-gray-600">
               Lampirkan Bill of Quantities (BOQ) untuk memberikan spesifikasi proyek yang detail dan estimasi biaya kepada vendor. 
-              BOQ yang dibuat di BOQ Maker akan tersedia untuk dipilih di sini.
+              BOQ yang dibuat di BOQ Studio akan tersedia untuk dipilih di sini.
             </p>
             
             <div className="flex items-center justify-between mb-4">
@@ -992,7 +992,7 @@ export default function CreateProjectComponent({ onBack }) {
             ) : (
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  Tidak ada BOQ terlampir. Anda dapat melampirkan BOQ tersimpan dari BOQ Maker ke proyek ini.
+                  Tidak ada BOQ terlampir. Anda dapat melampirkan BOQ tersimpan dari BOQ Studio ke proyek ini.
                 </p>
               </div>
             )}

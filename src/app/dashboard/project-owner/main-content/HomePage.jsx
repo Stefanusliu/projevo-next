@@ -11,7 +11,7 @@ export default function HomePage() {
   const [activeMenu, setActiveMenu] = useState("Proyek");
   const [showCreateProject, setShowCreateProject] = useState(false);
   
-  const menuItems = ['Proyek', 'Generator BOQ', 'Transaksi', 'Riwayat'];
+  const menuItems = ['Proyek', 'BOQ Studio', 'Transaksi', 'Riwayat'];
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#d9d9d9' }}>
@@ -52,7 +52,7 @@ export default function HomePage() {
                   onCreateProject={() => setShowCreateProject(true)}
                 />
               )}
-              {activeMenu === "Generator BOQ" && <SavedBOQComponent />}
+              {activeMenu === "BOQ Studio" && <SavedBOQComponent />}
               {activeMenu === "Transaksi" && <TransactionComponent />}
               {activeMenu === "Riwayat" && <HistoryComponent />}
             </div>

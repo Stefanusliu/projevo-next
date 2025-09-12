@@ -189,11 +189,11 @@ export default function Login() {
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 mb-8">
               <Image 
-                src="/logo.png" 
+                src="/logo-black.png" 
                 alt="Projevo Logo" 
-                width={120}
+                width={200}
                 height={40}
-                className="h-10 w-auto"
+                className="w-full max-w-sm"
               />
             </Link>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">

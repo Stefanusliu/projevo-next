@@ -6,6 +6,7 @@ import { MdAdd, MdClose, MdDelete, MdDragIndicator, MdFileDownload, MdSave, MdEd
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { firestoreService } from '../../hooks/useFirestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Helper function to convert boqPricing array to tahapanKerja structure
 const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => {
@@ -35,8 +36,8 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
   const groupedData = {};
   
   boqPricing.forEach((item, index) => {
-    const tahapanName = item.tahapanName || item.tahapanKerja || 'Main Work Phase';
-    const jenisName = item.jenisName || item.jenisKerja || 'General Work';
+    const tahapanName = item.tahapanName || item.tahapanKerja || 'Tahapan Kerja Utama';
+    const jenisName = item.jenisName || item.jenisKerja || 'Pekerjaan Umum';
     const uraianName = item.uraianName || item.uraianPekerjaan || item.name || `Item ${index + 1}`;
     
     if (!groupedData[tahapanName]) {
@@ -139,6 +140,85 @@ const convertBoqPricingToTahapanKerja = (boqPricing, negotiationData = null) => 
 function BOQMakerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, userProfile, loading } = useAuth();
+  
+  // Role-based access control - Only project owners can access BOQ Studio
+  useEffect(() => {
+    console.log('BOQ Maker - Auth state:', { user: !!user, userProfile: !!userProfile, loading, userType: userProfile?.userType });
+    
+    if (!loading && user && userProfile) {
+      console.log('BOQ Maker - User authenticated successfully');
+      if (userProfile.userType !== 'project-owner') {
+        console.log('BOQ Maker - Redirecting non-project-owner:', userProfile.userType);
+        router.push('/dashboard');
+        return;
+      }
+    }
+    
+    // If not loading and no user after 5 seconds, something might be wrong
+    if (!loading && !user) {
+      console.log('BOQ Maker - No user found, redirecting to login');
+      setTimeout(() => {
+        if (!user) {
+          router.push('/login');
+        }
+      }, 2000);
+    }
+  }, [user, userProfile, loading, router]);
+  
+  // Show loading while authentication is still loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Memuat autentikasi...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show loading if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Memuat data pengguna...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show loading if userProfile is not loaded yet
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Memuat profil pengguna...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (userProfile.userType !== 'project-owner') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Akses Ditolak</h2>
+          <p className="text-gray-600 mb-4">BOQ Studio hanya tersedia untuk Pemilik Proyek.</p>
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Kembali ke Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   const [currentView, setCurrentView] = useState('list');
   const [currentBOQId, setCurrentBOQId] = useState(null);
   const [boqTitle, setBoqTitle] = useState('');
@@ -260,8 +340,8 @@ function BOQMakerContent() {
       
       // Show user-friendly error message
       const errorMessage = error.message.includes('not found') 
-        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
-        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+        ? 'Data BOQ tidak dapat ditemukan. Link mungkin sudah kedaluwarsa atau data sudah pernah dilihat. Silakan minta link baru dari pemilik proyek.'
+        : 'Error memuat data BOQ. Silakan coba lagi atau hubungi dukungan jika masalah berlanjut.';
       
       alert(errorMessage);
       
@@ -356,8 +436,8 @@ function BOQMakerContent() {
       
       // Show user-friendly error message
       const errorMessage = error.message.includes('not found') 
-        ? 'BOQ data could not be found. The link may have expired or the data was already viewed. Please request a new link from the project owner.'
-        : 'Error loading BOQ data. Please try again or contact support if the problem persists.';
+        ? 'Data BOQ tidak dapat ditemukan. Link mungkin sudah kedaluwarsa atau data sudah pernah dilihat. Silakan minta link baru dari pemilik proyek.'
+        : 'Error memuat data BOQ. Silakan coba lagi atau hubungi dukungan jika masalah berlanjut.';
       
       alert(errorMessage);
       
@@ -1851,7 +1931,7 @@ function BOQMakerContent() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                   <div>
-                    <h1 className="text-2xl font-semibold text-gray-900">BOQ Manager</h1>
+                    <h1 className="text-2xl font-semibold text-gray-900">Pengelola BOQ</h1>
                   </div>
                   <div className="flex items-center space-x-3">
                     {hasAutosaveDraft && (
@@ -1859,14 +1939,14 @@ function BOQMakerContent() {
                         onClick={loadAutosaveDraft}
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors"
                       >
-                        Continue Draft
+                        Lanjutkan Draft
                       </button>
                     )}
                     <button
                       onClick={createNewBOQ}
                       className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     >
-                      + New BOQ
+                      + BOQ Baru
                     </button>
                   </div>
                 </div>
@@ -1881,20 +1961,20 @@ function BOQMakerContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No BOQs yet</h3>
-                  <p className="text-gray-500 mb-8 max-w-md mx-auto">Get started by creating your first Bill of Quantities. You can save, edit, and manage all your BOQs from here.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada BOQ</h3>
+                  <p className="text-gray-500 mb-8 max-w-md mx-auto">Mulai dengan membuat Bill of Quantities pertama Anda. Anda dapat menyimpan, mengedit, dan mengelola semua BOQ dari sini.</p>
                   <button
                     onClick={createNewBOQ}
                     className="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    Create Your First BOQ
+                    Buat BOQ Pertama Anda
                   </button>
                 </div>
               ) : (
                 <div>
                   <div className="mb-6">
-                    <h2 className="text-lg font-medium text-gray-900">Your BOQs ({savedBOQs.length})</h2>
-                    <p className="text-sm text-gray-500">Manage and organize your Bill of Quantities</p>
+                    <h2 className="text-lg font-medium text-gray-900">BOQ Anda ({savedBOQs.length})</h2>
+                    <p className="text-sm text-gray-500">Kelola dan atur Bill of Quantities Anda</p>
                   </div>
                   
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -1908,11 +1988,11 @@ function BOQMakerContent() {
                               </h3>
                               <div className="mt-2 space-y-1">
                                 <p className="text-sm text-gray-500">
-                                  Created {formatDate(boq.createdAt)}
+                                  Dibuat {formatDate(boq.createdAt)}
                                 </p>
                                 {boq.updatedAt !== boq.createdAt && (
                                   <p className="text-sm text-gray-500">
-                                    Updated {formatDate(boq.updatedAt)}
+                                    Diperbarui {formatDate(boq.updatedAt)}
                                   </p>
                                 )}
                               </div>
@@ -1921,7 +2001,7 @@ function BOQMakerContent() {
                               <button
                                 onClick={() => deleteBOQ(boq.id)}
                                 className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Delete BOQ"
+                                title="Hapus BOQ"
                               >
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1935,13 +2015,13 @@ function BOQMakerContent() {
                               onClick={() => loadBOQ(boq.id, 'view')}
                               className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                             >
-                              View
+                              Lihat
                             </button>
                             <button
                               onClick={() => loadBOQ(boq.id, 'edit')}
                               className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                             >
-                              Edit
+                              Sunting
                             </button>
                           </div>
                         </div>
@@ -1957,8 +2037,8 @@ function BOQMakerContent() {
             <div className="bg-white px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
-                  <p className="text-blue-100">Create detailed Bill of Quantities with local storage</p>
+                  <h1 className="text-2xl font-bold text-red-500 mb-2">Generator BOQ</h1>
+                  <p className="text-blue-100">Buat Bill of Quantities detail dengan penyimpanan lokal</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   {isOwnerView ? (
@@ -1967,7 +2047,7 @@ function BOQMakerContent() {
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm flex items-center"
                     >
                       <MdArrowBack className="w-4 h-4 mr-2" />
-                      Back to Project
+                      Kembali ke Proyek
                     </button>
                   ) : (
                     <>
@@ -1975,14 +2055,14 @@ function BOQMakerContent() {
                         onClick={() => setCurrentView('list')}
                         className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border border-blue-200 text-xs"
                       >
-                        ← Home
+                        ← Beranda
                       </button>
                       {editMode && (
                         <button
                           onClick={saveBOQ}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
                         >
-                          {currentBOQId ? 'Update' : 'Save'} BOQ
+                          {currentBOQId ? 'Perbarui' : 'Simpan'} BOQ
                         </button>
                       )}
                       {!editMode && (
@@ -1990,7 +2070,7 @@ function BOQMakerContent() {
                           onClick={() => setEditMode(true)}
                           className="bg-white hover:bg-gray-50 text-blue-700 px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium border text-xs"
                         >
-                          Edit Mode
+                          Mode Edit
                         </button>
                       )}
                       {editMode && (
@@ -1998,7 +2078,7 @@ function BOQMakerContent() {
                           onClick={exportToCSV}
                           className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md font-medium text-xs"
                         >
-                          Export CSV
+                          Ekspor CSV
                         </button>
                       )}
                       {!editMode && (
@@ -2006,7 +2086,7 @@ function BOQMakerContent() {
                           onClick={exportToCSV}
                           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm"
                         >
-                          Export CSV
+                          Ekspor CSV
                         </button>
                       )}
                     </>
@@ -2023,9 +2103,9 @@ function BOQMakerContent() {
                     <MdEdit className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-amber-800">Proposal Resubmission Mode</h3>
+                    <h3 className="text-lg font-semibold text-amber-800">Mode Pengajuan Ulang Proposal</h3>
                     <p className="text-sm text-amber-700">
-                      You are editing your proposal based on project owner feedback. Previous prices are shown for comparison.
+                      Anda sedang mengedit proposal Anda berdasarkan masukan pemilik proyek. Harga sebelumnya ditampilkan untuk perbandingan.
                     </p>
                   </div>
                 </div>
@@ -2035,14 +2115,14 @@ function BOQMakerContent() {
                   <div className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
                     <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
                       <MdMessage className="w-4 h-4 mr-1" />
-                      Project Owner Feedback:
+                      Masukan Pemilik Proyek:
                     </h4>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{negotiationNotes}</p>
                     <button
                       onClick={() => setShowNegotiationDetails(false)}
                       className="mt-2 text-xs text-amber-600 hover:text-amber-800 font-medium"
                     >
-                      Hide feedback
+                      Sembunyikan masukan
                     </button>
                   </div>
                 )}
@@ -2053,7 +2133,7 @@ function BOQMakerContent() {
                     className="mt-2 text-sm text-amber-600 hover:text-amber-800 font-medium flex items-center"
                   >
                     <MdMessage className="w-4 h-4 mr-1" />
-                    Show project owner feedback
+                    Tampilkan masukan pemilik proyek
                   </button>
                 )}
               </div>
@@ -2062,12 +2142,12 @@ function BOQMakerContent() {
             <div className="px-8 py-6 border-b border-gray-200 bg-white">
               <div className="max-w-2xl">
                 <label htmlFor="boqTitle" className="block text-sm font-medium text-gray-800 mb-2">
-                  BOQ Title / Project Name
+                  BOQ Title / Nama Proyek
                 </label>
                 <input
                   id="boqTitle"
                   type="text"
-                  placeholder="Enter BOQ title or project name..."
+                  placeholder="Masukkan judul BOQ atau nama proyek..."
                   value={boqTitle}
                   onChange={(e) => setBoqTitle(e.target.value)}
                   disabled={!editMode}
@@ -2078,14 +2158,14 @@ function BOQMakerContent() {
                   }
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  This title will be used when saving your BOQ.
+                  Judul ini akan digunakan saat menyimpan BOQ Anda.
                 </p>
                 {/* Autosave indicator */}
                 {lastAutoSave && (
                   <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
                     <MdSave className="w-4 h-4" />
                     <span>
-                      Auto-saved at {lastAutoSave.toLocaleTimeString('id-ID', { 
+                      Tersimpan otomatis pada {lastAutoSave.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
                         minute: '2-digit',
                         second: '2-digit'
@@ -2129,7 +2209,7 @@ function BOQMakerContent() {
                             </th>
                           )}
                           <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300" style={{width: showPriceComparison ? '12%' : '14%'}}>
-                            Harga Sekarang
+                            Harga
                           </th>
                           <th className="px-4 py-3 text-left text-sm font-bold text-gray-800" style={{width: showPriceComparison ? '14%' : '16%'}}>
                             Total
@@ -2263,7 +2343,7 @@ function BOQMakerContent() {
                                         <MdDragIndicator className="w-4 h-4" />
                                       </button>
                                     )}
-                                    <div className="text-blue-400 font-bold text-lg min-w-[24px]">
+                                    <div className="text-gray-800 font-normal text-sm min-w-[24px]">
                                       {row.tahapanIndex + 1}.
                                     </div>
                                     <input
@@ -2517,39 +2597,28 @@ function BOQMakerContent() {
                               </td>
                             )}
 
-                            {/* Harga Sekarang */}
-                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
+                            {/* Harga */}
+                            <td className="px-4 py-2 border-r border-gray-200 align-middle cursor-not-allowed"
                                 onClick={(e) => {
-                                  const input = e.currentTarget.querySelector('input');
-                                  if (input && editMode) input.focus();
+                                  // Price field is disabled for project owners
                                 }}>
                               {row.spec ? (
                                 <div className="space-y-1">
                                   {editMode ? (
                                     <input
-                                      type="number"
-                                      min="0"
-                                      value={row.spec.pricePerPcs === null || row.spec.pricePerPcs === undefined ? '' : row.spec.pricePerPcs}
+                                      type="text"
+                                      value="Rp 0"
                                       onChange={(e) => {
-                                        const value = e.target.value;
-                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                          updateSpec(row.tahapanId, row.jenisId, row.uraianId, row.specId, 'pricePerPcs', value === '' ? null : parseFloat(value) || 0);
-                                        }
+                                        // Disabled - project owners cannot fill price
                                       }}
-                                      onKeyDown={(e) => handleKeyPress(e, row.tahapanId, row.jenisId, row.uraianId, 'pricePerPcs')}
-                                      onKeyPress={(e) => {
-                                        if (!/[\d.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
-                                          e.preventDefault();
-                                        }
-                                      }}
-                                      disabled={!editMode}
-                                      tabIndex={row.tahapanIndex * 100 + row.jenisIndex * 10 + row.uraianIndex + 7}
-                                      className="w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-right placeholder-gray-500"
-                                      placeholder={resubmissionMode ? "Harga baru" : "Enter new price"}
+                                      disabled={true}
+                                      tabIndex={-1}
+                                      className="w-full h-full text-gray-400 bg-transparent outline-none border-0 p-0 text-sm text-right cursor-not-allowed"
+                                      placeholder="Rp 0"
                                     />
                                   ) : (
-                                    <div className="text-sm text-gray-800 font-medium text-center">
-                                      Rp {parseFloat(row.spec.pricePerPcs || 0).toLocaleString('id-ID')}
+                                    <div className="text-sm text-gray-400 font-medium text-right">
+                                      Rp 0
                                     </div>
                                   )}
                                 </div>
@@ -2561,8 +2630,8 @@ function BOQMakerContent() {
                             {/* Total */}
                             <td className="px-4 py-2 align-middle">
                               {row.spec ? (
-                                <div className="px-2 py-1 text-gray-800 font-medium text-sm text-center">
-                                  Rp {calculateSpecTotal(row.spec).toLocaleString('id-ID')}
+                                <div className="px-2 py-1 text-gray-800 font-medium text-sm text-right">
+                                  Rp 0
                                 </div>
                               ) : (
                                 <div className="w-full h-6"></div>
@@ -3268,8 +3337,8 @@ function LoadingFallback() {
             <div className="bg-white px-8 py-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-red-500 mb-2">BOQ Generator</h1>
-                  <p className="text-gray-600">Loading...</p>
+                  <h1 className="text-2xl font-bold text-red-500 mb-2">Generator BOQ</h1>
+                  <p className="text-gray-600">Memuat...</p>
                 </div>
               </div>
             </div>

@@ -243,11 +243,11 @@ function ProjectOwnerDashboardContent() {
               <div className="flex items-center">
                 <Link href="/" className="flex items-center space-x-2">
                   <Image 
-                    src="/logo.png" 
+                    src="/logo-white.png" 
                     alt="Projevo Logo" 
-                    width={100}
-                    height={32}
-                    className="h-8 w-auto"
+                    width={120}
+                    height={30}
+                    className="w-full h-auto max-w-[70px] object-contain"
                   />
                 </Link>
               </div>
@@ -268,7 +268,7 @@ function ProjectOwnerDashboardContent() {
                   onMouseEnter={(e) => e.target.style.color = '#2373FF'}
                   onMouseLeave={(e) => e.target.style.color = ''}
                 >
-                  Generator BOQ
+                  BOQ Studio
                 </Link>
                 <Link
                   href="/contact"

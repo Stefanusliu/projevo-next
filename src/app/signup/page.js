@@ -515,7 +515,7 @@ export default function SignUp() {
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 mb-6">
               <Image 
-                src="/logo.png" 
+                src="/logo-black.png" 
                 alt="Projevo Logo" 
                 width={120}
                 height={40}

@@ -52,10 +52,10 @@ export default function Header() {
           <div className="flex items-center">
             <div className="flex items-center space-x-3">
               <Image 
-                src="/logo.png" 
+                src="/logo-white.png" 
                 alt="Projevo Logo" 
-                width={40} 
-                height={40}
+                width={120} 
+                height={80}
                 className="rounded-lg"
               />
               <span className="text-2xl font-bold text-white">
@@ -69,9 +69,6 @@ export default function Header() {
             <a href="#how-it-works" className="text-white hover:text-blue-400 transition-colors font-medium">
               How it Works?
             </a>
-            <Link href="/boq-maker" className="text-white hover:text-blue-400 transition-colors font-medium">
-              BOQ Maker
-            </Link>
             <Link href="/contact" className="text-white hover:text-blue-400 transition-colors font-medium">
               Contact Us
             </Link>
@@ -152,9 +149,6 @@ export default function Header() {
               <a href="#how-it-works" className="text-white hover:text-blue-400 font-medium">
                 How it Works?
               </a>
-              <Link href="/boq-maker" className="text-white hover:text-blue-400 font-medium">
-                BOQ Maker
-              </Link>
               <Link href="/contact" className="text-white hover:text-blue-400 font-medium">
                 Contact Us
               </Link>

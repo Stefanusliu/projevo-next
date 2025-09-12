@@ -1,3 +1,4 @@
+import XenditPaymentModal from "../../../../components/payments/XenditPaymentModal";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -34,7 +35,7 @@ import {
   normalizeProposals,
   getProposalsLength,
 } from "../../../../utils/proposalsUtils";
-import MidtransPaymentModal from "../../../../components/payments/MidtransPaymentModal";
+// ...existing code...
 
 const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Early return if project is not valid
@@ -113,8 +114,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     }
   }, [project]);
 
-  // Function to navigate to BOQ maker page in read-only mode
-  const handleViewBOQInMaker = async (proposal) => {
+  // Function to navigate to BOQ viewer page in read-only mode
+  const handleViewBOQInViewer = async (proposal) => {
     try {
       console.log("🔄 Navigating to BOQ Maker with proposal data:", proposal);
 
@@ -278,19 +279,16 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         localStorage.setItem(sessionKey, JSON.stringify(boqViewData));
         console.log("✅ BOQ data stored in localStorage with key:", sessionKey);
 
-        // Navigate to BOQ maker page with enhanced query parameters
+        // Navigate to BOQ viewer page with query parameters
         const queryParams = new URLSearchParams({
           mode: "view",
-          readOnly: "true",
-          ownerView: "true", // Tell BOQ maker this is owner viewing vendor BOQ
-          userType: "project-owner", // User context for proper navigation
           sessionKey: sessionKey,
           vendorName: proposal.vendorName || "Unknown Vendor",
           projectTitle: project.projectTitle || "Unknown Project",
           returnUrl: "/dashboard/project-owner", // Where to return when clicking back
         });
 
-        router.push(`/boq-maker?${queryParams.toString()}`);
+        router.push(`/boq-viewer?${queryParams.toString()}`);
       } catch (storageError) {
         console.error(
           "❌ Failed to store BOQ data in localStorage:",
@@ -698,30 +696,22 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
   const handleAcceptProposal = async (proposalIndex, proposal) => {
     try {
-      console.log("🔄 Starting vendor selection...", {
+      console.log("🔄 Starting proposal acceptance...", {
         proposalIndex,
         vendorName: proposal.vendorName,
       });
 
-      // Check if this is the first time selecting a vendor for this project
-      const isFirstVendorSelection =
-        !project.selectedVendorId &&
-        !project.status?.includes("vendor_selected");
+      // Accept the proposal and set the project status to "Diberikan" (Awarded)
+      // This will make the payment button appear in the main dashboard
+      await completeProposalAcceptance(proposalIndex, proposal);
 
-      if (isFirstVendorSelection) {
-        // Trigger payment modal for 50% down payment
-        console.log("💳 First vendor selection - triggering payment modal");
-        setSelectedProposalForPayment(proposal);
-        setSelectedProposalIndex(proposalIndex);
-        setShowPaymentModal(true);
-      } else {
-        // If vendor was already selected previously, proceed with normal acceptance
-        console.log("✅ Subsequent vendor selection - no payment required");
-        await completeProposalAcceptance(proposalIndex, proposal);
-      }
+      console.log("✅ Proposal accepted - project status changed to Awarded");
+      console.log(
+        "💡 Project owner can now proceed to payment from main dashboard"
+      );
     } catch (error) {
-      console.error("❌ Error in vendor selection process:", error);
-      alert(`Failed to select vendor: ${error.message}`);
+      console.error("❌ Error in proposal acceptance process:", error);
+      alert(`Failed to accept proposal: ${error.message}`);
     }
   };
 
@@ -770,6 +760,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
       const updates = {
         proposals: updatedProposalsForAccept,
+        selectedVendorId: proposal.vendorId || proposal.vendorUserId,
+        selectedVendor: proposal.vendorName,
+        negotiationAccepted: true,
+        status: "Awarded",
+        firstPaymentCompleted: false, // Explicitly set to false to trigger payment button
+        initialPaymentCompleted: false, // Explicitly set to false to trigger payment button
         updatedAt: now,
         lastModifiedBy: project.ownerId || "project_owner",
       };
@@ -787,6 +783,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         const updatedProject = {
           ...project,
           proposals: updatedProposalsForAccept,
+          selectedVendorId: proposal.vendorId || proposal.vendorUserId,
+          selectedVendor: proposal.vendorName,
+          negotiationAccepted: true,
+          status: "Awarded",
+          firstPaymentCompleted: false,
+          initialPaymentCompleted: false,
           updatedAt: now,
           lastModifiedBy: project.ownerId || "project_owner",
         };
@@ -1435,7 +1437,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           // Get the full proposal object from the original proposals array
                           const fullProposal =
                             project.proposals[activity.originalIndex];
-                          handleViewBOQInMaker(fullProposal);
+                          handleViewBOQInViewer(fullProposal);
                         }}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
                       >
@@ -2605,12 +2607,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
                       {/* BOQ Actions */}
                       <button
-                        onClick={() => handleViewBOQInMaker(proposal)}
+                        onClick={() => handleViewBOQInViewer(proposal)}
                         className="flex items-center gap-2 w-full py-3 px-4 bg-white hover:bg-gray-50 rounded-lg transition-colors text-left border border-gray-200 shadow-sm"
                       >
                         <FiFileText size={16} className="text-blue-700" />
                         <span className="font-medium text-blue-900">
-                          View Detailed BOQ in Maker
+                          Lihat Detail BOQ
                         </span>
                         <FiEye size={16} className="text-blue-700 ml-auto" />
                       </button>
@@ -3007,7 +3009,6 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           </div>
         </div>
       </div>
-
       {/* Tab Navigation - Hide when viewing vendor profile */}
       {!showVendorProfile && (
         <div className="bg-white border-b border-gray-200">
@@ -3041,14 +3042,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           </div>
         </div>
       )}
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderTabContent()}
       </div>
-
-      {/* Midtrans Payment Modal */}
-      <MidtransPaymentModal
+      // ...existing code...
+      <XenditPaymentModal
         isOpen={showPaymentModal}
         onClose={() => {
           setShowPaymentModal(false);
@@ -3058,7 +3057,14 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         projectData={project}
         selectedProposal={selectedProposalForPayment}
         proposalIndex={selectedProposalIndex}
-        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentSuccess={() => {
+          alert(
+            "🎉 Pembayaran berhasil! Silakan cek email Anda untuk detail pembayaran."
+          );
+        }}
+        onPaymentError={(error) => {
+          alert("Pembayaran gagal: " + error);
+        }}
       />
     </div>
   );

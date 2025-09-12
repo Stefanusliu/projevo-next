@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -262,7 +263,7 @@ function VendorDashboardContent() {
               <div className="flex items-center">
                 <Link href="/" className="flex items-center space-x-2">
                   <Image 
-                    src="/logo.png" 
+                    src="/logo-white.png" 
                     alt="Projevo Logo" 
                     width={100}
                     height={32}
@@ -281,14 +282,7 @@ function VendorDashboardContent() {
                 >
                   How it Works?
                 </Link>
-                <Link
-                  href="/boq-maker"
-                  className="text-white font-medium transition-colors hover:text-blue-400"
-                  onMouseEnter={(e) => e.target.style.color = '#2373FF'}
-                  onMouseLeave={(e) => e.target.style.color = ''}
-                >
-                  BOQ Generator
-                </Link>
+
                 <Link
                   href="/contact"
                   className="text-white font-medium transition-colors hover:text-blue-400"

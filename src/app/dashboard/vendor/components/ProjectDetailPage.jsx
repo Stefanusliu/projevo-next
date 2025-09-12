@@ -572,51 +572,13 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
       }
 
       const currentProposal = project.proposals[proposalIndex];
-      const negotiationData = currentProposal?.negotiation;
       
-      // Prepare BOQ resubmission data for BOQ maker
-      const boqResubmissionData = {
-        mode: 'resubmission',
-        isResubmission: true,
-        projectId: project.id,
-        projectTitle: project.projectTitle,
-        vendorId: user.uid,
-        vendorName: user.displayName || user.email,
-        proposalIndex: proposalIndex,
-        existingProposal: currentProposal,
-        originalBOQPricing: currentProposal.boqPricing || [],
-        negotiationDetails: negotiationData || {},
-        negotiationNotes: negotiationData?.notes || '',
-        negotiationRequirements: negotiationData?.requirements || '',
-        ownerComments: negotiationData?.ownerComments || '',
-        deadline: negotiationData?.deadline || null,
-        requestedChanges: negotiationData?.requestedChanges || []
-      };
+      console.log('🚀 Navigating to BOQ penawaran for proposal resubmission');
       
-      // Store resubmission data in localStorage with a session key
-      const sessionKey = `boq_resubmission_${project.id}_${user.uid}_${Date.now()}`;
-      try {
-        localStorage.setItem(sessionKey, JSON.stringify(boqResubmissionData));
-        console.log('✅ BOQ resubmission data stored in localStorage with key:', sessionKey);
-        
-        // Navigate to BOQ maker page with resubmission parameters
-        const queryParams = new URLSearchParams({
-          mode: 'resubmission',
-          sessionKey: sessionKey,
-          projectTitle: project.projectTitle || 'Project Resubmission',
-          vendorName: user.displayName || user.email || 'Vendor',
-          proposalIndex: proposalIndex.toString()
-        });
-        
-        console.log('🚀 Navigating to BOQ maker for proposal resubmission');
-        router.push(`/boq-maker?${queryParams.toString()}`);
-        
-      } catch (storageError) {
-        console.error('❌ Failed to store resubmission data in localStorage:', storageError);
-        alert('Unable to open BOQ editor for resubmission. Please try again.');
-      }
-
-      console.log('✅ Opening BOQ maker for proposal resubmission');
+      // Navigate directly to BOQ-penawaran page with existing proposal data
+      router.push(`/boq-penawaran?projectId=${project.id}&proposalId=${currentProposal.id || currentProposal.proposalId}`);
+      
+      console.log('✅ Opening BOQ penawaran for proposal resubmission');
     } catch (error) {
       console.error('❌ Error opening proposal resubmission:', error);
       alert(`Failed to open proposal resubmission: ${error.message}`);

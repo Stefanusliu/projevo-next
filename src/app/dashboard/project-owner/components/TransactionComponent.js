@@ -339,13 +339,13 @@ export default function TransactionComponent() {
     const calculations = getTerminCalculations(selectedTransaction);
     
     return (
-      <div className="p-6">
+      <div className="p-8">
         {/* Back button */}
         <button
           onClick={handleBackToList}
           className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
         >
-          ← Kembali ke Daftar Transaksi
+          ← Kembali
         </button>
 
         {/* Main content */}

@@ -646,7 +646,7 @@ export default function BOQGeneratorComponent() {
           // List View
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-black">Generator BOQ Draft</h3>
+              <h3 className="text-xl font-semibold text-black">BOQ Studio Draft</h3>
               <button
                 onClick={createNewBOQ}
                 className="text-white px-4 py-2 rounded-lg transition-colors"
@@ -840,13 +840,13 @@ export default function BOQGeneratorComponent() {
 
             <div className="text-center pt-4">
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                Butuh fitur yang lebih canggih? Gunakan BOQ Maker lengkap.
+                Butuh fitur yang lebih canggih? Gunakan BOQ Studio lengkap.
               </p>
               <button
                 onClick={() => router.push('/boq-maker')}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
               >
-                Buka BOQ Maker Lengkap
+                Buka BOQ Studio Lengkap
               </button>
             </div>
           </div>

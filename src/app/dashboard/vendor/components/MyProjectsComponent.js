@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 import ProjectStatusModal from './ProjectStatusModal';
-import ProjectDetailPage from './ProjectDetailPage';
+import ProjectDetailPage from './ProjectDetailPage.jsx';
 import VendorProposalModal from './VendorProposalModal';
 import CreateProposalPage from './CreateProposalPage';
 import { FiLoader, FiExternalLink, FiPlus, FiEdit, FiClock } from 'react-icons/fi';
 
 export default function MyProjectsComponent({ projectFilter = "All" }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,22 +29,38 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
     setSelectedProject(project);
     
     // Check if this is a resubmission (vendor wants to edit existing proposal)
-    if (project.isResubmission) {
-      console.log('🔄 Opening proposal editor for resubmission:', project.existingProposal);
-      setShowCreateProposal(true);
+    if (project.isResubmission && project.existingProposal) {
+      console.log('🔄 Opening BOQ penawaran for resubmission:', project.existingProposal);
+      // Navigate to BOQ-penawaran page with project and proposal data
+      router.push(`/boq-penawaran?projectId=${project.id}&proposalId=${project.existingProposal.id}`);
     } else {
-      // Regular proposal creation - show modal
-      setIsModalOpen(true);
+      // For new proposals, also use BOQ-penawaran page
+      console.log('📝 Opening BOQ penawaran for new proposal');
+      router.push(`/boq-penawaran?projectId=${project.id}`);
     }
   };
 
   const handleEditProposal = (project) => {
-    setSelectedProject({
-      ...project,
-      isResubmission: true,
-      existingProposal: getVendorProposal(project)
-    });
-    setShowCreateProposal(true);
+    // BLOCKED: Do not show create proposal UI - redirect to project details instead
+    console.log('handleEditProposal called - redirecting to project details');
+    handleViewProject(project);
+  };
+
+  // Handle proposal resubmission/update for negotiating status
+  const handleResubmitProposal = (project) => {
+    console.log('🔄 Resubmitting proposal for project:', project.id);
+    
+    // Find the vendor's existing proposal
+    const vendorProposal = project.proposals?.find(proposal => proposal.vendorId === user.uid);
+    
+    if (vendorProposal) {
+      // Navigate to BOQ-penawaran page with existing proposal data
+      router.push(`/boq-penawaran?projectId=${project.id}&proposalId=${vendorProposal.id}`);
+    } else {
+      // Fallback: create new proposal if no existing proposal found
+      console.log('⚠️ No existing proposal found, creating new one');
+      router.push(`/boq-penawaran?projectId=${project.id}`);
+    }
   };
 
   // Load projects where vendor has submitted proposals or been awarded
@@ -322,6 +340,11 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
     // Check proposal status
     const vendorProposal = project.proposals?.find(proposal => proposal.vendorId === user.uid);
     if (vendorProposal) {
+      // Check if this is a recently updated proposal (multiple indicators)
+      const hasRecentUpdate = vendorProposal.hasRecentUpdate || 
+                             (vendorProposal.resubmissionDate && vendorProposal.isResubmission) ||
+                             (vendorProposal.updateCount && vendorProposal.updateCount > 0);
+      
       if (vendorProposal.status === 'accepted') {
         return 'In Progress';
       } else if (vendorProposal.status === 'rejected') {
@@ -329,6 +352,10 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
       } else if (vendorProposal.status === 'pending_review') {
         return 'Proposal Submitted';
       } else if (vendorProposal.status === 'negotiating') {
+        // If negotiating but has recent update, show as submitted for review
+        if (hasRecentUpdate) {
+          return 'Proposal Submitted';
+        }
         return 'Negotiating';
       } else if (vendorProposal.status === 'pending') {
         return 'Awaiting Review';
@@ -479,32 +506,32 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Submitted Status Card */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-600 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <span className="text-xs font-medium text-yellow-700 uppercase tracking-wide">
+                  <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     Phase: Tender
                   </span>
                 </div>
                 <div className="flex space-x-1">
-                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse"></div>
-                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                  <div className="w-1 h-1 bg-yellow-500 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                  <div className="w-1 h-1 bg-gray-600 rounded-full animate-pulse"></div>
+                  <div className="w-1 h-1 bg-gray-600 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="w-1 h-1 bg-gray-600 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
                 </div>
               </div>
               
-              <div className="text-sm font-semibold text-yellow-800">
+              <div className="text-sm font-semibold text-gray-800">
                 Status: {vendorStatus}
               </div>
               
-              <div className="text-xs text-yellow-600 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
               </div>
             </div>
             
             {/* Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
@@ -540,7 +567,7 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
             
             {/* Action Button */}
             <button
-              onClick={() => handleEditProposal(project)}
+              onClick={() => handleResubmitProposal(project)}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiEdit className="w-4 h-4" />
@@ -553,28 +580,28 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced In Progress Status Card */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-600 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <span className="text-xs font-medium text-green-700 uppercase tracking-wide">
+                  <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     Phase: Contract
                   </span>
                 </div>
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse"></div>
               </div>
               
-              <div className="text-sm font-semibold text-green-800">
+              <div className="text-sm font-semibold text-gray-800">
                 Status: In Progress
               </div>
               
-              <div className="text-xs text-green-600 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
               </div>
             </div>
             
             {/* Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Project
@@ -586,28 +613,28 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Completed Status Card */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-600 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+                  <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     Phase: Completed
                   </span>
                 </div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
               </div>
               
-              <div className="text-sm font-semibold text-blue-800">
+              <div className="text-sm font-semibold text-gray-800">
                 Status: Completed
               </div>
               
-              <div className="text-xs text-blue-600 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
               </div>
             </div>
             
             {/* Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
@@ -619,28 +646,28 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Enhanced Rejected Status Card */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-600 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <span className="text-xs font-medium text-red-700 uppercase tracking-wide">
+                  <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     Phase: Tender
                   </span>
                 </div>
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
               </div>
               
-              <div className="text-sm font-semibold text-red-800">
+              <div className="text-sm font-semibold text-gray-800">
                 Status: Rejected
               </div>
               
-              <div className="text-xs text-red-600 mt-1">
+              <div className="text-xs text-gray-600 mt-1">
               </div>
             </div>
             
             {/* Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
@@ -652,14 +679,14 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         return (
           <div className="flex items-stretch gap-3 w-full">
             {/* Default Status Card */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
+            <div className="bg-white border border-gray-600 rounded-lg p-3 flex-1 h-[80px] flex flex-col justify-center">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
                   <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     Phase: Unknown
                   </span>
                 </div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
               </div>
               
               <div className="text-sm font-semibold text-gray-800">
@@ -673,7 +700,7 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
             {/* Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Project
@@ -935,20 +962,8 @@ export default function MyProjectsComponent({ projectFilter = "All" }) {
         />
       )}
       
-      {/* Create Proposal Page */}
-      {showCreateProposal && selectedProject && (
-        <CreateProposalPage
-          project={selectedProject}
-          onBack={() => {
-            setShowCreateProposal(false);
-            setSelectedProject(null);
-          }}
-          onSubmit={() => {
-            setShowCreateProposal(false);
-            setSelectedProject(null);
-          }}
-        />
-      )}
+      {/* REMOVED: No more Create Proposal Page rendering */}
+      {/* Update Proposal should only open project details via handleViewProject */}
         </div>
       )}
     </>

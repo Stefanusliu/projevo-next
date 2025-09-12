@@ -6,14 +6,14 @@ import { usePathname } from 'next/navigation';
 
 export default function Sidebar({ onMenuClick }) {
   const pathname = usePathname();
-  const menuItems = ['Project', 'BOQ Generator', 'Payment', 'History'];
+  const menuItems = ['Project', 'BOQ Studio', 'Payment', 'History'];
 
   // Helper function to get the correct href for each menu item
   const getMenuHref = (item) => {
     switch (item) {
       case 'Project':
         return '/dashboard/project-owner/home';
-      case 'BOQ Generator':
+      case 'BOQ Studio':
         return '/dashboard/project-owner/home';
       case 'Payment':
         return '/dashboard/project-owner/home';
@@ -31,7 +31,7 @@ export default function Sidebar({ onMenuClick }) {
   };
 
   const handleMenuClick = (item) => {
-    if (item === 'BOQ Generator' || item === 'Payment' || item === 'Project') {
+    if (item === 'BOQ Studio' || item === 'Payment' || item === 'Project') {
       // For these items, we want to stay on the home page but change the content
       if (onMenuClick) {
         onMenuClick(item);
