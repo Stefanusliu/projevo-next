@@ -2275,7 +2275,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               {/* Edit Project Button */}
               <button
                 onClick={() => handleEditProject(project)}
-                className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
               >
                 <FiEdit className="w-4 h-4" />
                 Edit Proyek
@@ -2284,7 +2284,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               {/* Delete Project Button */}
               <button
                 onClick={() => handleDeleteProject(project)}
-                className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center gap-2 whitespace-nowrap h-[36px]"
               >
                 <FiTrash2 className="w-4 h-4" />
                 Hapus Proyek
@@ -2364,7 +2364,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleEditProject(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
               title={
                 project.adminNotes ||
                 "Admin requires revision. Please check admin notes for details."
@@ -2401,7 +2401,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
@@ -2433,7 +2433,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
@@ -2466,7 +2466,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiLock className="w-4 h-4" />
               View Details
@@ -2510,7 +2510,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleViewOffers(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiMessageSquare className="w-4 h-4" />
               Lihat Penawaran
@@ -2544,7 +2544,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handlePayment(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiCreditCard className="w-4 h-4" />
               Bayar Termin 1 & 2
@@ -2577,7 +2577,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Resubmit Button Only */}
             <button
               onClick={() => handleResubmitProject(project)}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiRefreshCw className="w-4 h-4" />
               Kirim Ulang
@@ -2610,7 +2610,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             {/* Modern Action Button */}
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               Pantau Progres
@@ -2664,7 +2664,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             </div>
             <button
               onClick={() => handleViewProject(project)}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
             >
               <FiExternalLink className="w-4 h-4" />
               View Details
