@@ -240,7 +240,7 @@ export default function VendorProjectDetail() {
             <div className="bg-blue-50 rounded-lg p-4">
               <h3 className="text-lg font-medium text-blue-900 mb-2">Project Details</h3>
               <p className="text-sm text-blue-800">
-                This is the detailed view of the project. Same information available from both "View Project" and "Update Proposal" buttons.
+                This is the detailed view of the project. Same information available from both &quot;View Project&quot; and &quot;Update Proposal&quot; buttons.
               </p>
             </div>
           </div>

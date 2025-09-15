@@ -1556,6 +1556,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
     console.log("  - Selected proposal:", selectedProposal);
     console.log("  - Proposal index:", proposalIndex);
+    console.log("  - All project proposals:", project.proposals);
+    console.log("  - Full proposal structure:", JSON.stringify(selectedProposal, null, 2));
 
     if (!selectedProposal) {
       alert(
@@ -1575,8 +1577,20 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     let totalAmount = 0;
 
     // Try different fields where vendor proposal amount might be stored
-    if (selectedProposal?.totalBidAmount) {
+    if (selectedProposal?.totalAmount) {
+      totalAmount = Number(selectedProposal.totalAmount);
+    } else if (selectedProposal?.totalBidAmount) {
       totalAmount = Number(selectedProposal.totalBidAmount);
+    } else if (selectedProposal?.currentPrice) {
+      totalAmount = Number(selectedProposal.currentPrice);
+    } else if (selectedProposal?.totalPrice) {
+      totalAmount = Number(selectedProposal.totalPrice);
+    } else if (selectedProposal?.finalPrice) {
+      totalAmount = Number(selectedProposal.finalPrice);
+    } else if (selectedProposal?.originalPrice) {
+      totalAmount = Number(selectedProposal.originalPrice);
+    } else if (selectedProposal?.proposedPrice) {
+      totalAmount = Number(selectedProposal.proposedPrice);
     } else if (selectedProposal?.price) {
       totalAmount = Number(selectedProposal.price);
     } else if (selectedProposal?.bidAmount) {
@@ -3228,42 +3242,37 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             try {
               const projectId = selectedProposalForPayment.projectData.id;
               const paymentInfo = {
-                firstPaymentCompleted: true,
-                firstPaymentDate: new Date(),
-                firstPaymentAmount:
-                  selectedProposalForPayment.projectData.firstPaymentAmount,
-                remainingAmount:
-                  selectedProposalForPayment.projectData.remainingAmount,
-                paymentData: paymentData,
-                status: "Berjalan", // Change status to allow vendor to start work
+                payment: {
+                  status: "pending", // Will be updated by webhook when actually paid
+                  externalId: paymentData.external_id,
+                  invoiceId: paymentData.invoice_id,
+                  invoiceUrl: paymentData.invoice_url,
+                  createdAt: new Date(),
+                },
+                paymentInitiated: true,
+                paymentInitiatedAt: new Date(),
+                // Don't set firstPaymentCompleted yet - wait for webhook
+                updatedAt: new Date(),
               };
 
-              // Update project in Firestore
-              await updateDoc(doc(db, "projects", projectId), {
-                ...paymentInfo,
-                updatedAt: serverTimestamp(),
-              });
+              // Update project in Firestore with payment tracking info
+              await updateDoc(doc(db, "projects", projectId), paymentInfo);
 
               console.log(
-                "✅ Project status updated to 'Berjalan' after payment"
+                "✅ Payment initiated and tracked, waiting for webhook confirmation"
               );
 
               alert(
-                "🎉 Pembayaran berhasil!\n\n" +
-                  `✓ Termin 1 & 2 telah dibayar (Rp ${selectedProposalForPayment.projectData.firstPaymentAmount?.toLocaleString(
-                    "id-ID"
-                  )})\n` +
-                  `✓ Status proyek berubah menjadi 'Berjalan'\n` +
-                  `✓ Vendor dapat mulai mengerjakan proyek\n` +
-                  `✓ Sisa pembayaran: Rp ${selectedProposalForPayment.projectData.remainingAmount?.toLocaleString(
-                    "id-ID"
-                  )}\n\n` +
-                  "Silakan cek email Anda untuk detail pembayaran."
+                "💳 Pembayaran telah dibuat!\n\n" +
+                  `✓ Invoice pembayaran telah dibuat\n` +
+                  `✓ Status akan diperbarui otomatis setelah pembayaran dikonfirmasi\n` +
+                  `✓ Silakan selesaikan pembayaran di tab yang baru dibuka\n\n` +
+                  "Proyek akan berubah status menjadi 'Berjalan' setelah pembayaran terkonfirmasi."
               );
             } catch (error) {
-              console.error("❌ Error updating project status:", error);
+              console.error("❌ Error updating payment tracking:", error);
               alert(
-                "⚠️ Pembayaran berhasil, tetapi gagal memperbarui status proyek.\n" +
+                "⚠️ Pembayaran telah dibuat, tetapi gagal menyimpan informasi tracking.\n" +
                   "Silakan hubungi support untuk memperbarui status proyek secara manual."
               );
             }
