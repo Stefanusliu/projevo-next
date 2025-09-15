@@ -1,11 +1,24 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../../../../../contexts/AuthContext';
-import { db } from '../../../../../lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { FiArrowLeft, FiMapPin, FiCalendar, FiDollarSign, FiUser } from 'react-icons/fi';
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "../../../../../contexts/AuthContext";
+import { db } from "../../../../../lib/firebase";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import {
+  FiArrowLeft,
+  FiMapPin,
+  FiCalendar,
+  FiDollarSign,
+  FiUser,
+} from "react-icons/fi";
 
 export default function VendorProjectDetail() {
   const router = useRouter();
@@ -27,33 +40,32 @@ export default function VendorProjectDetail() {
   const fetchProjectDetails = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch project details
-      const projectRef = doc(db, 'projects', projectId);
+      const projectRef = doc(db, "projects", projectId);
       const projectDoc = await getDoc(projectRef);
-      
+
       if (!projectDoc.exists()) {
-        throw new Error('Project not found');
+        throw new Error("Project not found");
       }
-      
+
       const projectData = { id: projectDoc.id, ...projectDoc.data() };
       setProject(projectData);
 
       // Fetch vendor's proposal for this project if exists
       const proposalsQuery = query(
-        collection(db, 'proposals'),
-        where('projectId', '==', projectId),
-        where('vendorId', '==', user.uid)
+        collection(db, "proposals"),
+        where("projectId", "==", projectId),
+        where("vendorId", "==", user.uid)
       );
-      
+
       const proposalSnapshot = await getDocs(proposalsQuery);
       if (!proposalSnapshot.empty) {
         const proposalDoc = proposalSnapshot.docs[0];
         setProposal({ id: proposalDoc.id, ...proposalDoc.data() });
       }
-      
     } catch (err) {
-      console.error('Error fetching project details:', err);
+      console.error("Error fetching project details:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -61,20 +73,25 @@ export default function VendorProjectDetail() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'negotiating': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "open":
+        return "bg-blue-100 text-blue-800";
+      case "in-progress":
+        return "bg-green-100 text-green-800";
+      case "completed":
+        return "bg-gray-100 text-gray-800";
+      case "negotiating":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -121,35 +138,50 @@ export default function VendorProjectDetail() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => router.push('/dashboard/vendor')}
+            onClick={() => router.push("/dashboard/vendor")}
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4"
           >
             <FiArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
-          
+
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-500">Project ID: {project.orderId}</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                  {project.status || 'Open'}
+                <span className="text-sm text-gray-500">
+                  Project ID: {project.orderId}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                    project.status
+                  )}`}
+                >
+                  {project.status || "Open"}
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{project.projectTitle}</h1>
-              
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                {project.projectTitle}
+              </h1>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <FiMapPin className="w-4 h-4 text-gray-400" />
-                  <span>{project.location || 'Location not specified'}</span>
+                  <span>{project.location || "Location not specified"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FiCalendar className="w-4 h-4 text-gray-400" />
-                  <span>Start: {project.estimatedStartMonth} {project.estimatedStartYear}</span>
+                  <span>
+                    Start: {project.estimatedStartMonth}{" "}
+                    {project.estimatedStartYear}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FiDollarSign className="w-4 h-4 text-gray-400" />
-                  <span>{project.budget ? formatCurrency(project.budget) : 'Budget TBD'}</span>
+                  <span>
+                    {project.budget
+                      ? formatCurrency(project.budget)
+                      : "Budget TBD"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -160,31 +192,53 @@ export default function VendorProjectDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Project Information</h2>
-              
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Project Information
+              </h2>
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Project Type</h3>
-                  <p className="text-gray-900">{project.projectType || 'Not specified'}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Project Type
+                  </h3>
+                  <p className="text-gray-900">
+                    {project.projectType || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Property Type</h3>
-                  <p className="text-gray-900">{project.propertyType || 'Not specified'}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Property Type
+                  </h3>
+                  <p className="text-gray-900">
+                    {project.propertyType || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Scope</h3>
-                  <p className="text-gray-900">{project.scope || 'Not specified'}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Scope
+                  </h3>
+                  <p className="text-gray-900">
+                    {project.scope || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Duration</h3>
-                  <p className="text-gray-900">{project.projectDuration || 'Not specified'}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Duration
+                  </h3>
+                  <p className="text-gray-900">
+                    {project.projectDuration || "Not specified"}
+                  </p>
                 </div>
               </div>
-              
+
               {project.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-                  <p className="text-gray-900 whitespace-pre-wrap">{project.description}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    Description
+                  </h3>
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {project.description}
+                  </p>
                 </div>
               )}
             </div>
@@ -192,17 +246,29 @@ export default function VendorProjectDetail() {
             {/* Proposal Status */}
             {proposal && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Your Proposal Status</h2>
-                
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Your Proposal Status
+                </h2>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Proposal Amount</h3>
-                    <p className="text-xl font-bold text-gray-900">{formatCurrency(proposal.totalAmount)}</p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">
+                      Proposal Amount
+                    </h3>
+                    <p className="text-xl font-bold text-gray-900">
+                      {formatCurrency(proposal.totalAmount)}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(proposal.status)}`}>
-                      {proposal.status || 'Submitted'}
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">
+                      Status
+                    </h3>
+                    <span
+                      className={`inline-flex px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                        proposal.status
+                      )}`}
+                    >
+                      {proposal.status || "Submitted"}
                     </span>
                   </div>
                 </div>
@@ -213,16 +279,22 @@ export default function VendorProjectDetail() {
           {/* Sidebar */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Project Owner</h3>
-              
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Project Owner
+              </h3>
+
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                   <FiUser className="w-6 h-6 text-gray-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{project.ownerName || 'Unknown'}</p>
+                  <p className="font-medium text-gray-900">
+                    {project.ownerName || "Unknown"}
+                  </p>
                   {project.ownerEmail && (
-                    <p className="text-sm text-gray-500">{project.ownerEmail}</p>
+                    <p className="text-sm text-gray-500">
+                      {project.ownerEmail}
+                    </p>
                   )}
                 </div>
               </div>
@@ -238,9 +310,13 @@ export default function VendorProjectDetail() {
             </div>
 
             <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-blue-900 mb-2">Project Details</h3>
+              <h3 className="text-lg font-medium text-blue-900 mb-2">
+                Project Details
+              </h3>
               <p className="text-sm text-blue-800">
-                This is the detailed view of the project. Same information available from both &quot;View Project&quot; and &quot;Update Proposal&quot; buttons.
+                This is the detailed view of the project. Same information
+                available from both &quot;View Project&quot; and &quot;Update
+                Proposal&quot; buttons.
               </p>
             </div>
           </div>

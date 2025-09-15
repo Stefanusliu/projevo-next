@@ -1043,17 +1043,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
           {/* Jenis Proyek and Properti */}
           <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="w-[100px]">
+            <div>
               <h3 className="text-sm font-normal text-gray-900">
                 Jenis Proyek
               </h3>
-              <p className="text-3xl text-gray-700 font-bold">
+              <p className="text-3xl text-gray-700 font-bold truncate whitespace-nowrap overflow-hidden">
                 {project.projectType || "Not specified"}
               </p>
             </div>
             <div>
               <h3 className="text-sm font-normal text-gray-900">Properti</h3>
-              <p className="text-3xl text-gray-700 font-bold">
+              <p className="text-3xl text-gray-700 font-bold truncate whitespace-nowrap overflow-hidden">
                 {project.propertyType || "Not specified"}
               </p>
             </div>
@@ -1065,7 +1065,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Ruang Lingkup
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {Array.isArray(project.projectScope)
                   ? project.projectScope.join(", ")
                   : Array.isArray(project.scope)
@@ -1077,7 +1077,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Metode Pengadaan
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {project.procurementMethod ||
                   project.bidMethod ||
                   "Not specified"}
@@ -1091,7 +1091,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Durasi Tender
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {project.tenderDuration ||
                   project.bidCountdown ||
                   "Not specified"}
@@ -1101,7 +1101,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Durasi Proyek
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {project.estimatedDuration ||
                   project.duration ||
                   "Not specified"}
@@ -1111,7 +1111,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Estimasi Mulai
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {formatDate(project.estimatedStartDate) || "Not specified"}
               </p>
             </div>
@@ -1119,7 +1119,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
               <h2 className="text-sm font-normal text-gray-900">
                 Pemilik Proyek
               </h2>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 truncate whitespace-nowrap overflow-hidden">
                 {project.clientName ||
                   project.client ||
                   project.ownerName ||
@@ -1135,7 +1135,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                 Catatan
               </h2>
               <div className="bg-gray-100 rounded-lg px-4 py-8">
-                <p className="text-3xl text-gray-700">
+                <p className="text-3xl text-gray-700 line-clamp-3 overflow-hidden">
                   {project.specialNotes || project.notes || "No special notes"}
                 </p>
               </div>
@@ -1143,7 +1143,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             <div style={{ width: "20%" }}>
               <h2 className="text-sm font-normal text-gray-900 mb-2">Status</h2>
               <div className="bg-gray-100 rounded-lg  px-4 py-8">
-                <p className="text-3xl text-gray-700">
+                <p className="text-3xl text-gray-700 truncate whitespace-nowrap overflow-hidden">
                   {project.status || "Draft"}
                 </p>
               </div>
@@ -1177,12 +1177,12 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                 onChange={(e) => setNegotiationFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All</option>
-                <option value="newest">Newest</option>
-                <option value="price-low">Price ↑</option>
-                <option value="price-high">Price ↓</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
+                <option value="all">Semua</option>
+                <option value="newest">Terbaru</option>
+                <option value="price-low">Harga ↑</option>
+                <option value="price-high">Harga ↓</option>
+                <option value="active">Aktif</option>
+                <option value="completed">Selesai</option>
               </select>
             </div>
           )}
@@ -1275,19 +1275,19 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                               : "bg-blue-100 text-blue-700"
                           }`}
                         >
-                          {activity.status === "accepted"
-                            ? "Completed"
+                          {activity.status === "completed"
+                            ? "Selesai"
                             : activity.status === "counter_offer"
-                            ? "Counter Offer"
+                            ? "Penawaran Balik"
                             : activity.status === "resubmitted"
-                            ? "Resubmitted"
+                            ? "Diajukan Ulang"
                             : activity.status === "pending_review"
-                            ? "Pending Review"
+                            ? "Menunggu Tinjauan"
                             : activity.status === "waiting"
-                            ? "Waiting"
+                            ? "Menunggu"
                             : activity.status === "negotiating"
-                            ? "Negotiating"
-                            : "Active"}
+                            ? "Bernegosiasi"
+                            : "Aktif"}
                         </span>
 
                         {/* New Badge for recent activities */}
@@ -1325,9 +1325,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white bg-opacity-60 rounded-lg mb-4">
                       <div>
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {activity.status === "accepted"
-                            ? "Final Price"
-                            : "Current Price"}
+                          {activity.status === "completed"
+                            ? "Harga Final"
+                            : "Harga Saat Ini"}
                         </span>
                         <p
                           className={`text-lg font-bold ${
@@ -1339,7 +1339,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           }`}
                         >
                           {formatCurrency(
-                            activity.status === "accepted"
+                            activity.status === "completed"
                               ? activity.finalPrice
                               : activity.currentPrice
                           )}
@@ -1350,24 +1350,24 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         activity.currentPrice !== activity.originalPrice && (
                           <div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                              Original Price
+                              Harga Awal
                             </span>
                             <p className="text-lg font-bold text-gray-600 line-through">
                               {formatCurrency(activity.originalPrice)}
                             </p>
                             <p className="text-xs text-green-600 font-medium">
                               {activity.originalPrice > activity.currentPrice
-                                ? "Reduced"
-                                : "Increased"}
+                                ? "Berkurang"
+                                : "Bertambah"}
                             </p>
                           </div>
                         )}
 
                       <div>
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {activity.status === "accepted"
-                            ? "Completed"
-                            : "Started"}
+                          {activity.status === "completed"
+                            ? "Selesai"
+                            : "Dimulai"}
                         </span>
                         <p className="text-sm font-medium text-gray-700">
                           {formatDate(
@@ -1382,7 +1382,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         activity.status !== "accepted" && (
                           <div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                              Last Activity
+                              Aktivitas Terakhir
                             </span>
                             <p className="text-sm font-medium text-gray-700">
                               {formatDate(activity.lastActivity)}
@@ -1415,7 +1415,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
                         >
                           <FiPhone size={16} />
-                          Phone
+                          Telepon
                         </a>
                       )}
 
@@ -1441,7 +1441,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
                       >
                         <FiEye size={16} />
-                        View Details
+                        Lihat Detail
                       </button>
                     </div>
                   </div>
@@ -1617,9 +1617,9 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           proposal.status === "accepted" ||
           negotiation.status === "accepted"
         ) {
-          status = "accepted";
+          status = "completed";
           statusColor = "green";
-          message = `Negotiation completed with ${
+          message = `Negosiasi selesai dengan ${
             proposal.vendorName || "vendor"
           }`;
         } else if (
@@ -1628,26 +1628,28 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         ) {
           status = "counter_offer";
           statusColor = "orange";
-          message = `Counter offer from ${proposal.vendorName || "vendor"}`;
+          message = `Menunggu tanggapan dari ${
+            proposal.vendorName || "vendor"
+          }`;
         } else if (
           proposal.status === "resubmitted" ||
           proposal.status === "negotiated"
         ) {
           status = "resubmitted";
           statusColor = "blue";
-          message = `New proposal submitted by ${
+          message = `Proposal baru diajukan oleh ${
             proposal.vendorName || "vendor"
           }`;
         } else if (proposal.status === "pending_review") {
           status = "pending_review";
           statusColor = "blue";
-          message = `Proposal pending review from ${
+          message = `Proposal menunggu tinjauan dari ${
             proposal.vendorName || "vendor"
           }`;
         } else if (proposal.status === "waiting_for_vendor") {
-          status = "waiting";
+          status = "waiting_for_vendor";
           statusColor = "yellow";
-          message = `Waiting for response from ${
+          message = `Menunggu tanggapan dari ${
             proposal.vendorName || "vendor"
           }`;
         } else if (
@@ -1656,12 +1658,14 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         ) {
           status = "negotiating";
           statusColor = "purple";
-          message = `In negotiation with ${proposal.vendorName || "vendor"}`;
+          message = `Dalam negosiasi dengan ${proposal.vendorName || "vendor"}`;
         }
 
         return {
           vendorName:
-            proposal.vendorName || proposal.vendor?.name || "Unknown Vendor",
+            proposal.vendorName ||
+            proposal.vendor?.name ||
+            "Vendor Tidak Dikenal",
           vendorId: proposal.vendorId,
           vendorPhone: proposal.vendorPhone,
           vendorEmail: proposal.vendorEmail,
@@ -1679,7 +1683,27 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
             proposal.originalPrice ||
             proposal.totalAmount ||
             proposal.totalPrice,
-          finalPrice: negotiation.finalPrice || proposal.finalPrice,
+          finalPrice: (() => {
+            // Calculate final price based on negotiation status
+            if (status === "completed" && negotiation) {
+              // For completed negotiations, try to get the final negotiated price
+              return (
+                negotiation.finalPrice ||
+                negotiation.currentPrice ||
+                negotiation.acceptedPrice ||
+                proposal.currentPrice ||
+                proposal.totalAmount ||
+                proposal.totalPrice
+              );
+            } else if (proposal.finalPrice) {
+              return proposal.finalPrice;
+            } else if (proposal.totalAmount) {
+              return proposal.totalAmount;
+            } else if (proposal.totalPrice) {
+              return proposal.totalPrice;
+            }
+            return null;
+          })(),
           acceptedAt: negotiation.acceptedAt || proposal.acceptedAt,
           originalIndex: proposal.originalIndex,
         };
@@ -3045,7 +3069,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderTabContent()}
       </div>
-      
+
       <XenditPaymentModal
         isOpen={showPaymentModal}
         onClose={() => {

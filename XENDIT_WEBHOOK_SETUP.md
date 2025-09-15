@@ -1,16 +1,19 @@
 # Xendit Webhook Setup Guide
 
 ## Overview
+
 This guide explains how to set up Xendit webhooks to properly handle payment notifications and update project status automatically.
 
 ## Current Implementation
 
 ### 1. Webhook Endpoint
+
 - **URL**: `/api/xendit/webhook`
 - **Method**: POST
 - **Purpose**: Receives payment status updates from Xendit
 
 ### 2. Payment Flow
+
 1. User clicks "Bayar Termin 1 & 2" button
 2. Payment invoice is created with external_id format: `proj-{projectId}-{timestamp}`
 3. User is redirected to Xendit payment page
@@ -20,6 +23,7 @@ This guide explains how to set up Xendit webhooks to properly handle payment not
 ### 3. Webhook Configuration in Xendit Dashboard
 
 #### For Development/Testing:
+
 1. Login to Xendit Dashboard (https://dashboard.xendit.co/)
 2. Go to Settings > Developers > Webhooks
 3. Add new webhook with:
@@ -29,11 +33,13 @@ This guide explains how to set up Xendit webhooks to properly handle payment not
    - **Verification Token**: `sfDQ78ovuNRUh4dxDsyk4uXDJ99rwsawOUuWXu3By38NjwAb`
 
 #### For Production:
+
 1. Replace localhost URL with your production domain:
    - **URL**: `https://yourdomain.com/api/xendit/webhook`
 2. Use the same verification token
 
 #### Important Security Notes:
+
 - The webhook endpoint verifies the `x-callback-token` header for security
 - Only requests with the correct token will be processed
 - Unauthorized requests return 401 status code
@@ -41,6 +47,7 @@ This guide explains how to set up Xendit webhooks to properly handle payment not
 ### 4. Testing Payment Status
 
 #### Scenario 1: Successful Payment
+
 1. Click "Bayar Termin 1 & 2"
 2. Complete payment on Xendit page
 3. Webhook receives PAID status
@@ -48,6 +55,7 @@ This guide explains how to set up Xendit webhooks to properly handle payment not
 5. Button changes from "Bayar Termin 1 & 2" to "Pantau Progres"
 
 #### Scenario 2: Unpaid/Failed Payment
+
 1. Click "Bayar Termin 1 & 2"
 2. Close payment page without completing payment OR select failure in test mode
 3. No webhook is sent or webhook shows EXPIRED/FAILED status
@@ -78,21 +86,25 @@ curl -X POST http://localhost:3000/api/xendit/webhook \
 The webhook endpoint includes several security measures:
 
 #### ✅ **Token Verification**
+
 - Verifies `x-callback-token` header matches our verification token
 - Rejects unauthorized requests with 401 status
 - Prevents malicious webhook attempts
 
-#### ✅ **Duplicate Prevention**  
+#### ✅ **Duplicate Prevention**
+
 - Checks `payment_id` to prevent duplicate processing
 - Protects against money loss from duplicate webhooks
 - Maintains webhook history for audit trail
 
 #### ✅ **Quick Acknowledgement**
+
 - Responds with 200 status immediately after processing
 - Prevents Xendit retries due to timeouts
 - Includes verification status in response
 
 #### ✅ **Error Handling**
+
 - Logs all webhook activity for debugging
 - Returns 200 even on errors to prevent retries
 - Graceful handling of missing or invalid data
@@ -100,6 +112,7 @@ The webhook endpoint includes several security measures:
 ### 7. Webhook Verification
 
 The webhook endpoint:
+
 - ✅ Validates webhook verification token
 - ✅ Validates required fields
 - ✅ Extracts project ID from external_id
@@ -113,7 +126,7 @@ The webhook endpoint:
 ### 8. Project Status Flow
 
 ```
-[Proposal Accepted] 
+[Proposal Accepted]
     ↓
 [Status: "Diberikan" + Button: "Bayar Termin 1 & 2"]
     ↓ (Payment initiated)
@@ -125,6 +138,7 @@ The webhook endpoint:
 ### 9. Database Updates
 
 When webhook confirms payment:
+
 ```javascript
 {
   firstPaymentCompleted: true,
@@ -156,14 +170,17 @@ When webhook confirms payment:
 ## Troubleshooting
 
 ### Issue: Payment always shows as successful
+
 - **Cause**: No webhook configured or webhook not working
 - **Solution**: Set up webhook URL in Xendit dashboard
 
-### Issue: Webhook not receiving data  
+### Issue: Webhook not receiving data
+
 - **Cause**: Incorrect webhook URL or firewall blocking
 - **Solution**: Check URL is accessible and webhook is active in Xendit
 
 ### Issue: Project status not updating
+
 - **Cause**: external_id format mismatch or project not found
 - **Solution**: Check logs for webhook processing errors
 

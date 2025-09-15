@@ -9,12 +9,12 @@ export async function POST(req) {
 
     // In a real implementation, you would update your database here
     // For now, just return the simulated status
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       external_id,
       status,
       message: `Payment status simulated as ${status}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Simulation error:", error);

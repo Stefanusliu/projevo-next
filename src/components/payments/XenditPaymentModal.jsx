@@ -65,11 +65,11 @@ const XenditPaymentModal = ({
       const res = await fetch("/api/xendit/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          amount, 
-          payerEmail, 
-          description, 
-          projectId: projectData?.id || projectData?.projectId 
+        body: JSON.stringify({
+          amount,
+          payerEmail,
+          description,
+          projectId: projectData?.id || projectData?.projectId,
         }),
       });
 

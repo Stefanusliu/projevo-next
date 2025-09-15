@@ -1553,7 +1553,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     console.log("  - Selected proposal:", selectedProposal);
     console.log("  - Proposal index:", proposalIndex);
     console.log("  - All project proposals:", project.proposals);
-    console.log("  - Full proposal structure:", JSON.stringify(selectedProposal, null, 2));
+    console.log(
+      "  - Full proposal structure:",
+      JSON.stringify(selectedProposal, null, 2)
+    );
 
     if (!selectedProposal) {
       alert(

@@ -20,7 +20,7 @@ export async function POST(req) {
 
     // Create unique external ID with project info for better tracking
     const externalId = `proj-${projectId}-${Date.now()}`;
-    
+
     // Create invoice via Xendit API
     const response = await axios.post(
       "https://api.xendit.co/v2/invoices",
@@ -33,7 +33,7 @@ export async function POST(req) {
         metadata: {
           project_id: projectId,
           payment_type: "termin_payment",
-          environment: "development"
+          environment: "development",
         },
         // Set longer expiry for testing (24 hours)
         invoice_duration: 86400,
@@ -56,14 +56,14 @@ export async function POST(req) {
       external_id: externalId,
       invoice_id: response.data.id,
       amount,
-      status: response.data.status
+      status: response.data.status,
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       invoice_url: response.data.invoice_url,
       external_id: externalId,
       invoice_id: response.data.id,
-      status: response.data.status
+      status: response.data.status,
     });
   } catch (error) {
     console.error("Xendit API Error:", error.response?.data || error.message);

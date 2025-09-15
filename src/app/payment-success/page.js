@@ -8,7 +8,7 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState("verifying"); // verifying, success, failed
   const [error, setError] = useState("");
-  
+
   const externalId = searchParams.get("external_id");
 
   useEffect(() => {
@@ -21,7 +21,7 @@ function PaymentSuccessContent() {
 
       try {
         console.log("🔍 Verifying payment for external_id:", externalId);
-        
+
         // Call our payment status check API
         const response = await fetch("/api/xendit/check-payment-status", {
           method: "POST",
@@ -32,11 +32,11 @@ function PaymentSuccessContent() {
         });
 
         const result = await response.json();
-        
+
         if (response.ok && result.status === "PAID") {
           console.log("✅ Payment verified as PAID");
           setVerificationStatus("success");
-          
+
           // Auto redirect after 5 seconds only if payment is actually verified
           setTimeout(() => {
             router.push("/dashboard/project-owner");
@@ -121,8 +121,8 @@ function PaymentSuccessContent() {
             Pembayaran Berhasil!
           </h1>
           <p className="text-gray-600 mb-6">
-            Terima kasih! Pembayaran Anda telah berhasil diproses dan diverifikasi. 
-            Anda akan menerima konfirmasi melalui email.
+            Terima kasih! Pembayaran Anda telah berhasil diproses dan
+            diverifikasi. Anda akan menerima konfirmasi melalui email.
           </p>
           <button
             onClick={() => router.push("/dashboard/project-owner")}
@@ -160,7 +160,8 @@ function PaymentSuccessContent() {
           Verifikasi Pembayaran Gagal
         </h1>
         <p className="text-gray-600 mb-6">
-          {error || "Pembayaran tidak dapat diverifikasi. Silakan coba lagi atau hubungi customer service."}
+          {error ||
+            "Pembayaran tidak dapat diverifikasi. Silakan coba lagi atau hubungi customer service."}
         </p>
         <div className="space-y-3">
           <button
