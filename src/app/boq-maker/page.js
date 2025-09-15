@@ -3403,14 +3403,13 @@ function BOQMakerComponent({ user, userProfile, loading }) {
                                   <td
                                     className="px-4 py-2 border-r border-gray-200 align-middle cursor-pointer"
                                     onClick={(e) => {
-                                      const input =
-                                        e.currentTarget.querySelector("input");
-                                      if (input && editMode) input.focus();
+                                      const select =
+                                        e.currentTarget.querySelector("select");
+                                      if (select && editMode) select.focus();
                                     }}
                                   >
                                     {row.spec ? (
-                                      <input
-                                        type="text"
+                                      <select
                                         value={row.spec.satuan}
                                         onChange={(e) =>
                                           updateSpec(
@@ -3440,10 +3439,19 @@ function BOQMakerComponent({ user, userProfile, loading }) {
                                         }
                                         className={
                                           editMode
-                                            ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center placeholder-gray-500"
+                                            ? "w-full h-full text-gray-800 bg-transparent outline-none focus:ring-0 border-0 p-0 text-sm text-center"
                                             : "w-full h-full text-gray-800 bg-transparent outline-none border-0 p-0 cursor-not-allowed text-sm text-center"
                                         }
-                                      />
+                                      >
+                                        <option value="">Pilih Satuan</option>
+                                        <option value="kg">kg</option>
+                                        <option value="m¹">m¹</option>
+                                        <option value="m²">m²</option>
+                                        <option value="m³">m³</option>
+                                        <option value="Ls">Ls</option>
+                                        <option value="set">set</option>
+                                        <option value="bh">bh</option>
+                                      </select>
                                     ) : (
                                       <div className="w-full h-6"></div>
                                     )}
