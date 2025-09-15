@@ -35,7 +35,6 @@ import {
   normalizeProposals,
   getProposalsLength,
 } from "../../../../utils/proposalsUtils";
-// ...existing code...
 
 const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Early return if project is not valid
@@ -3046,7 +3045,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderTabContent()}
       </div>
-      // ...existing code...
+      
       <XenditPaymentModal
         isOpen={showPaymentModal}
         onClose={() => {
