@@ -4013,21 +4013,6 @@ function BOQMakerComponent({ user, userProfile, loading }) {
                     >
                       Go to Project Owner Dashboard
                     </button>
-                    <button
-                      onClick={() => {
-                        setShowSuccessModal(false);
-                        router.push("/dashboard/vendor");
-                      }}
-                      className="w-full border-2 border-gray-200 text-black px-6 py-4 rounded-xl hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-semibold text-lg transform hover:-translate-y-0.5"
-                    >
-                      Browse as Vendor
-                    </button>
-                    <button
-                      onClick={() => setShowSuccessModal(false)}
-                      className="w-full text-gray-600 hover:text-black px-6 py-3 rounded-xl transition-all duration-200 font-medium"
-                    >
-                      Continue Editing BOQ
-                    </button>
                   </div>
                 </div>
               </div>

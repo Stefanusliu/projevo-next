@@ -1568,27 +1568,36 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
     // 🔍 Check if payment already exists before creating new one
     console.log("🔍 Checking existing payment data...");
-    
+
     // Support both old single payment structure and new multiple payments structure
-    const existingPayments = project.payments || (project.payment ? [project.payment] : []);
+    const existingPayments =
+      project.payments || (project.payment ? [project.payment] : []);
     console.log("💳 Found existing payments:", existingPayments);
-    
+
     // Check if we already have a payment for "Termin 1 & 2"
-    const termin12Payment = existingPayments.find(payment => 
-      payment.title === "Termin 1 & 2" || 
-      payment.paymentType === "first_payment" ||
-      (!payment.title && !payment.paymentType) // For backward compatibility with old single payment
+    const termin12Payment = existingPayments.find(
+      (payment) =>
+        payment.title === "Termin 1 & 2" ||
+        payment.paymentType === "first_payment" ||
+        (!payment.title && !payment.paymentType) // For backward compatibility with old single payment
     );
-    
+
     if (termin12Payment && termin12Payment.invoiceUrl) {
-      console.log("💳 Found existing Termin 1 & 2 payment URL:", termin12Payment.invoiceUrl);
-      
+      console.log(
+        "💳 Found existing Termin 1 & 2 payment URL:",
+        termin12Payment.invoiceUrl
+      );
+
       // Check if payment is already completed in our local data first
-      if (termin12Payment.status === "paid" || 
-          project.initialPaymentCompleted === true || 
-          project.firstPaymentCompleted === true) {
-        console.log("✅ Termin 1 & 2 payment already completed! Proceeding to next phase...");
-        
+      if (
+        termin12Payment.status === "paid" ||
+        project.initialPaymentCompleted === true ||
+        project.firstPaymentCompleted === true
+      ) {
+        console.log(
+          "✅ Termin 1 & 2 payment already completed! Proceeding to next phase..."
+        );
+
         try {
           await updateDoc(doc(db, "projects", project.id), {
             initialPaymentCompleted: true,
@@ -1596,30 +1605,43 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
             status: "On Going",
             updatedAt: new Date(),
             // Update the specific payment status in the array
-            [`payments.${existingPayments.findIndex(p => p === termin12Payment)}.status`]: "paid"
+            [`payments.${existingPayments.findIndex(
+              (p) => p === termin12Payment
+            )}.status`]: "paid",
           });
-          
+
           await fetchProjects();
-          alert("Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya.");
+          alert(
+            "Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya."
+          );
           return;
         } catch (updateError) {
           console.error("❌ Error updating project status:", updateError);
-          alert("Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman.");
+          alert(
+            "Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman."
+          );
           return;
         }
       }
-      
+
       // If we have an existing URL and payment is not completed, use the existing URL
-      console.log("🔗 Using existing Termin 1 & 2 payment URL instead of creating new one");
-      window.open(termin12Payment.invoiceUrl, '_blank');
+      console.log(
+        "🔗 Using existing Termin 1 & 2 payment URL instead of creating new one"
+      );
+      window.open(termin12Payment.invoiceUrl, "_blank");
       return;
-      
     } else if (termin12Payment && termin12Payment.invoiceId) {
-      console.log("💳 Found existing Termin 1 & 2 payment with invoiceId but no URL:", termin12Payment);
-      
+      console.log(
+        "💳 Found existing Termin 1 & 2 payment with invoiceId but no URL:",
+        termin12Payment
+      );
+
       // Try to check status via API only if we don't have a URL but have invoiceId
       try {
-        console.log("🔄 Checking Xendit payment status for Termin 1 & 2:", project.id);
+        console.log(
+          "🔄 Checking Xendit payment status for Termin 1 & 2:",
+          project.id
+        );
 
         const response = await fetch("/api/xendit/check-payment-status", {
           method: "POST",
@@ -1634,34 +1656,46 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         const result = await response.json();
 
         if (result.success && result.paymentStatus === "paid") {
-          console.log("✅ Termin 1 & 2 payment already completed via API! Proceeding to next phase...");
-          
+          console.log(
+            "✅ Termin 1 & 2 payment already completed via API! Proceeding to next phase..."
+          );
+
           try {
             await updateDoc(doc(db, "projects", project.id), {
               initialPaymentCompleted: true,
               firstPaymentCompleted: true,
               status: "On Going",
               updatedAt: new Date(),
-              [`payments.${existingPayments.findIndex(p => p === termin12Payment)}.status`]: "paid"
+              [`payments.${existingPayments.findIndex(
+                (p) => p === termin12Payment
+              )}.status`]: "paid",
             });
-            
+
             await fetchProjects();
-            alert("Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya.");
+            alert(
+              "Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya."
+            );
             return;
           } catch (updateError) {
             console.error("❌ Error updating project status:", updateError);
-            alert("Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman.");
+            alert(
+              "Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman."
+            );
             return;
           }
         }
-        
-        console.log("⚠️ Termin 1 & 2 payment not completed or API check failed. Creating new payment...");
+
+        console.log(
+          "⚠️ Termin 1 & 2 payment not completed or API check failed. Creating new payment..."
+        );
       } catch (error) {
         console.error("❌ Error checking payment status:", error);
         console.log("🔄 API check failed. Creating new payment...");
       }
     } else {
-      console.log("📝 No existing Termin 1 & 2 payment found. Creating new payment...");
+      console.log(
+        "📝 No existing Termin 1 & 2 payment found. Creating new payment..."
+      );
     }
 
     console.log(
@@ -1777,13 +1811,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     const paymentTitle = `Termin ${terminNumber}`;
 
     // Check if this termin payment already exists
-    const existingTerminPayment = existingPayments.find(payment => 
-      payment.title === paymentTitle
+    const existingTerminPayment = existingPayments.find(
+      (payment) => payment.title === paymentTitle
     );
 
     if (existingTerminPayment && existingTerminPayment.invoiceUrl) {
       console.log(`🔗 Using existing ${paymentTitle} payment URL`);
-      window.open(existingTerminPayment.invoiceUrl, '_blank');
+      window.open(existingTerminPayment.invoiceUrl, "_blank");
       return;
     }
 
@@ -1797,7 +1831,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       projectPhases: projectPhases,
       terminAmount: terminAmount,
       firstPaymentAmount: terminAmount, // Single termin amount
-      remainingAmount: totalAmount - (terminAmount * terminNumber),
+      remainingAmount: totalAmount - terminAmount * terminNumber,
     };
 
     setSelectedProposalForPayment({
@@ -1810,11 +1844,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
 
   // Function to determine what payment button to show
   const getPaymentButton = (project) => {
-    const existingPayments = project.payments || (project.payment ? [project.payment] : []);
-    const termin12Payment = existingPayments.find(payment => 
-      payment.title === "Termin 1 & 2" || 
-      payment.paymentType === "first_payment" ||
-      (!payment.title && !payment.paymentType)
+    const existingPayments =
+      project.payments || (project.payment ? [project.payment] : []);
+    const termin12Payment = existingPayments.find(
+      (payment) =>
+        payment.title === "Termin 1 & 2" ||
+        payment.paymentType === "first_payment" ||
+        (!payment.title && !payment.paymentType)
     );
 
     // If no Termin 1 & 2 payment or it's not paid yet
@@ -1833,10 +1869,10 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     // Check for next termin needed
     const projectPhases = project.projectPhases || 3;
     for (let i = 3; i <= projectPhases; i++) {
-      const terminPayment = existingPayments.find(payment => 
-        payment.title === `Termin ${i}`
+      const terminPayment = existingPayments.find(
+        (payment) => payment.title === `Termin ${i}`
       );
-      
+
       if (!terminPayment || terminPayment.status !== "paid") {
         return (
           <button
@@ -3446,18 +3482,21 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           ) {
             try {
               const projectId = selectedProposalForPayment.projectData.id;
-              const paymentTitle = selectedProposalForPayment.projectData.paymentTitle || "Termin 1 & 2";
-              const paymentIndex = selectedProposalForPayment.projectData.paymentIndex || 0;
-              
+              const paymentTitle =
+                selectedProposalForPayment.projectData.paymentTitle ||
+                "Termin 1 & 2";
+              const paymentIndex =
+                selectedProposalForPayment.projectData.paymentIndex || 0;
+
               // Get existing payments array or convert old payment structure
               const currentProject = selectedProposalForPayment.projectData;
               let existingPayments = currentProject.payments || [];
-              
+
               // If there's an old single payment structure, convert it to array
               if (currentProject.payment && !currentProject.payments) {
                 existingPayments = [currentProject.payment];
               }
-              
+
               // Create new payment object
               const newPayment = {
                 title: paymentTitle,
@@ -3467,10 +3506,13 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
                 invoiceId: paymentData.invoice_id,
                 invoiceUrl: paymentData.invoice_url,
                 createdAt: new Date(),
-                amount: selectedProposalForPayment.projectData.firstPaymentAmount,
-                description: `Pembayaran ${paymentTitle} - ${currentProject.projectTitle || currentProject.title}`,
+                amount:
+                  selectedProposalForPayment.projectData.firstPaymentAmount,
+                description: `Pembayaran ${paymentTitle} - ${
+                  currentProject.projectTitle || currentProject.title
+                }`,
               };
-              
+
               // Add new payment to the array
               const updatedPayments = [...existingPayments];
               if (paymentIndex < updatedPayments.length) {
@@ -3529,4 +3571,4 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       />
     </div>
   );
-};
+}
