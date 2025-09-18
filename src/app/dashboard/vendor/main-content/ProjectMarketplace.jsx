@@ -509,7 +509,92 @@ const ProjectMarketplace = () => {
         await Promise.all(companyPromises);
       }
 
-      console.log("Processed tender projects:", projects);
+      // Now fetch and process awarded projects where this vendor was selected
+      console.log("🏆 Loading awarded projects for vendor:", user.uid);
+
+      const awardedProjects = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        // Check if this is an awarded project where the current vendor was selected
+        if (
+          data.status === "Awarded" &&
+          data.selectedVendorId === user.uid &&
+          data.payment?.invoiceId // Has payment data
+        ) {
+          console.log("🎯 Found awarded project for vendor:", doc.id);
+
+          const awardedProject = {
+            id: doc.id,
+            projectTitle: data.title || data.projectTitle || "Untitled Project",
+            category: data.projectType || "Bangun",
+            budget: data.estimatedBudget || "Budget tidak tersedia",
+            duration: data.estimatedDuration || "Durasi tidak ditentukan",
+            location: {
+              city: data.city || "Kota tidak ditentukan",
+              province: data.province || "Provinsi tidak ditentukan",
+              fullAddress: data.fullAddress || "Alamat tidak tersedia",
+            },
+            scope: data.projectScope || [],
+            deadline: data.deadline || data.tenderDeadline,
+            bidCountdown: "Project Awarded", // This will be updated based on payment status
+            client:
+              data.ownerName ||
+              data.client ||
+              data.ownerEmail?.split("@")[0] ||
+              "Client not specified",
+            estimatedStartDate: data.estimatedStartDate || data.startDate,
+            status: "Awarded",
+            ownerId: data.ownerId,
+            tenderDuration: data.tenderDuration || "1 bulan",
+            proposals: data.proposals || [],
+            // Add payment related fields
+            payment: data.payment,
+            selectedVendorId: data.selectedVendorId,
+            initialPaymentCompleted: data.initialPaymentCompleted || false,
+            firstPaymentCompleted: data.firstPaymentCompleted || false,
+            // Keep original data
+            originalData: data,
+            ...data,
+          };
+
+          awardedProjects.push(awardedProject);
+        }
+      });
+
+      // Check payment status for all awarded projects in parallel
+      if (awardedProjects.length > 0) {
+        console.log(
+          `📋 Processing ${awardedProjects.length} awarded projects...`
+        );
+        const awardedProjectsWithPaymentStatus = await Promise.all(
+          awardedProjects.map(async (project) => {
+            try {
+              return await checkPaymentStatus(project);
+            } catch (error) {
+              console.error(
+                "❌ Error checking payment status for project:",
+                project.id,
+                error
+              );
+              return project; // Return original project if payment check fails
+            }
+          })
+        );
+
+        // Add awarded projects to the main projects array
+        projects.push(...awardedProjectsWithPaymentStatus);
+        console.log("✅ Added awarded projects with payment status");
+      }
+
+      console.log(
+        "Processed tender projects:",
+        projects.filter((p) => p.status !== "Awarded")
+      );
+      console.log(
+        "Processed awarded projects:",
+        projects.filter((p) => p.status === "Awarded")
+      );
       console.log("Sample project data structure:", projects[0]);
       setMarketData(projects);
       setLoading(false);
@@ -588,20 +673,32 @@ const ProjectMarketplace = () => {
     );
     const notLocked = timeToDeadline === null || timeToDeadline > 24;
 
-    const notAwarded =
-      !item.selectedVendorId &&
-      item.status !== "awarded" &&
-      item.status !== "Awarded" &&
-      item.status !== "Negotiate" &&
-      item.status !== "On Going" &&
-      item.status !== "Completed" &&
-      !item.negotiationAccepted &&
-      !item.initialPaymentCompleted &&
-      !item.hasNegotiationOffer;
+    // Check if project should be shown:
+    // 1. For tender projects: not awarded, not expired, not locked
+    // 2. For awarded projects: only show if current vendor was selected
+    const shouldShowProject =
+      // Show awarded projects where this vendor was selected
+      (item.status === "Awarded" && item.selectedVendorId === user?.uid) ||
+      // OR show tender projects that are still available
+      (!item.selectedVendorId &&
+        item.status !== "awarded" &&
+        item.status !== "Awarded" &&
+        item.status !== "Negotiate" &&
+        item.status !== "On Going" &&
+        item.status !== "Completed" &&
+        !item.negotiationAccepted &&
+        !item.initialPaymentCompleted &&
+        !item.hasNegotiationOffer &&
+        notExpired &&
+        notLocked);
 
-    // Check if any proposal has been accepted
+    // For awarded projects, skip the hasAcceptedProposal check since they're already awarded
     let hasAcceptedProposal = false;
-    if (item.proposals && Array.isArray(item.proposals)) {
+    if (
+      item.status !== "Awarded" &&
+      item.proposals &&
+      Array.isArray(item.proposals)
+    ) {
       hasAcceptedProposal = item.proposals.some(
         (proposal) =>
           proposal.status === "accepted" ||
@@ -613,9 +710,7 @@ const ProjectMarketplace = () => {
       projectTypeMatch &&
       scopeMatch &&
       propertyMatch &&
-      notExpired &&
-      notLocked &&
-      notAwarded &&
+      shouldShowProject &&
       !hasAcceptedProposal
     );
   });
@@ -758,6 +853,22 @@ const ProjectMarketplace = () => {
     setShowCreateProposal(true);
   };
 
+  const handleNegotiationResponse = (project) => {
+    // Get the vendor's proposal ID for negotiation response
+    const vendorProposal = getVendorProposal(project);
+    const proposalId = vendorProposal ? vendorProposal.id : null;
+
+    // Navigate to BOQ penawaran page for creating new proposal in response to negotiation
+    if (proposalId) {
+      router.push(
+        `/boq-penawaran?projectId=${project.id}&proposalId=${proposalId}`
+      );
+    } else {
+      // Fallback if proposal ID not found
+      router.push(`/boq-penawaran?projectId=${project.id}`);
+    }
+  };
+
   const handleViewDetails = (project) => {
     setSelectedProject(project);
     setShowDetailsView(true);
@@ -820,8 +931,22 @@ const ProjectMarketplace = () => {
   }, []);
 
   const getBidCountdownColor = (countdown) => {
-    // All countdown badges now use blue accent for consistency
+    // Return appropriate color based on the countdown/status text
+    if (countdown === "Payment Completed") return "text-white"; // Green background
+    if (countdown === "Payment Pending") return "text-white"; // Orange background
+    if (countdown === "Payment Expired") return "text-white"; // Red background
+    if (countdown === "Project Awarded") return "text-white"; // Blue background
+    // All other countdown badges use blue accent for consistency
     return "text-white";
+  };
+
+  const getBidCountdownBackgroundColor = (countdown) => {
+    if (countdown === "Payment Completed") return "#10B981"; // Green
+    if (countdown === "Payment Pending") return "#F59E0B"; // Orange
+    if (countdown === "Payment Expired") return "#EF4444"; // Red
+    if (countdown === "Project Awarded") return "#8B5CF6"; // Purple
+    // Default blue for regular countdown
+    return "#2373FF";
   };
 
   useEffect(() => {
@@ -870,6 +995,95 @@ const ProjectMarketplace = () => {
     return normalizedProposals.find(
       (proposal) => proposal.vendorId === user.uid
     );
+  };
+
+  // Helper function to check if vendor's proposal is in negotiation
+  const isVendorProposalNegotiating = (project) => {
+    const vendorProposal = getVendorProposal(project);
+    return vendorProposal && vendorProposal.status === "negotiating";
+  };
+
+  // Helper function to check payment status with Xendit for awarded projects
+  const checkPaymentStatus = async (project) => {
+    try {
+      console.log("🔄 Checking Xendit payment status for project:", project.id);
+
+      // Check if project has payment data with invoiceId
+      if (!project.payment?.invoiceId) {
+        console.log("❌ No payment invoice ID found for project:", project.id);
+        return project;
+      }
+
+      const response = await fetch("/api/xendit/check-payment-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: project.payment.invoiceId, // Using invoiceId as orderId
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error("❌ Payment status check failed:", result.error);
+        return project;
+      }
+
+      console.log("✅ Payment status result:", result);
+
+      // Update project payment status based on Xendit response
+      const updatedProject = {
+        ...project,
+        payment: {
+          ...project.payment,
+          status: result.paymentStatus,
+          lastChecked: new Date().toISOString(),
+        },
+        // Update bidCountdown based on payment status
+        bidCountdown:
+          result.paymentStatus === "paid"
+            ? "Payment Completed"
+            : result.paymentStatus === "pending"
+            ? "Payment Pending"
+            : result.paymentStatus === "expired"
+            ? "Payment Expired"
+            : "Project Awarded",
+      };
+
+      // If payment is completed, update the project in Firestore
+      if (
+        result.paymentStatus === "paid" &&
+        project.payment.status !== "paid"
+      ) {
+        console.log(
+          "💰 Payment completed! Updating project status in Firestore"
+        );
+
+        try {
+          const { updateDoc, doc } = await import("firebase/firestore");
+          await updateDoc(doc(db, "projects", project.id), {
+            "payment.status": "paid",
+            initialPaymentCompleted: true,
+            firstPaymentCompleted: true,
+            updatedAt: new Date(),
+          });
+
+          updatedProject.initialPaymentCompleted = true;
+          updatedProject.firstPaymentCompleted = true;
+
+          console.log("✅ Project payment status updated in Firestore");
+        } catch (error) {
+          console.error("❌ Error updating project payment status:", error);
+        }
+      }
+
+      return updatedProject;
+    } catch (error) {
+      console.error("❌ Error checking payment status:", error);
+      return project;
+    }
   };
 
   // Helper function to check if proposal can be edited (deadline must be more than 24 hours away)
@@ -1416,7 +1630,6 @@ const ProjectMarketplace = () => {
                         {project.customId || `#${project.id}`}
                       </p>
                     </div>
-
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
@@ -1500,7 +1713,6 @@ const ProjectMarketplace = () => {
                         </button>
                       </div>
                     </div>
-
                     {/* Scope */}
                     <div className="mb-4">
                       <h4 className="text-sm font-medium text-gray-900 mb-2">
@@ -1541,33 +1753,38 @@ const ProjectMarketplace = () => {
                         )}
                       </div>
                     </div>
-
                     {/* Stats */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="text-xs text-gray-500">Anggaran</p>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {project.budget}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Durasi</p>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {project.duration}
-                          </p>
-                        </div>
-                      </div>                    {/* Client Info */}
-                      <div className="mb-4">
-                        <p className="text-xs text-gray-500">Klien</p>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Anggaran</p>
                         <p className="text-sm font-semibold text-gray-900">
-                          {project.client}
+                          {project.budget}
                         </p>
-                      </div>                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Durasi</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {project.duration}
+                        </p>
+                      </div>
+                    </div>{" "}
+                    {/* Client Info */}
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500">Klien</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {project.client}
+                      </p>
+                    </div>{" "}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
                       <div>
                         <p className="text-xs text-gray-500">Batas Waktu</p>
                         <span
                           className="px-2.5 py-1 text-xs font-medium rounded-full text-white"
-                          style={{ backgroundColor: "#2373FF" }}
+                          style={{
+                            backgroundColor: getBidCountdownBackgroundColor(
+                              project.bidCountdown
+                            ),
+                          }}
                         >
                           {project.bidCountdown}
                         </span>
@@ -1579,14 +1796,17 @@ const ProjectMarketplace = () => {
                         </p>
                       </div>
                     </div>
-
                     {/* Actions */}
                     <div className="flex space-x-3">
                       {hasVendorSubmittedProposal(project) ? (
                         canEditProposal(project) ? (
                           <div className="flex-1">
                             <button
-                              onClick={() => handleEditProposal(project)}
+                              onClick={() =>
+                                isVendorProposalNegotiating(project)
+                                  ? handleNegotiationResponse(project)
+                                  : handleEditProposal(project)
+                              }
                               className="w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-amber-600 hover:bg-amber-700"
                             >
                               <div className="flex items-center justify-center gap-2">
@@ -1603,7 +1823,9 @@ const ProjectMarketplace = () => {
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                   />
                                 </svg>
-                                Edit Penawaran
+                                {isVendorProposalNegotiating(project)
+                                  ? "Ajukan Penawaran Baru"
+                                  : "Edit Penawaran"}
                               </div>
                             </button>
                           </div>

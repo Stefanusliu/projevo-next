@@ -1527,7 +1527,7 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     console.log("View offers for project:", project);
   };
 
-  const handlePayment = (project) => {
+  const handlePayment = async (project) => {
     console.log("🎯 HANDLE PAYMENT DEBUG:");
     console.log("  - Project passed to handlePayment:", project);
     console.log("  - Project ID:", project.id);
@@ -1563,6 +1563,138 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
         "Penawaran vendor yang dipilih tidak ditemukan. Silakan hubungi dukungan."
       );
       return;
+    }
+
+    // 🔍 Check if payment already exists before creating new one
+    console.log("🔍 Checking existing payment data...");
+
+    // Support both old single payment structure and new multiple payments structure
+    const existingPayments =
+      project.payments || (project.payment ? [project.payment] : []);
+    console.log("💳 Found existing payments:", existingPayments);
+
+    // Check if we already have a payment for "Termin 1 & 2"
+    const termin12Payment = existingPayments.find(
+      (payment) =>
+        payment.title === "Termin 1 & 2" ||
+        payment.paymentType === "first_payment" ||
+        (!payment.title && !payment.paymentType) // For backward compatibility with old single payment
+    );
+
+    if (termin12Payment && termin12Payment.invoiceUrl) {
+      console.log(
+        "💳 Found existing Termin 1 & 2 payment URL:",
+        termin12Payment.invoiceUrl
+      );
+
+      // Check if payment is already completed in our local data first
+      if (
+        termin12Payment.status === "paid" ||
+        project.initialPaymentCompleted === true ||
+        project.firstPaymentCompleted === true
+      ) {
+        console.log(
+          "✅ Termin 1 & 2 payment already completed! Proceeding to next phase..."
+        );
+
+        try {
+          await updateDoc(doc(db, "projects", project.id), {
+            initialPaymentCompleted: true,
+            firstPaymentCompleted: true,
+            status: "On Going",
+            updatedAt: new Date(),
+            // Update the specific payment status in the array
+            [`payments.${existingPayments.findIndex(
+              (p) => p === termin12Payment
+            )}.status`]: "paid",
+          });
+
+          await fetchProjects();
+          alert(
+            "Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya."
+          );
+          return;
+        } catch (updateError) {
+          console.error("❌ Error updating project status:", updateError);
+          alert(
+            "Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman."
+          );
+          return;
+        }
+      }
+
+      // If we have an existing URL and payment is not completed, use the existing URL
+      console.log(
+        "🔗 Using existing Termin 1 & 2 payment URL instead of creating new one"
+      );
+      window.open(termin12Payment.invoiceUrl, "_blank");
+      return;
+    } else if (termin12Payment && termin12Payment.invoiceId) {
+      console.log(
+        "💳 Found existing Termin 1 & 2 payment with invoiceId but no URL:",
+        termin12Payment
+      );
+
+      // Try to check status via API only if we don't have a URL but have invoiceId
+      try {
+        console.log(
+          "🔄 Checking Xendit payment status for Termin 1 & 2:",
+          project.id
+        );
+
+        const response = await fetch("/api/xendit/check-payment-status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: termin12Payment.invoiceId,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.paymentStatus === "paid") {
+          console.log(
+            "✅ Termin 1 & 2 payment already completed via API! Proceeding to next phase..."
+          );
+
+          try {
+            await updateDoc(doc(db, "projects", project.id), {
+              initialPaymentCompleted: true,
+              firstPaymentCompleted: true,
+              status: "On Going",
+              updatedAt: new Date(),
+              [`payments.${existingPayments.findIndex(
+                (p) => p === termin12Payment
+              )}.status`]: "paid",
+            });
+
+            await fetchProjects();
+            alert(
+              "Pembayaran Termin 1 & 2 sudah selesai! Proyek berlanjut ke fase berikutnya."
+            );
+            return;
+          } catch (updateError) {
+            console.error("❌ Error updating project status:", updateError);
+            alert(
+              "Pembayaran sudah selesai, namun gagal memperbarui status proyek. Silakan refresh halaman."
+            );
+            return;
+          }
+        }
+
+        console.log(
+          "⚠️ Termin 1 & 2 payment not completed or API check failed. Creating new payment..."
+        );
+      } catch (error) {
+        console.error("❌ Error checking payment status:", error);
+        console.log("🔄 API check failed. Creating new payment...");
+      }
+    } else {
+      console.log(
+        "📝 No existing Termin 1 & 2 payment found. Creating new payment..."
+      );
     }
 
     console.log(
@@ -1626,6 +1758,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
     const enhancedProjectData = {
       ...project,
       paymentType: "first_payment",
+      paymentTitle: "Termin 1 & 2",
+      paymentIndex: existingPayments.length, // Next payment index
       totalProjectAmount: totalAmount,
       projectPhases: projectPhases,
       terminAmount: terminAmount,
@@ -1648,6 +1782,119 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
       proposalIndex: proposalIndex,
     });
     setShowPaymentModal(true);
+  };
+
+  // Function to handle subsequent payments (Termin 3, 4, etc.)
+  const handleSubsequentPayment = async (project, terminNumber) => {
+    console.log(`🎯 HANDLE TERMIN ${terminNumber} PAYMENT:`, project);
+
+    const selectedProposal = project.proposals?.find(
+      (proposal) =>
+        proposal.status === "accepted" ||
+        (proposal.negotiation && proposal.negotiation.status === "accepted") ||
+        proposal.vendorId === project.selectedVendorId
+    );
+
+    if (!selectedProposal) {
+      alert("Penawaran vendor yang dipilih tidak ditemukan.");
+      return;
+    }
+
+    // Get total amount from proposal
+    let totalAmount = selectedProposal?.totalAmount || 0;
+    const projectPhases = project.projectPhases || 3;
+    const terminAmount = Math.round(totalAmount / projectPhases);
+
+    // Get existing payments
+    const existingPayments = project.payments || [];
+    const paymentTitle = `Termin ${terminNumber}`;
+
+    // Check if this termin payment already exists
+    const existingTerminPayment = existingPayments.find(
+      (payment) => payment.title === paymentTitle
+    );
+
+    if (existingTerminPayment && existingTerminPayment.invoiceUrl) {
+      console.log(`🔗 Using existing ${paymentTitle} payment URL`);
+      window.open(existingTerminPayment.invoiceUrl, "_blank");
+      return;
+    }
+
+    // Enhanced project data for subsequent payment
+    const enhancedProjectData = {
+      ...project,
+      paymentType: "subsequent_payment",
+      paymentTitle: paymentTitle,
+      paymentIndex: existingPayments.length,
+      totalProjectAmount: totalAmount,
+      projectPhases: projectPhases,
+      terminAmount: terminAmount,
+      firstPaymentAmount: terminAmount, // Single termin amount
+      remainingAmount: totalAmount - terminAmount * terminNumber,
+    };
+
+    setSelectedProposalForPayment({
+      projectData: enhancedProjectData,
+      proposal: selectedProposal,
+      proposalIndex: 0,
+    });
+    setShowPaymentModal(true);
+  };
+
+  // Function to determine what payment button to show
+  const getPaymentButton = (project) => {
+    const existingPayments =
+      project.payments || (project.payment ? [project.payment] : []);
+    const termin12Payment = existingPayments.find(
+      (payment) =>
+        payment.title === "Termin 1 & 2" ||
+        payment.paymentType === "first_payment" ||
+        (!payment.title && !payment.paymentType)
+    );
+
+    // If no Termin 1 & 2 payment or it's not paid yet
+    if (!termin12Payment || termin12Payment.status !== "paid") {
+      return (
+        <button
+          onClick={() => handlePayment(project)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+        >
+          <FiCreditCard className="w-4 h-4" />
+          Bayar Termin 1 & 2
+        </button>
+      );
+    }
+
+    // Check for next termin needed
+    const projectPhases = project.projectPhases || 3;
+    for (let i = 3; i <= projectPhases; i++) {
+      const terminPayment = existingPayments.find(
+        (payment) => payment.title === `Termin ${i}`
+      );
+
+      if (!terminPayment || terminPayment.status !== "paid") {
+        return (
+          <button
+            onClick={() => handleSubsequentPayment(project, i)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-green-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+          >
+            <FiCreditCard className="w-4 h-4" />
+            Bayar Termin {i}
+          </button>
+        );
+      }
+    }
+
+    // All payments completed
+    return (
+      <button
+        onClick={() => handleViewProject(project)}
+        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-gray-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
+      >
+        <FiCheck className="w-4 h-4" />
+        Semua Pembayaran Selesai
+      </button>
+    );
   };
 
   const handleResubmitProject = (project) => {
@@ -2541,14 +2788,8 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
               </div>
             </div>
 
-            {/* Modern Action Button */}
-            <button
-              onClick={() => handlePayment(project)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 border border-blue-600 flex items-center justify-center gap-2 whitespace-nowrap flex-1 h-[80px]"
-            >
-              <FiCreditCard className="w-4 h-4" />
-              Bayar Termin 1 & 2
-            </button>
+            {/* Dynamic Payment Button */}
+            {getPaymentButton(project)}
           </div>
         );
 
@@ -3240,14 +3481,51 @@ export default function HomeComponent({ activeProjectTab, onCreateProject }) {
           ) {
             try {
               const projectId = selectedProposalForPayment.projectData.id;
+              const paymentTitle =
+                selectedProposalForPayment.projectData.paymentTitle ||
+                "Termin 1 & 2";
+              const paymentIndex =
+                selectedProposalForPayment.projectData.paymentIndex || 0;
+
+              // Get existing payments array or convert old payment structure
+              const currentProject = selectedProposalForPayment.projectData;
+              let existingPayments = currentProject.payments || [];
+
+              // If there's an old single payment structure, convert it to array
+              if (currentProject.payment && !currentProject.payments) {
+                existingPayments = [currentProject.payment];
+              }
+
+              // Create new payment object
+              const newPayment = {
+                title: paymentTitle,
+                paymentType: "first_payment",
+                status: "pending", // Will be updated by webhook when actually paid
+                externalId: paymentData.external_id,
+                invoiceId: paymentData.invoice_id,
+                invoiceUrl: paymentData.invoice_url,
+                createdAt: new Date(),
+                amount:
+                  selectedProposalForPayment.projectData.firstPaymentAmount,
+                description: `Pembayaran ${paymentTitle} - ${
+                  currentProject.projectTitle || currentProject.title
+                }`,
+              };
+
+              // Add new payment to the array
+              const updatedPayments = [...existingPayments];
+              if (paymentIndex < updatedPayments.length) {
+                // Replace existing payment at index
+                updatedPayments[paymentIndex] = newPayment;
+              } else {
+                // Add new payment
+                updatedPayments.push(newPayment);
+              }
+
               const paymentInfo = {
-                payment: {
-                  status: "pending", // Will be updated by webhook when actually paid
-                  externalId: paymentData.external_id,
-                  invoiceId: paymentData.invoice_id,
-                  invoiceUrl: paymentData.invoice_url,
-                  createdAt: new Date(),
-                },
+                payments: updatedPayments,
+                // Keep old structure for backward compatibility
+                payment: newPayment,
                 paymentInitiated: true,
                 paymentInitiatedAt: new Date(),
                 // Don't set firstPaymentCompleted yet - wait for webhook

@@ -2,6 +2,104 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { db } from "../../lib/firebase";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
+
+// Function to update Firebase payment status
+async function updateFirebasePaymentStatus(externalId, paymentResult) {
+  try {
+    console.log(
+      "🔄 Updating Firebase payment status for external_id:",
+      externalId
+    );
+
+    // Extract project ID from external_id (format: proj-{projectId}-{timestamp})
+    if (!externalId.startsWith("proj-")) {
+      console.log("⚠️ External ID doesn't match expected format:", externalId);
+      return;
+    }
+
+    const parts = externalId.split("-");
+    if (parts.length < 3) {
+      console.log("⚠️ Invalid external_id format:", externalId);
+      return;
+    }
+
+    const projectId = parts[1];
+    console.log("📋 Extracted project ID:", projectId);
+
+    // Update the project payment status
+    const projectRef = doc(db, "projects", projectId);
+
+    // Check if project exists and get current data
+    const projectSnapshot = await getDoc(projectRef);
+    if (!projectSnapshot.exists()) {
+      console.log("❌ Project not found:", projectId);
+      return;
+    }
+
+    const projectData = projectSnapshot.data();
+
+    // Support both old single payment structure and new multiple payments structure
+    const existingPayments =
+      projectData.payments ||
+      (projectData.payment ? [projectData.payment] : []);
+
+    // Find the specific payment to update by matching external_id
+    const paymentIndex = existingPayments.findIndex(
+      (p) => p.externalId === externalId
+    );
+
+    if (paymentIndex === -1) {
+      console.log(
+        "❌ Payment not found in project payments array with external_id:",
+        externalId
+      );
+      return;
+    }
+
+    // Update the specific payment in the array
+    existingPayments[paymentIndex] = {
+      ...existingPayments[paymentIndex],
+      status: "completed",
+      orderId: paymentResult.orderId,
+      amount: paymentResult.amount,
+      paidAmount: paymentResult.paidAmount,
+      paymentMethod: paymentResult.paymentMethod,
+      paidAt: paymentResult.paidAt
+        ? new Date(paymentResult.paidAt)
+        : new Date(),
+      verifiedAt: new Date(),
+      updatedAt: new Date(),
+      paymentInitiated: true,
+    };
+
+    // Prepare update data for project
+    const updateData = {
+      payments: existingPayments,
+      updatedAt: new Date(),
+    };
+
+    // If this is the initial payment, also update project status
+    if (existingPayments[paymentIndex].paymentType === "initial") {
+      updateData.firstPaymentCompleted = true;
+      updateData.initialPaymentCompleted = true;
+      updateData.paymentCompletedAt = new Date();
+      updateData.status = "Berjalan"; // Change status to running
+    }
+
+    await updateDoc(projectRef, updateData);
+    console.log(
+      "✅ Firebase payment status updated successfully for project:",
+      projectId,
+      "payment index:",
+      paymentIndex
+    );
+  } catch (error) {
+    console.error("❌ Error updating Firebase payment status:", error);
+    // Don't throw error to avoid breaking the UI - this is a background update
+  }
+}
 
 function PaymentSuccessContent() {
   const router = useRouter();
@@ -14,10 +112,16 @@ function PaymentSuccessContent() {
   useEffect(() => {
     const verifyPayment = async () => {
       if (!externalId) {
+        console.log("❌ No external_id found in URL params");
         setError("Invalid payment reference");
         setVerificationStatus("failed");
         return;
       }
+
+      console.log(
+        "🔍 Starting payment verification for external_id:",
+        externalId
+      );
 
       try {
         console.log("🔍 Verifying payment for external_id:", externalId);
@@ -32,9 +136,19 @@ function PaymentSuccessContent() {
         });
 
         const result = await response.json();
+        console.log("🔍 Payment verification result:", result);
 
-        if (response.ok && result.status === "PAID") {
+        if (
+          response.ok &&
+          (result.status === "PAID" ||
+            result.invoiceStatus === "PAID" ||
+            result.isCompleted)
+        ) {
           console.log("✅ Payment verified as PAID");
+
+          // Update Firebase payment status immediately
+          await updateFirebasePaymentStatus(externalId, result);
+
           setVerificationStatus("success");
 
           // Auto redirect after 5 seconds only if payment is actually verified
@@ -43,7 +157,9 @@ function PaymentSuccessContent() {
           }, 5000);
         } else {
           console.log("❌ Payment not verified or failed:", result);
-          setError(result.error || "Payment verification failed");
+          setError(
+            result.error || result.message || "Payment verification failed"
+          );
           setVerificationStatus("failed");
         }
       } catch (error) {

@@ -1,4 +1,5 @@
 import XenditPaymentModal from "../../../../components/payments/XenditPaymentModal";
+import PaymentTerminTab from "../../components/PaymentTerminTab";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +28,7 @@ import {
   FiBarChart,
   FiBell,
   FiCamera,
+  FiCreditCard,
 } from "react-icons/fi";
 import BOQDisplay from "../../../components/BOQDisplay";
 import { firestoreService } from "../../../../hooks/useFirestore";
@@ -35,6 +37,11 @@ import {
   normalizeProposals,
   getProposalsLength,
 } from "../../../../utils/proposalsUtils";
+import {
+  getPublicImageUrl,
+  getCacheBustedUrl,
+  createPlaceholderImage,
+} from "../../../../utils/imageUtils";
 
 const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
   // Early return if project is not valid
@@ -108,8 +115,16 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
   // Load documentation images from project data
   useEffect(() => {
+    console.log("Project data updated:", project);
+    console.log("Project documentationImages:", project?.documentationImages);
     if (project?.documentationImages) {
+      console.log("Setting documentation images:", project.documentationImages);
       setDocumentationImages(project.documentationImages);
+      // Clear previous image errors to give new images a chance to load
+      setImageErrors({});
+    } else {
+      console.log("No documentation images found in project data");
+      console.log("Available project keys:", Object.keys(project || {}));
     }
   }, [project]);
 
@@ -303,6 +318,7 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
 
   // Documentation helper functions
   const handleImageError = (imageId) => {
+    console.error("Image failed to load:", imageId);
     setImageErrors((prev) => ({ ...prev, [imageId]: true }));
   };
 
@@ -319,9 +335,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     alert("Delete dokumentasi hanya dapat dilakukan oleh vendor");
   };
 
-  // Dummy image fallback
-  const dummyImage =
-    "data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%2364748b' text-anchor='middle' dy='.3em'%3EImage not available%3C/text%3E%3C/svg%3E";
+  // Dummy image fallback using utility function
+  const dummyImage = createPlaceholderImage(300, 200, "Image not available");
 
   // Check if any proposal has been accepted (vendor accepted negotiation)
   const hasAcceptedProposal =
@@ -332,6 +347,16 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         (proposal.negotiation && proposal.negotiation.status === "accepted")
     );
 
+  // Check if project has payments to show Termin tab
+  const hasPayments =
+    (project?.payments && project.payments.length > 0) ||
+    (project?.payment && Object.keys(project.payment).length > 0);
+
+  console.log("ProjectOwnerDetailPage - project:", project);
+  console.log("ProjectOwnerDetailPage - hasPayments:", hasPayments);
+  console.log("ProjectOwnerDetailPage - payments array:", project?.payments);
+  console.log("ProjectOwnerDetailPage - payment object:", project?.payment);
+
   const tabs = [
     { id: "overview", label: "Overview", icon: FiEye },
     { id: "tahapan", label: "Tahapan", icon: FiFileText },
@@ -341,6 +366,17 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
       label: `Penawaran (${getProposalsLength(project.proposals)})`,
       icon: FiUser,
     },
+    ...(hasPayments
+      ? [
+          {
+            id: "termin",
+            label: `Termin (${
+              project.payments?.length || (project.payment ? 1 : 0)
+            })`,
+            icon: FiCreditCard,
+          },
+        ]
+      : []),
     {
       id: "negotiation",
       label: "Negotiation",
@@ -2908,6 +2944,14 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
     );
   };
 
+  const renderTerminTab = () => {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <PaymentTerminTab project={project} isVendorView={false} />
+      </div>
+    );
+  };
+
   const renderDokumentasiTab = () => {
     const isVendorAccepted =
       hasAcceptedProposal ||
@@ -2949,26 +2993,85 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
           <div>
             {documentationImages.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {documentationImages.map((image) => (
-                  <div
-                    key={image.id}
-                    className="aspect-square bg-gray-100 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative"
-                  >
-                    <img
-                      src={
-                        imageErrors[`doc-${image.id}`] ? dummyImage : image.url
-                      }
-                      alt="Documentation"
-                      className="w-full h-full object-cover"
-                      onError={() => handleImageError(`doc-${image.id}`)}
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <button className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
-                        View
-                      </button>
+                {documentationImages.map((image, index) => {
+                  console.log("Processing image:", { image, index });
+
+                  const imageKey = image.id || image.name || `image-${index}`;
+                  console.log("Generated imageKey:", imageKey);
+
+                  // Check if image.url exists
+                  if (!image.url) {
+                    console.error("Image URL is missing:", image);
+                    return null;
+                  }
+
+                  // Use utility function to get clean, public URL with cache busting
+                  const imageUrl = getCacheBustedUrl(image.url);
+                  console.log(
+                    "Generated imageUrl (clean & cache-busted):",
+                    imageUrl
+                  );
+
+                  // Create error handler with captured variables
+                  const handleImageLoadError = () => {
+                    console.error("Image load failed:", {
+                      imageKey: imageKey,
+                      url: imageUrl,
+                      originalUrl: image.url,
+                    });
+                    handleImageError(`doc-${imageKey}`);
+                  };
+
+                  // Create load handler with captured variables
+                  const handleImageLoadSuccess = () => {
+                    console.log("Image loaded successfully:", {
+                      imageKey: imageKey,
+                      url: imageUrl,
+                    });
+                  };
+
+                  return (
+                    <div
+                      key={imageKey}
+                      className="aspect-square bg-gray-100 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative"
+                    >
+                      <img
+                        src={
+                          imageErrors[`doc-${imageKey}`] ? dummyImage : imageUrl
+                        }
+                        alt="Documentation"
+                        className="w-full h-full object-cover"
+                        onError={handleImageLoadError}
+                        onLoad={handleImageLoadSuccess}
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="flex space-x-2">
+                          <button className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors">
+                            View
+                          </button>
+                          {imageErrors[`doc-${imageKey}`] && (
+                            <button
+                              onClick={() => {
+                                console.log(
+                                  "Retrying image load for:",
+                                  imageKey
+                                );
+                                setImageErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors[`doc-${imageKey}`];
+                                  return newErrors;
+                                });
+                              }}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
+                            >
+                              Retry
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-center justify-center">
@@ -3005,6 +3108,8 @@ const ProjectOwnerDetailPage = ({ project, onBack, onProjectUpdate }) => {
         return renderBOQTab();
       case "proposals":
         return renderProposalsTab();
+      case "termin":
+        return renderTerminTab();
       case "negotiation":
         return renderNegotiationTab();
       case "dokumentasi":

@@ -19,13 +19,15 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiCamera,
-  FiInfo
+  FiInfo,
+  FiCreditCard
 } from 'react-icons/fi';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { firestoreService } from '../../../../hooks/useFirestore';
 import { useStorage } from '../../../../hooks/useStorage';
 import { normalizeProposals } from '../../../../utils/proposalsUtils';
 import BOQDisplay from '../../../components/BOQDisplay';
+import PaymentTerminTab from '../../components/PaymentTerminTab';
 
 export default function ProjectDetailPage({ project, onBack, onCreateProposal }) {
   const { user } = useAuth();
@@ -74,11 +76,29 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
 
   // Get dynamic tabs based on project status
   const getDynamicTabs = () => {
+    // Check if project has payments to show Termin tab
+    const hasPayments = (project?.payments && project.payments.length > 0) || 
+                       (project?.payment && Object.keys(project.payment).length > 0);
+
+    console.log('ProjectDetailPage (Vendor) - project:', project);
+    console.log('ProjectDetailPage (Vendor) - hasPayments:', hasPayments);
+    console.log('ProjectDetailPage (Vendor) - payments array:', project?.payments);
+    console.log('ProjectDetailPage (Vendor) - payment object:', project?.payment);
+
     const baseTabs = [
       { id: 'overview', label: 'Overview', icon: FiEye },
       { id: 'boq', label: 'BOQ', icon: FiFileText },
       { id: 'proposal', label: 'Penawaran', icon: FiUser },
     ];
+    
+    // Add Termin tab if project has payments
+    if (hasPayments) {
+      baseTabs.push({ 
+        id: 'termin', 
+        label: `Termin (${project.payments?.length || (project.payment ? 1 : 0)})`, 
+        icon: FiCreditCard 
+      });
+    }
     
     // Only show documentation tab when project is IN PROGRESS
     if (isProjectInProgress()) {
@@ -1589,6 +1609,14 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
     );
   };
 
+  const renderTerminTab = () => {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <PaymentTerminTab project={project} isVendorView={true} />
+      </div>
+    );
+  };
+
   const renderDokumentasiTab = () => {
     if (!isProjectInProgress()) {
       return (
@@ -1774,6 +1802,8 @@ export default function ProjectDetailPage({ project, onBack, onCreateProposal })
         return renderBOQTab();
       case 'proposal':
         return renderProposalTab();
+      case 'termin':
+        return renderTerminTab();
       case 'dokumentasi':
         return renderDokumentasiTab();
       default:
