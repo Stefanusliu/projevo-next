@@ -33,6 +33,7 @@ import {
   FiXCircle,
   FiTrash2,
   FiX,
+  FiCheck,
 } from "react-icons/fi";
 import { MdSort, MdHome, MdFolder } from "react-icons/md";
 import ProjectOwnerDetailModal from "./ProjectOwnerDetailModal";
